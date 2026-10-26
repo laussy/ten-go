@@ -3,23 +3,25 @@
 The pool of pump jobs shared by Fabrice's machines (azag, yzao) for the one-atom-laser skeleton (report 0JOalb). Design: the page
 *Ten-Go* of laussywiki. No machine ever computes a pump that another one has done or holds.
 
-A machine asks for a **budget**, not for pumps: `tengo claim --hours 10` takes, in one go, the free pumps of the campaign in its
+A machine asks for a **budget**, not for pumps: `ten-go claim --hours 10` takes, in one go, the free pumps of the campaign in its
 global (van der Corput) order until their cost on that machine fills the ten hours, the longest job kept back. The claim is a commit;
 a push refused because another machine pushed first is redone from the new state, so that no pump is ever in two allocations. An
 allocation has a deadline (start + 1.5 budget + 2 h), after which its pumps not done are free again.
 
 ## Commands
 
-    python3 tengo.py init MACHINE --repo CLONE --work DIR   # once per machine: ~/.config/tengo.json
-    python3 tengo.py status                                 # what is done, held (by whom, until when) and free
-    python3 tengo.py claim --hours 10 [--kernels N] [--go]
-    python3 tengo.py done                                   # push the pumps finished (results/*.tgz) and the job times
-    python3 tengo.py release                                # stop this machine's jobs, push what is done, free the rest
-    python3 tengo.py launch                                 # (re)start the driver of this machine's open allocation
-    python3 tengo.py watch --until 'YYYY-MM-DD HH:MM' [--hours 10]   # unattended: claim, launch, push every 30 min, restart
-    python3 tengo.py fetch DIR                              # unpack every result into DIR
+The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CLONE/tengo.py ~/bin/ten-go`.
 
-The clone belongs to tengo: every command resets it to `origin/main` first.
+    ten-go init MACHINE --repo CLONE --work DIR   # once per machine: ~/.config/tengo.json
+    ten-go status                                 # what is done, held (by whom, until when) and free
+    ten-go claim --hours 10 [--kernels N] [--go]
+    ten-go done                                   # push the pumps finished (results/*.tgz) and the job times
+    ten-go release                                # stop this machine's jobs, push what is done, free the rest
+    ten-go launch                                 # (re)start the driver of this machine's open allocation
+    ten-go watch --until 'YYYY-MM-DD HH:MM' [--hours 10]   # unattended: claim, launch, push every 30 min, restart
+    ten-go fetch DIR                              # unpack every result into DIR
+
+The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 
 ## Layout
 

@@ -1,29 +1,29 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.1 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a private GitHub
-repository, and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `tengo claim --hours 10` takes, in one
+"""Operation Ten-Go v1.2 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a private GitHub
+repository, and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go claim --hours 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
 commit pushed to the repository; a push refused because another machine pushed first is redone from the new state, so that no pump
 can be in two allocations.  An allocation has a deadline (its start + 1.5 budget + 2 h): the pumps it has not done by then go back to
 the pool.  The jobs are run by run_window.py (kit/), one work directory per allocation.
 
-Repository (the clone is tengo's alone: every command starts by resetting it to origin/main):
+Repository (the clone is Ten-Go's alone: every command starts by resetting it to origin/main):
   campaigns/<c>.json   params, file prefix, reference seconds per order, pumps [id, P, orders] in the global order
   machines/<m>.json    kernels, speed factor against the reference
   allocs/<c>/<id>.json one allocation: machine, budget, deadline, pumps, done, measured job times, results, status
   results/<c>/<id>-<n>.tgz   the .dat files of the pumps done, one archive per push
-Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `tengo init`; env TENGO_CONF names another file).
+The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `tengo init`; env TENGO_CONF names another file).
 
-Usage: tengo init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H [-c C] [--kernels N] [--go]
+Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H [-c C] [--kernels N] [--go]
        | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] | watch --until 'YYYY-MM-DD HH:MM' [--hours 10] [-c C]
        | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME"""
 import argparse, glob, json, os, random, re, shutil, subprocess, sys, tarfile, time
-VERSION = "1.1"   # 1.1: claim --go (was --launch) starts the driver
+VERSION = "1.2"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file)
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
 
-def die(msg): sys.exit(f"tengo: {msg}")
+def die(msg): sys.exit(f"ten-go: {msg}")
 def R(*p): return os.path.join(C["repo"], *p)
 def stamp(t): return time.strftime("%a %d %b %H:%M", time.localtime(t))
 
@@ -45,7 +45,7 @@ def transact(change, msg):
         if out is None: return None
         git("add", "-A"); git("commit", "-q", "-m", msg(out))
         if git("push", "-q", "origin", "HEAD:main", check=False).returncode == 0: return out
-        print("tengo: push refused (another machine pushed first), redoing from the new state", file=sys.stderr)
+        print("ten-go: push refused (another machine pushed first), redoing from the new state", file=sys.stderr)
         time.sleep(random.uniform(2, 10))
     die("could not push after 10 attempts")
 
@@ -124,13 +124,13 @@ def ours(W):
 def launch(a, quiet=False):
     W = workdir(a)
     if not os.path.isdir(W): setup(a)
-    if ours(W)[0]: return quiet or print(f"tengo: the driver of {a['id']} is already running")
+    if ours(W)[0]: return quiet or print(f"ten-go: the driver of {a['id']} is already running")
     if os.path.exists(os.path.join(W, "STOP")): die(f"{W}/STOP exists (released or stopped by hand): remove it to run again")
     for f in glob.glob(os.path.join(W, "*.dat")):
         if os.path.getsize(f) < 1000: os.remove(f)   # the leftover of a killed job
     cmd = (["systemd-inhibit", "--what=sleep:idle", f"--why=Ten-Go {a['id']}"] if shutil.which("systemd-inhibit") else []) + ["python3", "run_window.py"]
     subprocess.Popen(cmd, cwd=W, stdin=subprocess.DEVNULL, stdout=open(os.path.join(W, "run.log"), "a"), stderr=subprocess.STDOUT, start_new_session=True)
-    print(f"tengo: launched {a['id']} in {W} on {a['kernels']} kernels")
+    print(f"ten-go: launched {a['id']} in {W} on {a['kernels']} kernels")
 
 
 # ----------------------------------------------------------------------------------------------------------------------- commands
@@ -150,9 +150,9 @@ def cmd_claim(c, hours, kernels=None, do_launch=False):
                  cost_kernel_h=round(tot / 3600, 1), pumps=take, done=[], times={}, results=[], status="open", tengo=VERSION)
         save(R("allocs", c, aid + ".json"), a); return a
     a = transact(change, lambda a: f"claim {a['id']}: {len(a['pumps'])} pumps of {c}, {a['hours']:g} h on {a['kernels']} kernels")
-    if a is None: return print(f"tengo: nothing free in {c}")
+    if a is None: return print(f"ten-go: nothing free in {c}")
     W = setup(a); P = {pid: Pv for pid, Pv, _ in campaign(c)["pumps"]}; xs = sorted(float(P[p]) for p in a["pumps"])
-    print(f"tengo: claimed {a['id']}: {len(a['pumps'])} pumps of {c} ({xs[0]:g}-{xs[-1]:g} g, spread in the global order), "
+    print(f"ten-go: claimed {a['id']}: {len(a['pumps'])} pumps of {c} ({xs[0]:g}-{xs[-1]:g} g, spread in the global order), "
           f"{a['cost_kernel_h']} kernel-h for {hours:g} h on {kern} kernels; deadline {stamp(a['deadline'])}; work directory {W}")
     if do_launch: launch(a)
     return a
@@ -195,13 +195,13 @@ def cmd_done(aid=None, final=None):
                     out.append(f"{a['id']}: +{len(new)} pumps ({len(a['done'])}/{len(a['pumps'])} done), {st}")
         return out or None
     out = transact(change, lambda o: "done: " + "; ".join(o))
-    print("tengo: " + ("; ".join(out) if out else "nothing new to push"))
+    print("ten-go: " + ("; ".join(out) if out else "nothing new to push"))
 
 
 def cmd_release(aid=None):
     sync()
     mine = [a for c in campaigns() for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open" and (not aid or a["id"] == aid)]
-    if not mine: return print("tengo: no open allocation of this machine")
+    if not mine: return print("ten-go: no open allocation of this machine")
     for a in mine:
         W = workdir(a)
         if os.path.isdir(W) and any(ours(W)): subprocess.run(["python3", "run_window.py", "--kill"], cwd=W)   # its own jobs only
@@ -245,7 +245,7 @@ def cmd_watch(until, hours, c):
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail)"""
     end = time.mktime(time.strptime(until, "%Y-%m-%d %H:%M")); restarts = {}; last = 0; c = pick(c)
-    print(f"tengo watch until {stamp(end)} ({C['machine']}, {c})", flush=True)
+    print(f"ten-go watch until {stamp(end)} ({C['machine']}, {c})", flush=True)
     while True:
         now = time.time()
         if now - last > 1800: cmd_done(); last = now
@@ -274,7 +274,7 @@ def cmd_fetch(c, dest):
     sync(); c = pick(c); os.makedirs(dest, exist_ok=True); n = 0
     for f in sorted(glob.glob(R("results", c, "*.tgz"))):
         with tarfile.open(f) as t: t.extractall(dest, filter="data"); n += len(t.getnames())
-    print(f"tengo: {n} files of {c} in {dest}")
+    print(f"ten-go: {n} files of {c} in {dest}")
 
 
 # ------------------------------------------------------------------------------------------------------------------------ campaigns
@@ -301,18 +301,18 @@ CAMPAIGNS = {"close-0.004": mk_close004}
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Operation Ten-Go: a shared pool of pump jobs in a git repository")
+    ap = argparse.ArgumentParser(prog="ten-go", description="Operation Ten-Go: a shared pool of pump jobs in a git repository")
     ap.add_argument("cmd"); ap.add_argument("arg", nargs="?"); ap.add_argument("-c", "--campaign")
     ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
     a = ap.parse_args()
-    if a.cmd in ("-v", "version"): return print(f"tengo {VERSION}")
+    if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
     if a.cmd == "init":
-        if not (a.arg and a.repo and a.work): die("tengo init MACHINE --repo CLONE --work DIR")
+        if not (a.arg and a.repo and a.work): die("ten-go init MACHINE --repo CLONE --work DIR")
         save(CONF, dict(machine=a.arg, repo=os.path.abspath(os.path.expanduser(a.repo)), work=os.path.abspath(os.path.expanduser(a.work))))
-        return print(f"tengo: {CONF} written ({a.arg})")
+        return print(f"ten-go: {CONF} written ({a.arg})")
     try: C.update(json.load(open(CONF)))
-    except FileNotFoundError: die(f"no {CONF}: run `tengo init MACHINE --repo CLONE --work DIR` first")
+    except FileNotFoundError: die(f"no {CONF}: run `ten-go init MACHINE --repo CLONE --work DIR` first")
     if a.cmd == "status": cmd_status(a.campaign)
     elif a.cmd == "claim":
         if not a.hours: die("claim --hours H")
@@ -322,7 +322,7 @@ def main():
     elif a.cmd == "launch":
         sync(); op = [x for c in campaigns() for x in allocs(c) if x["machine"] == C["machine"] and x["status"] == "open" and (not a.alloc or x["id"] == a.alloc)]
         for x in op: launch(x)
-        if not op: print("tengo: no open allocation of this machine")
+        if not op: print("ten-go: no open allocation of this machine")
     elif a.cmd == "watch":
         if not a.until: die("watch --until 'YYYY-MM-DD HH:MM'")
         cmd_watch(a.until, a.hours or 10, a.campaign)
@@ -330,7 +330,7 @@ def main():
     elif a.cmd == "mkcampaign":
         if a.arg not in CAMPAIGNS: die(f"known campaigns: {', '.join(CAMPAIGNS)}")
         cm = CAMPAIGNS[a.arg](); transact(lambda: save(R("campaigns", a.arg + ".json"), cm) or a.arg, lambda o: f"campaign {o}: {len(cm['pumps'])} pumps")
-        print(f"tengo: campaign {a.arg}, {len(cm['pumps'])} pumps")
+        print(f"ten-go: campaign {a.arg}, {len(cm['pumps'])} pumps")
     else: die(f"unknown command {a.cmd}\n{__doc__}")
 
 
