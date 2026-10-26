@@ -1,0 +1,5 @@
+{
+ "kernels": 30,
+ "factor": 1.0,
+ "about": "the reference machine (i9-14900HX laptop, 32 threads); the reference seconds of the campaigns are its job times on 30 kernels at home"
+}
