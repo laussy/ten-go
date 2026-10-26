@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.0 (lw page [[Operation Ten-Go]]): several machines share one pool of pump jobs through a private GitHub
+"""Operation Ten-Go v1.1 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a private GitHub
 repository, and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `tengo claim --hours 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -14,11 +14,11 @@ Repository (the clone is tengo's alone: every command starts by resetting it to 
   results/<c>/<id>-<n>.tgz   the .dat files of the pumps done, one archive per push
 Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `tengo init`; env TENGO_CONF names another file).
 
-Usage: tengo init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H [-c C] [--kernels N] [--launch]
+Usage: tengo init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H [-c C] [--kernels N] [--go]
        | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] | watch --until 'YYYY-MM-DD HH:MM' [--hours 10] [-c C]
        | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME"""
 import argparse, glob, json, os, random, re, shutil, subprocess, sys, tarfile, time
-VERSION = "1.0"
+VERSION = "1.1"   # 1.1: claim --go (was --launch) starts the driver
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -303,7 +303,7 @@ CAMPAIGNS = {"close-0.004": mk_close004}
 def main():
     ap = argparse.ArgumentParser(description="Operation Ten-Go: a shared pool of pump jobs in a git repository")
     ap.add_argument("cmd"); ap.add_argument("arg", nargs="?"); ap.add_argument("-c", "--campaign")
-    ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--launch", action="store_true")
+    ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
     a = ap.parse_args()
     if a.cmd in ("-v", "version"): return print(f"tengo {VERSION}")
@@ -316,7 +316,7 @@ def main():
     if a.cmd == "status": cmd_status(a.campaign)
     elif a.cmd == "claim":
         if not a.hours: die("claim --hours H")
-        cmd_claim(a.campaign, a.hours, a.kernels, a.launch)
+        cmd_claim(a.campaign, a.hours, a.kernels, a.go)
     elif a.cmd == "done": cmd_done(a.alloc)
     elif a.cmd == "release": cmd_release(a.alloc)
     elif a.cmd == "launch":

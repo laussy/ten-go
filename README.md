@@ -1,7 +1,7 @@
 # Operation Ten-Go
 
 The pool of pump jobs shared by Fabrice's machines (azag, yzao) for the one-atom-laser skeleton (report 0JOalb). Design: the page
-*Operation Ten-Go* of laussywiki. No machine ever computes a pump that another one has done or holds.
+*Ten-Go* of laussywiki. No machine ever computes a pump that another one has done or holds.
 
 A machine asks for a **budget**, not for pumps: `tengo claim --hours 10` takes, in one go, the free pumps of the campaign in its
 global (van der Corput) order until their cost on that machine fills the ten hours, the longest job kept back. The claim is a commit;
@@ -12,7 +12,7 @@ allocation has a deadline (start + 1.5 budget + 2 h), after which its pumps not 
 
     python3 tengo.py init MACHINE --repo CLONE --work DIR   # once per machine: ~/.config/tengo.json
     python3 tengo.py status                                 # what is done, held (by whom, until when) and free
-    python3 tengo.py claim --hours 10 [--kernels N] [--launch]
+    python3 tengo.py claim --hours 10 [--kernels N] [--go]
     python3 tengo.py done                                   # push the pumps finished (results/*.tgz) and the job times
     python3 tengo.py release                                # stop this machine's jobs, push what is done, free the rest
     python3 tengo.py launch                                 # (re)start the driver of this machine's open allocation
