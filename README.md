@@ -19,6 +19,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go claim --hours 10 --until TAG ...       # only prints the same command, its --hours set to the hours until TAG
     ten-go done                                   # push the pumps finished (results/*.tgz) and the job times
     ten-go release                                # stop this machine's jobs, push what is done, free the rest
+    ten-go release --uchikiri [--dry]             # end as soon as possible WITHOUT LOSS (also: ten-go --uchikiri); says when
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
     ten-go watch --until TAG [--hours 10]         # unattended: claim, launch, push every 30 min, restart
     ten-go fetch DIR                              # unpack every result into DIR
@@ -30,6 +31,11 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
 back when other work wants them: the driver looks every minute, adds a kernel after 10 minutes of free threads, comes back toward
 the allocation's kernels after 2 minutes of other activity, and runs the shortest jobs waiting on the kernels above them, so that
 the retreat is quick (no job is killed). Outside Ten-Go, a file `shinshu` (a number, or `max`) in a run's directory does the same.
+
+`--uchikiri` ends the allocations of the machine without loss: each driver launches no new pump and completes those started (a job
+done or in flight), and says when it will end and what a STOP or a kill would waste instead; the pumps not started go back to the
+pool at once, a watch claims nothing more, and the driver pushes the last results when it ends. `--dry` only says when. Outside
+Ten-Go: `python3 run_window.py --uchikiri [--dry]` in the run's directory.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 

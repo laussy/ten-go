@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.5 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.6 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go claim --hours 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -25,15 +25,20 @@ thread of the machine), and give them back as soon as other work wants them: the
 kernel more after 10 minutes of threads free of any other work, back toward the allocation's kernels after 2 minutes of activity; a
 kernel above them runs the shortest job waiting, so that the retreat is quick.  The budget is unchanged: shinshu only ends it sooner.
 
+release --uchikiri (or ten-go --uchikiri) ends this machine's allocations as soon as possible without loss: each driver launches
+no new pump and completes those started (a job done or in flight), and says when it will end, and what a STOP or a kill would waste
+instead; the pumps not started go back to the pool at once, a watch of the machine claims nothing more, and the driver pushes the last
+results when it ends.  With --dry, it only says when.
+
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
 Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H|--until TAG [-c C] [--kernels N] [--go] [--shinshu [N]]
-       | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--hours 10] [-c C] [--shinshu [N]]
+       | done [--alloc ID] | release [--alloc ID] [--uchikiri [--dry]] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--hours 10] [-c C] [--shinshu [N]]
        | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
-VERSION = "1.5"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu
+VERSION = "1.6"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -303,6 +308,31 @@ def cmd_release(aid=None):
     for a in mine: cmd_done(a["id"], final="released")
 
 
+def cmd_uchikiri(aid=None, dry=False):
+    """end this machine's open allocations as soon as possible without loss (run_window.py --uchikiri, which says when); the pumps not
+    started go back to the pool at once, and the driver pushes the last results when it ends (its file atend)"""
+    sync()
+    mine = [a for c in campaigns() for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open" and (not aid or a["id"] == aid)]
+    if not mine: return print("ten-go: no open allocation of this machine")
+    if not dry: open(os.path.join(C["work"], "UCHIKIRI"), "w").write(f"{int(time.time())}\n")   # a watch of this machine claims no more
+    for a in mine:
+        W = workdir(a)
+        if not (os.path.isdir(W) and ours(W)[0]): print(f"ten-go: {a['id']}: no driver running (`ten-go release` gives its pumps back)"); continue
+        if not dry: open(os.path.join(W, "atend"), "w").write(shlex.join(["env", f"TENGO_CONF={CONF}", sys.executable, os.path.realpath(__file__), "done", "--alloc", a["id"]]) + "\n")
+        r = subprocess.run(["python3", "run_window.py", "--uchikiri"] + (["--dry"] if dry else []), cwd=W, capture_output=True, text=True)
+        say = (r.stdout + r.stderr).strip()
+        if dry or r.returncode: print(f"ten-go: {a['id']}: {say}"); continue
+        kept = set(open(os.path.join(W, "uchikiri.kept")).read().split())   # the pumps started, as the driver saw them
+        def change():
+            x = json.load(open(R("allocs", a["campaign"], a["id"] + ".json")))
+            back = [p for p in x["pumps"] if str(p) not in kept and p not in x["done"]]
+            if x["status"] != "open" or not back: return None
+            x["pumps"] = [p for p in x["pumps"] if p not in back]; x["uchikiri"] = int(time.time()); save(R("allocs", a["campaign"], a["id"] + ".json"), x)
+            return len(back)
+        n = transact(change, lambda n: f"uchikiri {a['id']}: {n} pumps back to the pool")
+        print(f"ten-go: {a['id']}: {n or 0} pumps back to the pool at once; {say}; the driver pushes the last results when it ends")
+
+
 def cmd_status(c=None):
     sync(); now = time.time()
     for c in ([pick(c)] if c else campaigns()):
@@ -323,6 +353,7 @@ def cmd_status(c=None):
             late = a["status"] == "open" and now > a["deadline"]
             print(f"    {a['id']:24s} {len(a['done']):4d}/{len(a['pumps']):<4d} {a['status']:9s} {a['hours']:g} h x {a['kernels']}"
                   + (f" (shinshu up to {upto(a['shinshu'])})" if a.get("shinshu") else "") + f", deadline {stamp(a['deadline'])}"
+                  + (f", uchikiri {stamp(a['uchikiri'])}" if a.get("uchikiri") else "")
                   + ("  PASSED: its pumps not done are free again" if late else ""))
 
 
@@ -378,10 +409,12 @@ def cmd_watch(until, hours, c, shinshu=None):
     """the unattended loop: claim and launch an allocation while time remains before `until`, push the pumps done every 30 min,
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail)"""
-    end = moment(until); restarts = {}; last = 0; c = pick(c)
+    end = moment(until); restarts = {}; last = 0; c = pick(c); t0 = time.time(); flag = os.path.join(C["work"], "UCHIKIRI")
     print(f"ten-go watch until {stamp(end)} ({C['machine']}, {c})", flush=True)
     while True:
         now = time.time()
+        if end > now and os.path.exists(flag) and os.path.getmtime(flag) > t0:
+            end = now; print(f"{time.strftime('%H:%M:%S')} uchikiri: no more claims, the watch ends with its drivers", flush=True)
         if now - last > 1800: cmd_done(); last = now
         sync(); op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
         for a in op:
@@ -436,10 +469,11 @@ CAMPAIGNS = {"close-0.004": mk_close004}
 
 def main():
     ap = argparse.ArgumentParser(prog="ten-go", description="Operation Ten-Go: a shared pool of pump jobs in a git repository")
-    ap.add_argument("cmd"); ap.add_argument("arg", nargs="?"); ap.add_argument("more", nargs="*"); ap.add_argument("-c", "--campaign")
+    ap.add_argument("cmd", nargs="?"); ap.add_argument("arg", nargs="?"); ap.add_argument("more", nargs="*"); ap.add_argument("-c", "--campaign")
     ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
     ap.add_argument("--machine"); ap.add_argument("--note", default=""); ap.add_argument("--shinshu", nargs="?", const="max")
+    ap.add_argument("--uchikiri", action="store_true"); ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
     if a.cmd == "claim" and a.hours and a.until:
         h = hours_until(a.until)[0]; k = a.kernels
@@ -448,13 +482,16 @@ def main():
             except (OSError, KeyError, ValueError): pass
         return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
+    if a.uchikiri and a.cmd not in (None, "release"): die("--uchikiri goes with release, or alone")
+    if a.cmd is None and not a.uchikiri: die(f"no command\n{__doc__}")
     if a.cmd == "init":
         if not (a.arg and a.repo and a.work): die("ten-go init MACHINE --repo CLONE --work DIR")
         save(CONF, dict(machine=a.arg, repo=os.path.abspath(os.path.expanduser(a.repo)), work=os.path.abspath(os.path.expanduser(a.work))))
         return print(f"ten-go: {CONF} written ({a.arg})")
     try: C.update(json.load(open(CONF)))
     except FileNotFoundError: die(f"no {CONF}: run `ten-go init MACHINE --repo CLONE --work DIR` first")
-    if a.cmd == "status": cmd_status(a.campaign)
+    if a.uchikiri: cmd_uchikiri(a.alloc, a.dry)
+    elif a.cmd == "status": cmd_status(a.campaign)
     elif a.cmd == "claim":
         if a.until: a.hours, t = hours_until(a.until); print(f"ten-go: until {a.until}, {stamp(t)}: {a.hours:g} h from now")
         if not a.hours: die("claim --hours H, or --until TAG")
