@@ -1,0 +1,20 @@
+{
+ "id": "azag-20261027-115055",
+ "campaign": "uijin",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.0,
+ "created": 1793098255,
+ "deadline": 1793116255,
+ "cost_kernel_h": 1.7,
+ "pumps": [
+  40000000
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.21",
+ "shinshu": "max",
+ "shugeki": false
+}
