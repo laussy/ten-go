@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.17 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.18 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -54,7 +54,7 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
 from fractions import Fraction
-VERSION = "1.17"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion
+VERSION = "1.18"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh)
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -240,6 +240,16 @@ def ours(W):
     return drv, fe
 
 
+def inhibitor(a):
+    """systemd-inhibit, to keep the machine awake while the driver runs: sleep and idle where the session may block them, idle alone
+    where sleep needs an interactive authentication (an ssh session), else nothing"""
+    if not shutil.which("systemd-inhibit"): return []
+    for what in ("sleep:idle", "idle"):
+        if subprocess.run(["systemd-inhibit", f"--what={what}", "--why=Ten-Go test", "true"], capture_output=True).returncode == 0:
+            return ["systemd-inhibit", f"--what={what}", f"--why=Ten-Go {a['id']}"]
+    return []
+
+
 def launch(a, quiet=False, shinshu=None):
     W = workdir(a)
     if not os.path.isdir(W): setup(a)
@@ -248,7 +258,7 @@ def launch(a, quiet=False, shinshu=None):
     if os.path.exists(os.path.join(W, "STOP")): die(f"{W}/STOP exists (released or stopped by hand): remove it to run again")
     for f in glob.glob(os.path.join(W, "*.dat")):
         if os.path.getsize(f) < 1000: os.remove(f)   # the leftover of a killed job
-    cmd = (["systemd-inhibit", "--what=sleep:idle", f"--why=Ten-Go {a['id']}"] if shutil.which("systemd-inhibit") else []) + ["python3", "run_window.py"]
+    cmd = inhibitor(a) + ["python3", "run_window.py"]
     subprocess.Popen(cmd, cwd=W, stdin=subprocess.DEVNULL, stdout=open(os.path.join(W, "run.log"), "a"), stderr=subprocess.STDOUT, start_new_session=True)
     sh = open(os.path.join(W, "shinshu")).read().strip() if os.path.exists(os.path.join(W, "shinshu")) else ""
     print(f"ten-go: launched {a['id']} in {W} on {a['kernels']} kernels" + (f", shinshu up to {upto(sh)}" if sh else ""))
@@ -481,12 +491,16 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
         for a in op:
             W = workdir(a); log = open(os.path.join(W, "run.log")).read() if os.path.exists(os.path.join(W, "run.log")) else ""
             if not ours(W)[0] and "ALLDONE" not in log.split("tengo-launch")[-1] and not os.path.exists(os.path.join(W, "STOP")):
-                if restarts.get(a["id"], 0) >= 3: continue
+                if restarts.get(a["id"], 0) >= 3:   # it does not start: its pumps back to the pool, not held until the deadline
+                    print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} down after 3 starts: released", flush=True)
+                    open(os.path.join(W, "STOP"), "w").write("released by the watch\n"); cmd_done(a["id"], final="released"); continue
                 restarts[a["id"]] = restarts.get(a["id"], 0) + 1; print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} not running: start {restarts[a['id']]}", flush=True)
                 open(os.path.join(W, "run.log"), "a").write(f"{time.strftime('%H:%M:%S')} tengo-launch (watch)\n"); launch(a, quiet=True)
         tails = [(a, *tail_state(workdir(a))) for a in op]
         fresh = [a for a, wait, run in tails if wait]           # an allocation still launching jobs
-        if not fresh and end - now > 1800:
+        down = [a for a in op if not ours(workdir(a))[0] and not os.path.exists(os.path.join(workdir(a), "STOP"))
+                and "ALLDONE" not in (open(os.path.join(workdir(a), "run.log")).read() if os.path.exists(os.path.join(workdir(a), "run.log")) else "")]
+        if not fresh and not down and end - now > 1800:         # no new claim while one of ours has its driver down
             busy = sum(run for _, _, run in tails); kern = machine(C["machine"])["kernels"]
             a = cmd_claim(c, min(hours, (end - now) / 3600), kern, shinshu=shinshu, shugeki=shugeki, quiet=True)
             if a:

@@ -103,7 +103,7 @@ if "--progress" in sys.argv:
     for o in dict.fromkeys(order(f[0]) for f in plan):
         pre = next(f[0] for f in plan if order(f[0]) == o); n_all = sum(order(f[0]) == o for f in plan)
         n = sum(os.path.exists(f"{f[0]}_{f[3]}.dat") for f in plan if order(f[0]) == o)
-        t = T[o] if o in T else 600 * (int(o[:-1]) / 150) ** 3; tot += n_all * t; done_t += n * t; parts.append(f"{o} {n}/{n_all}")
+        t = tcost(o); tot += n_all * t; done_t += n * t; parts.append(f"{o} {n}/{n_all}")
     pct = 100 * done_t / tot; b = int(pct * 40 / 100); ep = open("launch-epoch").read().split() if os.path.exists("launch-epoch") else []
     el = time.time() - int(ep[0]) if ep else 0; seed = float(ep[1]) if len(ep) > 1 else 0   # kernel time already on disk at launch (copied files)
     new = (done_t - seed) / (tot - seed) if tot > seed else 1   # the end estimate uses only the work done since the launch
@@ -239,7 +239,7 @@ def pick(extra):   # the next job: in the plan's order, or for a kernel above np
 jobs = [(f[0], int(f[1]), int(f[2]), f[3], f[4] if len(f) > 4 else PREC) for f in plan if not os.path.exists(f"{f[0]}_{f[3]}.dat")]   # a 5th field = the precision of that job
 foreign = ours(); jobs = [j for j in jobs if (j[0], j[3]) not in foreign.values()]
 if not os.path.exists("launch-epoch"):   # the launch time and the kernel time of the files present then (copied pumps), for the end estimate
-    seed = sum(T.get(order(f[0]), 600 * (int(order(f[0])[:-1]) / 150) ** 3) for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat"))
+    seed = sum(tcost(order(f[0])) for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat"))
     open("launch-epoch", "w").write(f"{int(time.time())} {seed:.0f}")
 print(f"{time.strftime('%H:%M:%S')} {len(jobs)} jobs to run ({len(foreign)} adopted in flight), GA={GA} GS={GS} PREC={PREC}"
       + (f", shinshu up to {ceiling()} kernels" if ceiling() else ""), flush=True)
