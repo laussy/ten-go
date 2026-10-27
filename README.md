@@ -22,6 +22,9 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go launch                                 # (re)start the driver of this machine's open allocation
     ten-go watch --until TAG [--hours 10]         # unattended: claim, launch, push every 30 min, restart
     ten-go fetch DIR                              # unpack every result into DIR
+    ten-go kh [TASK]                              # kernel-hours (kh) spent, per task and machine (ledger.tsv)
+    ten-go kh import DIR [TASK] [--note TEXT]     # book (or bring up to date) any run of run_window.py, in Ten-Go or not
+    ten-go kh add TASK KH [--note TEXT]           # book by hand a run without a log
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 
@@ -30,5 +33,7 @@ The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 - `campaigns/<c>.json`: parameters, file prefix, reference seconds per order, pumps `[id, P, orders]` in the global order
 - `machines/<m>.json`: kernels and speed factor (the costs are then refined from the measured jobs)
 - `allocs/<c>/<id>.json`: one allocation (machine, budget, deadline, pumps, done, job times, results, status)
+- `ledger.tsv`: the kernel-hours spent, one line per allocation (kept up to date by `done`), per run log imported, or booked by
+  hand. A kh is one kernel for one hour: the jobs' own times summed, a failed job's included.
 - `results/<c>/<id>-<n>.tgz`: the `.dat` files of the pumps done, one archive per push
 - `kit/`: `hp3.wls` and `run_window.py`, copied into each allocation's work directory

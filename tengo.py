@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.3 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a private GitHub
-repository, and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go claim --hours 10` takes, in one
+"""Operation Ten-Go v1.4 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go claim --hours 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
 commit pushed to the repository; a push refused because another machine pushed first is redone from the new state, so that no pump
@@ -12,17 +12,23 @@ Repository (the clone is Ten-Go's alone: every command starts by resetting it to
   machines/<m>.json    kernels, speed factor against the reference
   allocs/<c>/<id>.json one allocation: machine, budget, deadline, pumps, done, measured job times, results, status
   results/<c>/<id>-<n>.tgz   the .dat files of the pumps done, one archive per push
+  ledger.tsv           the kernel-hours (kh) spent, per task: one line per allocation (brought up to date by done) or per run log
+                       imported (any run of run_window.py, in Ten-Go or not), or booked by hand
 The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `ten-go init`; env TENGO_CONF names another file).
 
 --until TAG, an AF tag (read back by ~/bin/AF, lw page [[AF]]) or 'YYYY-MM-DD HH:MM', ends a claim or a watch at that moment: claim
 takes the hours from now until then in place of --hours.  Given both --hours and --until, claim only prints itself again, its --hours
-set to those hours and --until dropped.
+set to those hours and --until dropped, with the kernel-hours (kh) they make as a comment.
+
+A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
+ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
 Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H|--until TAG [-c C] [--kernels N] [--go]
        | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] | watch --until TAG [--hours 10] [-c C]
-       | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME"""
+       | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME
+       | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
-VERSION = "1.3"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG
+VERSION = "1.3"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -94,6 +100,42 @@ def allocs(c): return [json.load(open(f)) for f in sorted(glob.glob(R("allocs", 
 def machine(m): return json.load(open(R("machines", m + ".json")))
 def workdir(a): return os.path.join(C["work"], a["campaign"], a["id"])
 def parse(o): m = re.fullmatch(r"(\d+)([we])(\d*)", o); return int(m[1]), int(m[2] == "w"), m[3]   # "150w80": n_t 150, weights, 80 digits
+def kh(s): return f"{s / 3600:.1f}"
+def tilde(p): h = os.path.expanduser("~"); return "~" + p[len(h):] if p.startswith(h + "/") else p
+
+
+LEDGER = ["task", "machine", "source", "jobs", "failed", "kh", "first", "last", "note"]   # first and last job done
+
+
+def ledger(): return [dict(zip(LEDGER, l.rstrip("\n").split("\t"))) for l in open(R("ledger.tsv")).readlines()[1:]] if os.path.exists(R("ledger.tsv")) else []
+
+
+def save_ledger(L):
+    with open(R("ledger.tsv"), "w") as f:
+        f.write("\t".join(LEDGER) + "\n")   # a header GitHub shows as a table
+        for e in sorted(L, key=lambda e: (e["first"], e["source"])): f.write("\t".join(str(e[k]) for k in LEDGER) + "\n")
+
+
+def logspent(W):
+    """jobs, failed jobs and kernel-seconds of the jobs a run.log of run_window.py reports done, and when the first and the last of
+    them ended (the times of their files: the log has no dates)"""
+    n = bad = sec = 0; f = os.path.join(W, "run.log"); T = []
+    for l in (open(f) if os.path.exists(f) else []):
+        m = re.search(r" done (\S+) j=(\d+) P=\S+ in (\d+) s", l)
+        if not m: continue
+        n += 1; sec += int(m[3]); bad += "NO FILE" in l; d = os.path.join(W, f"{m[1]}_{m[2]}.dat")
+        if os.path.exists(d): T.append(os.path.getmtime(d))
+    T = T or [os.path.getmtime(f)] if n else [0]
+    return n, bad, sec, min(T), max(T)
+
+
+def book(L, task, m, source, spent, note=""):
+    """bring the line of `source` up to `spent` (from logspent); True when it changed"""
+    n, bad, sec, t0, t1 = spent; d = lambda t: time.strftime("%Y-%m-%d %H:%M", time.localtime(t)); e = next((e for e in L if e["source"] == source), None)
+    if e is None and n: L.append(dict(task=task, machine=m, source=source, jobs=n, failed=bad, kh=f"{sec / 3600:.2f}", first=d(t0), last=d(t1), note=note))
+    elif e and (str(n), f"{sec / 3600:.2f}") != (e["jobs"], e["kh"]): e.update(jobs=n, failed=bad, kh=f"{sec / 3600:.2f}", last=d(t1))
+    else: return False
+    return True
 
 
 def pick(c):
@@ -186,7 +228,7 @@ def cmd_claim(c, hours, kernels=None, do_launch=False):
     if a is None: return print(f"ten-go: nothing free in {c}")
     W = setup(a); P = {pid: Pv for pid, Pv, _ in campaign(c)["pumps"]}; xs = sorted(float(P[p]) for p in a["pumps"])
     print(f"ten-go: claimed {a['id']}: {len(a['pumps'])} pumps of {c} ({xs[0]:g}-{xs[-1]:g} g, spread in the global order), "
-          f"{a['cost_kernel_h']} kernel-h for {hours:g} h on {kern} kernels; deadline {stamp(a['deadline'])}; work directory {W}")
+          f"{a['cost_kernel_h']} kh for {hours:g} h on {kern} kernels; deadline {stamp(a['deadline'])}; work directory {W}")
     if do_launch: launch(a)
     return a
 
@@ -209,7 +251,7 @@ def jobtimes(W, prefix, pids):
 def cmd_done(aid=None, final=None):
     """push the pumps finished since the last push (their files as one archive), their job times, and the status of the allocation"""
     def change():
-        out = []
+        out = []; L = ledger(); booked = False
         for c in campaigns():
             cm = campaign(c); O = {pid: orders for pid, _, orders in cm["pumps"]}
             for a in allocs(c):
@@ -223,9 +265,12 @@ def cmd_done(aid=None, final=None):
                     a["results"].append(rel); a["done"] += new
                     for o, v in jobtimes(W, cm["prefix"], set(new)).items(): a["times"].setdefault(o, []).extend(v)
                 st = final or ("finished" if set(a["done"]) >= set(a["pumps"]) else "open")
+                sp = logspent(W); b = book(L, c, a["machine"], "alloc " + a["id"], sp); booked |= b
                 if new or st != a["status"]:
                     a["status"] = st; a["updated"] = int(time.time()); save(R("allocs", c, a["id"] + ".json"), a)
-                    out.append(f"{a['id']}: +{len(new)} pumps ({len(a['done'])}/{len(a['pumps'])} done), {st}")
+                    out.append(f"{a['id']}: +{len(new)} pumps ({len(a['done'])}/{len(a['pumps'])} done), {st}, {kh(sp[2])} kh spent")
+                elif b: out.append(f"{a['id']}: {kh(sp[2])} kh spent")
+        if booked: save_ledger(L)
         return out or None
     out = transact(change, lambda o: "done: " + "; ".join(o))
     print("ten-go: " + ("; ".join(out) if out else "nothing new to push"))
@@ -250,17 +295,56 @@ def cmd_status(c=None):
         _, K1 = cost(cm, A, "azag" if os.path.exists(R("machines", "azag.json")) else C["machine"])
         left = sum(K1[p] for p, _, _ in cm["pumps"] if p not in done) / 3600; b = int(40 * len(done) / N)
         print(f"{c}: [{'#' * b}{'.' * (40 - b)}] {len(done)}/{N} pumps done, {len(hold)} held, {N - len(done) - len(hold)} free; "
-              f"{left:.0f} kernel-h left at the reference speed")
+              f"{left:.0f} kh left at the reference speed; {sum(float(e['kh']) for e in ledger() if e['task'] == c):.1f} kh spent")
         for m in sorted({a["machine"] for a in A}):
             op = [a for a in A if a["machine"] == m and a["status"] == "open"]
             S, Km = cost(cm, A, m); rest = sum(Km[p] for a in op for p in a["pumps"] if p not in set(a["done"]))
             kern = max([a["kernels"] for a in op] or [machine(m)["kernels"]])
-            print(f"  {m}: {sum(len(a['done']) for a in A if a['machine'] == m)} pumps done in all; "
-                  + (f"holds {sum(len(a['pumps']) - len(a['done']) for a in op)}, {rest / 3600:.0f} kernel-h, end about {stamp(now + rest / kern)}" if op else "holds nothing"))
+            print(f"  {m}: {sum(len(a['done']) for a in A if a['machine'] == m)} pumps done in all, "
+                  f"{sum(float(e['kh']) for e in ledger() if e['task'] == c and e['machine'] == m):.1f} kh; "
+                  + (f"holds {sum(len(a['pumps']) - len(a['done']) for a in op)}, {rest / 3600:.0f} kh, end about {stamp(now + rest / kern)}" if op else "holds nothing"))
         for a in sorted(A, key=lambda a: a["created"])[-12:]:
             late = a["status"] == "open" and now > a["deadline"]
             print(f"    {a['id']:24s} {len(a['done']):4d}/{len(a['pumps']):<4d} {a['status']:9s} {a['hours']:g} h x {a['kernels']}, deadline {stamp(a['deadline'])}"
                   + ("  PASSED: its pumps not done are free again" if late else ""))
+
+
+def cmd_kh(args, mach=None, note=""):
+    """the ledger: totals per task and machine (kh), the lines of one task (kh TASK), a run log booked (kh import DIR [TASK]: again
+    later, its line is brought up to date), or a run without a log booked by hand (kh add TASK KH)"""
+    m = mach or C["machine"]
+    if args and args[0] == "import":
+        if len(args) not in (2, 3): die("kh import DIR [TASK]")
+        D = os.path.abspath(os.path.expanduser(args[1])); task = args[2] if len(args) == 3 else os.path.basename(D); sp = logspent(D)
+        if not sp[0]: die(f"no job done in {tilde(D)}/run.log")
+        def change():
+            L = ledger()
+            if not book(L, task, m, f"log {m}:{tilde(D)}", sp, note): return None
+            save_ledger(L); return True
+        r = transact(change, lambda r: f"kh: {task} on {m}, {tilde(D)}: {sp[0]} jobs, {kh(sp[2])} kh")
+        print(f"ten-go: {task} on {m}: {sp[0]} jobs ({sp[1]} failed), {kh(sp[2])} kh" + ("" if r else ", already in the ledger"))
+    elif args and args[0] == "add":
+        if len(args) != 3: die("kh add TASK KH")
+        task, now = args[1], time.strftime("%Y-%m-%d %H:%M")
+        try: x = float(args[2])
+        except ValueError: die(f"kh add {task} {args[2]}: KH is a number of kernel-hours")
+        def change():
+            L = ledger(); L.append(dict(task=task, machine=m, source=f"by hand {now}", jobs="", failed="", kh=f"{x:.2f}", first=now, last=now, note=note))
+            save_ledger(L); return True
+        transact(change, lambda r: f"kh: {task} on {m}, {x:g} kh by hand"); print(f"ten-go: {task} on {m}: {x:g} kh booked by hand")
+    else:
+        sync(); L = ledger()
+        if not L: return print("ten-go: the ledger is empty")
+        if args:
+            E = [e for e in L if e["task"] == args[0]] or die(f"no task {args[0]} in the ledger")
+            for e in E: print(f"  {e['machine']:6s} {float(e['kh']):9.1f} kh {e['jobs']:>6s} jobs  {e['first']} to {e['last']}  {e['source']}  {e['note']}")
+            return print(f"  {'all':6s} {sum(float(e['kh']) for e in E):9.1f} kh")
+        M = sorted({e["machine"] for e in L}); T = sorted({e["task"] for e in L}, key=lambda t: min(e["first"] for e in L if e["task"] == t))
+        tot = lambda t=None, mm=None: sum(float(e["kh"]) for e in L if (t is None or e["task"] == t) and (mm is None or e["machine"] == mm))
+        w = max(len(t) for t in T + ["task"]); print(f"kernel-hours spent (ledger.tsv, {len(L)} lines)")
+        print(f"  {'task':{w}s}" + "".join(f"{mm:>9s}" for mm in M) + f"{'all':>9s}  first job")
+        for t in T: print(f"  {t:{w}s}" + "".join(f"{tot(t, mm):9.1f}" if tot(t, mm) else f"{'-':>9s}" for mm in M) + f"{tot(t):9.1f}  {min(e['first'] for e in L if e['task'] == t)[:10]}")
+        print(f"  {'all':{w}s}" + "".join(f"{tot(None, mm):9.1f}" for mm in M) + f"{tot():9.1f}")
 
 
 def tail_state(W):
@@ -335,11 +419,17 @@ CAMPAIGNS = {"close-0.004": mk_close004}
 
 def main():
     ap = argparse.ArgumentParser(prog="ten-go", description="Operation Ten-Go: a shared pool of pump jobs in a git repository")
-    ap.add_argument("cmd"); ap.add_argument("arg", nargs="?"); ap.add_argument("-c", "--campaign")
+    ap.add_argument("cmd"); ap.add_argument("arg", nargs="?"); ap.add_argument("more", nargs="*"); ap.add_argument("-c", "--campaign")
     ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
+    ap.add_argument("--machine"); ap.add_argument("--note", default="")
     a = ap.parse_args()
-    if a.cmd == "claim" and a.hours and a.until: return print(restated(hours_until(a.until)[0]))
+    if a.cmd == "claim" and a.hours and a.until:
+        h = hours_until(a.until)[0]; k = a.kernels
+        if not k:
+            try: C.update(json.load(open(CONF))); k = machine(C["machine"])["kernels"]   # no sync: only this machine's kernels
+            except (OSError, KeyError, ValueError): pass
+        return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
     if a.cmd == "init":
         if not (a.arg and a.repo and a.work): die("ten-go init MACHINE --repo CLONE --work DIR")
@@ -362,6 +452,7 @@ def main():
         if not a.until: die("watch --until TAG (an AF tag, or 'YYYY-MM-DD HH:MM')")
         cmd_watch(a.until, a.hours or 10, a.campaign)
     elif a.cmd == "fetch": cmd_fetch(a.campaign, a.arg or ".")
+    elif a.cmd == "kh": cmd_kh(([a.arg] if a.arg else []) + a.more, a.machine, a.note)
     elif a.cmd == "mkcampaign":
         if a.arg not in CAMPAIGNS: die(f"known campaigns: {', '.join(CAMPAIGNS)}")
         cm = CAMPAIGNS[a.arg](); transact(lambda: save(R("campaigns", a.arg + ".json"), cm) or a.arg, lambda o: f"campaign {o}: {len(cm['pumps'])} pumps")
