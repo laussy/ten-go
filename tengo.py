@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.8 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.9 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --hours 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -37,12 +37,12 @@ complete go back to the pool at once, and those the jobs waited for complete are
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
-Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | --honkai --hours H|--until TAG [-c C] [--kernels N] [--go] [--shinshu [N]]
+Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | --honkai --hours H|--until TAG [-c C] [--ki N] [--go] [--shinshu [N]]
        | done [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--hours 10] [-c C] [--shinshu [N]]
        | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
-VERSION = "1.8"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi)
+VERSION = "1.9"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -502,14 +502,15 @@ CAMPAIGNS = {"close-0.004": mk_close004}
 def main():
     ap = argparse.ArgumentParser(prog="ten-go", description="Operation Ten-Go: a shared pool of pump jobs in a git repository")
     ap.add_argument("cmd", nargs="?"); ap.add_argument("arg", nargs="?"); ap.add_argument("more", nargs="*"); ap.add_argument("-c", "--campaign")
-    ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--go", action="store_true")
+    ap.add_argument("--hours", type=float); ap.add_argument("--ki", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
     ap.add_argument("--machine"); ap.add_argument("--note", default=""); ap.add_argument("--shinshu", nargs="?", const="max")
     ap.add_argument("--honkai", action="store_true"); ap.add_argument("--uchikiri", action="store_true"); ap.add_argument("--dry", action="store_true")
     ap.add_argument("--chushi", nargs="?", const=10, type=float); ap.add_argument("--now", action="store_true"); ap.add_argument("--wait", action="store_true")
+    if any(x.split("=")[0] == "--kernels" for x in sys.argv[1:]): die("no option --kernels any more: --ki N, the kernels of the allocation")
     a = ap.parse_args()
     if a.honkai and a.hours and a.until:
-        h = hours_until(a.until)[0]; k = a.kernels
+        h = hours_until(a.until)[0]; k = a.ki
         if not k:
             try: C.update(json.load(open(CONF))); k = machine(C["machine"])["kernels"]   # no sync: only this machine's kernels
             except (OSError, KeyError, ValueError): pass
@@ -533,7 +534,7 @@ def main():
     elif a.honkai:
         if a.until: a.hours, t = hours_until(a.until); print(f"ten-go: until {a.until}, {stamp(t)}: {a.hours:g} h from now")
         if not a.hours: die("--honkai --hours H, or --until TAG")
-        cmd_claim(a.campaign, a.hours, a.kernels, a.go, a.shinshu)
+        cmd_claim(a.campaign, a.hours, a.ki, a.go, a.shinshu)
     elif a.cmd == "done": cmd_done(a.alloc)
     elif a.cmd == "launch":
         sync(); op = [x for c in campaigns() for x in allocs(c) if x["machine"] == C["machine"] and x["status"] == "open" and (not a.alloc or x["id"] == a.alloc)]

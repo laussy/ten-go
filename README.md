@@ -14,8 +14,8 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
 
     ten-go init MACHINE --repo CLONE --work DIR   # once per machine: ~/.config/tengo.json
     ten-go status                                 # what is done, held (by whom, until when) and free
-    ten-go --honkai --hours 10 [--kernels N] [--go] [--shinshu [N]]   # claim an allocation (and launch it)
-    ten-go --honkai --until TAG [--kernels N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
+    ten-go --honkai --hours 10 [--ki N] [--go] [--shinshu [N]]   # claim an allocation (and launch it)
+    ten-go --honkai --until TAG [--ki N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
     ten-go --honkai --hours 10 --until TAG ...    # only prints the same command, its --hours set to the hours until TAG
     ten-go done                                   # push the pumps finished (results/*.tgz) and the job times
     ten-go --uchikiri [--dry]                     # end as soon as possible WITHOUT LOSS; says when
