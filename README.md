@@ -15,10 +15,12 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go init MACHINE --repo CLONE --work DIR   # once per machine: ~/.config/tengo.json
     ten-go status                                 # what is done, held (by whom, until when) and free
     ten-go claim --hours 10 [--kernels N] [--go]
+    ten-go claim --until TAG [--kernels N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
+    ten-go claim --hours 10 --until TAG ...       # only prints the same command, its --hours set to the hours until TAG
     ten-go done                                   # push the pumps finished (results/*.tgz) and the job times
     ten-go release                                # stop this machine's jobs, push what is done, free the rest
     ten-go launch                                 # (re)start the driver of this machine's open allocation
-    ten-go watch --until 'YYYY-MM-DD HH:MM' [--hours 10]   # unattended: claim, launch, push every 30 min, restart
+    ten-go watch --until TAG [--hours 10]         # unattended: claim, launch, push every 30 min, restart
     ten-go fetch DIR                              # unpack every result into DIR
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.

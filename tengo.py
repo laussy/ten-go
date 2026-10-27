@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.2 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a private GitHub
+"""Operation Ten-Go v1.3 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a private GitHub
 repository, and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go claim --hours 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -12,13 +12,17 @@ Repository (the clone is Ten-Go's alone: every command starts by resetting it to
   machines/<m>.json    kernels, speed factor against the reference
   allocs/<c>/<id>.json one allocation: machine, budget, deadline, pumps, done, measured job times, results, status
   results/<c>/<id>-<n>.tgz   the .dat files of the pumps done, one archive per push
-The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `tengo init`; env TENGO_CONF names another file).
+The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `ten-go init`; env TENGO_CONF names another file).
 
-Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H [-c C] [--kernels N] [--go]
-       | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] | watch --until 'YYYY-MM-DD HH:MM' [--hours 10] [-c C]
+--until TAG, an AF tag (read back by ~/bin/AF, lw page [[AF]]) or 'YYYY-MM-DD HH:MM', ends a claim or a watch at that moment: claim
+takes the hours from now until then in place of --hours.  Given both --hours and --until, claim only prints itself again, its --hours
+set to those hours and --until dropped.
+
+Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H|--until TAG [-c C] [--kernels N] [--go]
+       | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] | watch --until TAG [--hours 10] [-c C]
        | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME"""
-import argparse, glob, json, os, random, re, shutil, subprocess, sys, tarfile, time
-VERSION = "1.2"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file)
+import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
+VERSION = "1.3"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -26,6 +30,35 @@ C = {}
 def die(msg): sys.exit(f"ten-go: {msg}")
 def R(*p): return os.path.join(C["repo"], *p)
 def stamp(t): return time.strftime("%a %d %b %H:%M", time.localtime(t))
+
+
+def moment(s):
+    """the time of --until: an AF tag, read back by ~/bin/AF (not a copy of its decoder here), or 'YYYY-MM-DD HH:MM'"""
+    if re.fullmatch(r"[0-9A-Za-z]{5,6}", s):
+        try: r = subprocess.run([shutil.which("AF") or os.path.expanduser("~/bin/AF"), "-b", s], capture_output=True, text=True)
+        except FileNotFoundError: die(f"--until {s}: reading an AF tag needs ~/bin/AF")
+        if r.returncode: die(f"--until {s}: {r.stderr.strip()}")
+        return int(r.stdout.split("\t")[0])
+    try: return time.mktime(time.strptime(s, "%Y-%m-%d %H:%M"))
+    except ValueError: die(f"--until {s}: neither an AF tag nor 'YYYY-MM-DD HH:MM'")
+
+
+def hours_until(s):
+    t = moment(s); h = int((t - time.time()) / 36) / 100   # floored to 0.01 h
+    if h <= 0: die(f"--until {s}: {stamp(t)} is past")
+    return h, t
+
+
+def restated(h):
+    """the command line as typed, its --hours set to h and --until dropped (the options as argparse takes them, abbreviated or with =)"""
+    out, args = ["ten-go"], iter(sys.argv[1:])
+    for x in args:
+        k = x.split("=", 1)[0]
+        if len(k) > 3 and "--hours".startswith(k): out += ["--hours", f"{h:g}"]
+        elif len(k) > 2 and "--until".startswith(k): pass
+        else: out.append(x); continue
+        if "=" not in x: next(args, None)
+    return " ".join(map(shlex.quote, out))
 
 
 def git(*a, check=True):
@@ -244,7 +277,7 @@ def cmd_watch(until, hours, c):
     """the unattended loop: claim and launch an allocation while time remains before `until`, push the pumps done every 30 min,
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail)"""
-    end = time.mktime(time.strptime(until, "%Y-%m-%d %H:%M")); restarts = {}; last = 0; c = pick(c)
+    end = moment(until); restarts = {}; last = 0; c = pick(c)
     print(f"ten-go watch until {stamp(end)} ({C['machine']}, {c})", flush=True)
     while True:
         now = time.time()
@@ -306,6 +339,7 @@ def main():
     ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
     a = ap.parse_args()
+    if a.cmd == "claim" and a.hours and a.until: return print(restated(hours_until(a.until)[0]))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
     if a.cmd == "init":
         if not (a.arg and a.repo and a.work): die("ten-go init MACHINE --repo CLONE --work DIR")
@@ -315,7 +349,8 @@ def main():
     except FileNotFoundError: die(f"no {CONF}: run `ten-go init MACHINE --repo CLONE --work DIR` first")
     if a.cmd == "status": cmd_status(a.campaign)
     elif a.cmd == "claim":
-        if not a.hours: die("claim --hours H")
+        if a.until: a.hours, t = hours_until(a.until); print(f"ten-go: until {a.until}, {stamp(t)}: {a.hours:g} h from now")
+        if not a.hours: die("claim --hours H, or --until TAG")
         cmd_claim(a.campaign, a.hours, a.kernels, a.go)
     elif a.cmd == "done": cmd_done(a.alloc)
     elif a.cmd == "release": cmd_release(a.alloc)
@@ -324,7 +359,7 @@ def main():
         for x in op: launch(x)
         if not op: print("ten-go: no open allocation of this machine")
     elif a.cmd == "watch":
-        if not a.until: die("watch --until 'YYYY-MM-DD HH:MM'")
+        if not a.until: die("watch --until TAG (an AF tag, or 'YYYY-MM-DD HH:MM')")
         cmd_watch(a.until, a.hours or 10, a.campaign)
     elif a.cmd == "fetch": cmd_fetch(a.campaign, a.arg or ".")
     elif a.cmd == "mkcampaign":
