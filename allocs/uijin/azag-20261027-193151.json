@@ -42,22 +42,32 @@
   30000624
  ],
  "done": [
-  30000592
+  30000592,
+  30000336,
+  30000208,
+  30000720
  ],
  "times": {
   "200e": [
-   892
+   892,
+   931,
+   838,
+   799
   ],
   "150w": [
-   1238
+   1238,
+   1211,
+   1070,
+   1065
   ]
  },
  "results": [
-  "results/uijin/azag-20261027-193151-1.tgz"
+  "results/uijin/azag-20261027-193151-1.tgz",
+  "results/uijin/azag-20261027-193151-2.tgz"
  ],
  "status": "open",
  "tengo": "1.21",
  "shinshu": "max",
  "shugeki": false,
- "updated": 1793127554
+ "updated": 1793128594
 }
