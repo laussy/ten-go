@@ -52,7 +52,8 @@
   20000032,
   20000096,
   20000016,
-  20000080
+  20000080,
+  10000007
  ],
  "times": {
   "150w": [
@@ -92,14 +93,18 @@
    2846,
    2858,
    2886
+  ],
+  "300e80": [
+   3515
   ]
  },
  "results": [
-  "results/uijin/azag-20261027-094129-1.tgz"
+  "results/uijin/azag-20261027-094129-1.tgz",
+  "results/uijin/azag-20261027-094129-2.tgz"
  ],
  "status": "open",
  "tengo": "1.17",
  "shinshu": "max",
  "shugeki": false,
- "updated": 1793093556
+ "updated": 1793094971
 }
