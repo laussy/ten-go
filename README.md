@@ -13,11 +13,11 @@ allocation has a deadline (start + 1.5 budget + 2 h), after which its pumps not 
 The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CLONE/tengo.py ~/bin/ten-go`.
 
     ten-go --kido MACHINE --repo CLONE --work DIR # once per machine: ~/.config/tengo.json
-    ten-go status                                 # what is done, held (by whom, until when) and free
+    ten-go --senkyo                               # what is done, held (by whom, until when) and free
     ten-go --honkai --jikan 10 [--ki N] [--go] [--shinshu [N]]   # claim an allocation (and launch it)
     ten-go --honkai --until TAG [--ki N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
     ten-go --honkai --jikan 10 --until TAG ...    # only prints the same command, its --jikan set to the hours until TAG
-    ten-go done                                   # push the pumps finished (results/*.tgz) and the job times
+    ten-go --tassei                               # push the pumps finished (results/*.tgz) and the job times
     ten-go --uchikiri [--dry]                     # end as soon as possible WITHOUT LOSS; says when
     ten-go --chushi [MIN] [--now|--wait|--dry]    # stop NOW (the only stop), but first offer to wait for jobs within MIN (10) min
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
@@ -48,7 +48,7 @@ The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 - `campaigns/<c>.json`: parameters, file prefix, reference seconds per order, pumps `[id, P, orders]` in the global order
 - `machines/<m>.json`: kernels and speed factor (the costs are then refined from the measured jobs)
 - `allocs/<c>/<id>.json`: one allocation (machine, budget, deadline, pumps, done, job times, results, status)
-- `ledger.tsv`: the kernel-hours spent, one line per allocation (kept up to date by `done`), per run log imported, or booked by
+- `ledger.tsv`: the kernel-hours spent, one line per allocation (kept up to date by `--tassei`), per run log imported, or booked by
   hand. A kh is one kernel for one hour: the jobs' own times summed, a failed job's included.
 - `results/<c>/<id>-<n>.tgz`: the `.dat` files of the pumps done, one archive per push
 - `kit/`: `hp3.wls` and `run_window.py`, copied into each allocation's work directory

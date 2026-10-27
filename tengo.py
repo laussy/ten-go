@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.11 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.12 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -12,7 +12,7 @@ Repository (the clone is Ten-Go's alone: every command starts by resetting it to
   machines/<m>.json    kernels, speed factor against the reference
   allocs/<c>/<id>.json one allocation: machine, budget, deadline, pumps, done, measured job times, results, status
   results/<c>/<id>-<n>.tgz   the .dat files of the pumps done, one archive per push
-  ledger.tsv           the kernel-hours (kh) spent, per task: one line per allocation (brought up to date by done) or per run log
+  ledger.tsv           the kernel-hours (kh) spent, per task: one line per allocation (brought up to date by --tassei) or per run log
                        imported (any run of run_window.py, in Ten-Go or not), or booked by hand
 The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `ten-go --kido`; env TENGO_CONF names another file).
 
@@ -37,12 +37,12 @@ complete go back to the pool at once, and those the jobs waited for complete are
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
-Usage: ten-go --kido MACHINE --repo CLONE --work DIR | status [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]]
-       | done [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--jikan 10] [--sakusen C] [--shinshu [N]]
+Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]]
+       | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--jikan 10] [--sakusen C] [--shinshu [N]]
        | fetch [--sakusen C] [DIR] (unpack every result into DIR) | mkcampaign NAME
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
-VERSION = "1.11"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan
+VERSION = "1.12"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -306,7 +306,7 @@ def knows(W, opt): return opt in open(os.path.join(W, "run_window.py")).read()  
 
 
 def atend(a, W):   # the driver of a pushes its last results when it ends
-    open(os.path.join(W, "atend"), "w").write(shlex.join(["env", f"TENGO_CONF={CONF}", sys.executable, os.path.realpath(__file__), "done", "--alloc", a["id"]]) + "\n")
+    open(os.path.join(W, "atend"), "w").write(shlex.join(["env", f"TENGO_CONF={CONF}", sys.executable, os.path.realpath(__file__), "--tassei", "--alloc", a["id"]]) + "\n")
 
 
 def shrink(a, kept, why):
@@ -507,9 +507,10 @@ def main():
     ap.add_argument("--machine"); ap.add_argument("--note", default=""); ap.add_argument("--shinshu", nargs="?", const="max")
     ap.add_argument("--honkai", action="store_true"); ap.add_argument("--uchikiri", action="store_true"); ap.add_argument("--dry", action="store_true")
     ap.add_argument("--chushi", nargs="?", const=10, type=float); ap.add_argument("--now", action="store_true"); ap.add_argument("--wait", action="store_true")
-    ap.add_argument("--kido", metavar="MACHINE")
+    ap.add_argument("--kido", metavar="MACHINE"); ap.add_argument("--senkyo", action="store_true"); ap.add_argument("--tassei", action="store_true")
     OLD = {"--kernels": "--ki N, the kernels of the allocation", "-c": "--sakusen C, the campaign", "--campaign": "--sakusen C, the campaign",
-           "--hours": "--jikan H, the hours", "claim": "--honkai", "release": "--chushi, or --uchikiri", "init": "--kido MACHINE --repo CLONE --work DIR"}
+           "--hours": "--jikan H, the hours", "claim": "--honkai", "release": "--chushi, or --uchikiri", "init": "--kido MACHINE --repo CLONE --work DIR",
+           "status": "--senkyo", "done": "--tassei"}
     first = next((x for x in sys.argv[1:] if not x.startswith("-")), None)   # an old command only as the command, an old option anywhere
     for x in sys.argv[1:]:
         if x.split("=")[0] in OLD and (x.startswith("-") or x is first): die(f"no {'option' if x.startswith('-') else 'command'} {x.split('=')[0]} any more: {OLD[x.split('=')[0]]}")
@@ -521,7 +522,7 @@ def main():
             except (OSError, KeyError, ValueError): pass
         return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
-    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None)) if on]
+    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei)) if on]
     if len(opts) > 1: die(f"{' and '.join(opts)}: one at a time")
     if opts and a.cmd: die(f"{opts[0]} stands alone, without a command ({a.cmd})")
     if a.now and a.wait: die("--now or --wait, not both")
@@ -534,12 +535,12 @@ def main():
     except FileNotFoundError: die(f"no {CONF}: run `ten-go --kido MACHINE --repo CLONE --work DIR` first")
     if a.uchikiri: cmd_uchikiri(a.alloc, a.dry)
     elif a.chushi is not None: cmd_chushi(a.alloc, a.chushi, "dry" if a.dry else "wait" if a.wait else "now" if a.now else None)
-    elif a.cmd == "status": cmd_status(a.campaign)
+    elif a.senkyo: cmd_status(a.campaign)
     elif a.honkai:
         if a.until: a.hours, t = hours_until(a.until); print(f"ten-go: until {a.until}, {stamp(t)}: {a.hours:g} h from now")
         if not a.hours: die("--honkai --jikan H, or --until TAG")
         cmd_claim(a.campaign, a.hours, a.ki, a.go, a.shinshu)
-    elif a.cmd == "done": cmd_done(a.alloc)
+    elif a.tassei: cmd_done(a.alloc)
     elif a.cmd == "launch":
         sync(); op = [x for c in campaigns() for x in allocs(c) if x["machine"] == C["machine"] and x["status"] == "open" and (not a.alloc or x["id"] == a.alloc)]
         for x in op: launch(x, shinshu=a.shinshu)
