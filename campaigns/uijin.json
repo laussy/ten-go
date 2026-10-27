@@ -21,7 +21,8 @@
   "300e240": 7000,
   "300e320": 9000,
   "250e80": 2100,
-  "400e80": 14000
+  "400e80": 14000,
+  "400e160": 30000
  },
  "kind": "parts",
  "pumps": [
@@ -194,6 +195,13 @@
    "5.206",
    [
     "400e80"
+   ]
+  ],
+  [
+   70000000,
+   "5.2085",
+   [
+    "400e160"
    ]
   ],
   [
@@ -18069,6 +18077,14 @@
    "base": 60000000,
    "about": "order 400 at 80 digits at 5.2085 g (the dust) and 5.206 g (Sec. 33's order-400 test, there at 40 digits)",
    "pumps": 2,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpV",
+   "base": 70000000,
+   "about": "order 400 at 160 digits at 5.2085 g: with hpU (400e80) and hpR (300e160), the certificate 300/400 at two precisions",
+   "pumps": 1,
    "left_out": 0
   },
   {
