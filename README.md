@@ -24,6 +24,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go watch [--until TAG] [--jikan 10]       # unattended (without --until: until the campaign is complete): claim, launch, push every 30 min, restart
                                                   # (a new version pushed to the pool takes the watch over at its next sync)
     ten-go --shushu DIR                           # unpack every result into DIR
+    ten-go --kaiso SPEC.json [--dry]              # refit a part: new orders for its pumps not held or done (e.g. 300e -> 300e80)
     ten-go kh [TASK]                              # kernel-hours (kh) spent, per task and machine (ledger.tsv)
     ten-go kh import DIR [TASK] [--note TEXT]     # book (or bring up to date) any run of run_window.py, in Ten-Go or not
     ten-go kh add TASK KH [--note TEXT]           # book by hand a run without a log
@@ -53,7 +54,9 @@ campaign, refined only when a claim is made.
 A campaign in **parts** joins several (each its own kind and file prefix); a claim takes from the parts in their order. The
 first, `uijin` (`specs/uijin.json`): the 4 pumps of the adaptive run left half done, a probe of the lines that jump at
 5.2085 g below the lattice step (and once at 80 digits), a study of the working precision (`hpR`, `hpS`: 40 to 320 digits), then the boiling window at 0.08 g, and the close grid at
-0.004 g as a filler, added later by `ten-go --zoen SPEC.json`. Parts may also be explicit lists. `watch` without `--until`
+0.004 g as a filler, added later by `ten-go --zoen SPEC.json`, and refitted to 80 digits by `ten-go --kaiso SPEC.json` once the
+study showed 40 digits wrong for some lines with gamma >= 6.5 g (its pumps done at 40 digits redone at 80 at the end). Parts may
+also be explicit lists. `watch` without `--until`
 runs until the campaign is complete.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.

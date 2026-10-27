@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.21 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.23 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -45,18 +45,21 @@ suit an adaptive campaign: it is refined only when a claim is made.  A campaign 
 file prefix and kind, its pumps numbered from its own base; a claim takes from the parts in their order (an adaptive part first, say,
 the next parts filling what it cannot).  watch without --until runs until the campaign is complete.  --zoen SPEC.json (増援,
 reinforcements) adds the parts of SPEC to the campaign it names, while it runs: new pump numbers (nothing claimed changes), the same
-parameters, at the end or before the part "before" (an index); the watches take them up at their next claim.
+parameters, at the end or before the part "before" (an index); the watches take them up at their next claim.  --kaiso SPEC.json (改装,
+a refit) changes the orders of the pumps of a part that no allocation holds (open, past its deadline or not) and none has done, by
+the map of SPEC ({"name": campaign, "part": prefix, "orders": {"300e": "300e80", ...}}): to a higher precision, say, while it runs;
+the pumps held or done keep theirs.  --dry only says what would change.
 
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
 Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]] [--shugeki]
        | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch [--until TAG] [--jikan 10] [--sakusen C] [--shinshu [N]] [--shugeki]
-       | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME|SPEC.json (declare a campaign) | --zoen SPEC.json (add parts to one)
+       | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME|SPEC.json (declare a campaign) | --zoen SPEC.json (add parts to one) | --kaiso SPEC.json [--dry] (refit a part)
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
 from fractions import Fraction
-VERSION = "1.21"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version
+VERSION = "1.24"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -468,13 +471,19 @@ def cmd_kh(args, mach=None, note=""):
 
 
 def tail_state(W):
-    """jobs still waiting in the driver of W (from its log) and front-ends running"""
-    wait = None
+    """jobs still waiting in the driver of W and front-ends running: the driver's log says how many wait only when a job ends (so that
+    a claim of one long job would look as if launching until it is done), the plan less the files done and the jobs running counts a
+    failed job as waiting; the smaller of the two"""
+    wait = None; run = len(ours(W)[1])
     if os.path.exists(os.path.join(W, "run.log")):
         for l in open(os.path.join(W, "run.log")):
             m = re.search(r"(\d+) jobs to run|(\d+) waiting", l)
             if m: wait = int(m[1] or m[2])
-    return wait, len(ours(W)[1])
+    if wait and os.path.exists(os.path.join(W, "plan.txt")):
+        plan = [l.split() for l in open(os.path.join(W, "plan.txt")) if l.strip() and not l.startswith("#")]
+        left = sum(1 for f in plan if not (os.path.exists(x := os.path.join(W, f"{f[0]}_{f[3]}.dat")) and os.path.getsize(x) > 1000))
+        wait = min(wait, max(left - run, 0))
+    return wait, run
 
 
 def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
@@ -482,42 +491,47 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
     nothing free and no allocation open anywhere), push the pumps done every 30 min,
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail); a new
-    version pushed to the pool takes the watch over at its next sync"""
-    end = moment(until) if until else float("inf"); restarts = {}; last = 0; c = pick(c); flag = os.path.join(C["work"], "ENDING"); said = 0
+    version pushed to the pool takes the watch over at its next sync; a git that fails (the network gone) is tried again every minute"""
+    end = moment(until) if until else float("inf"); restarts = {}; last = 0; c = pick(c); flag = os.path.join(C["work"], "ENDING"); said = 0; lost = None
     t0 = float(os.environ.get("TENGO_WATCH_T0", time.time()))   # the start of the first watch: an uchikiri before a new version still counts
     print(f"ten-go watch until {stamp(end) if until else 'the campaign is complete'} ({C['machine']}, {c})", flush=True)
     while True:
-        now = time.time()
-        if end > now and os.path.exists(flag) and os.path.getmtime(flag) > t0:
-            end = now; print(f"{time.strftime('%H:%M:%S')} uchikiri or chushi: no more claims, the watch ends with its drivers", flush=True)
-        if now - last > 1800: cmd_done(); last = now
-        sync(); op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
-        if newer(): os.environ["TENGO_WATCH_T0"] = str(t0); os.execv(sys.executable, [sys.executable, os.path.realpath(__file__)] + sys.argv[1:])
-        for a in op:
-            W = workdir(a); log = open(os.path.join(W, "run.log")).read() if os.path.exists(os.path.join(W, "run.log")) else ""
-            if not ours(W)[0] and "ALLDONE" not in log.split("tengo-launch")[-1] and not os.path.exists(os.path.join(W, "STOP")):
-                if restarts.get(a["id"], 0) >= 3:   # it does not start: its pumps back to the pool, not held until the deadline
-                    print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} down after 3 starts: released", flush=True)
-                    open(os.path.join(W, "STOP"), "w").write("released by the watch\n"); cmd_done(a["id"], final="released"); continue
-                restarts[a["id"]] = restarts.get(a["id"], 0) + 1; print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} not running: start {restarts[a['id']]}", flush=True)
-                open(os.path.join(W, "run.log"), "a").write(f"{time.strftime('%H:%M:%S')} tengo-launch (watch)\n"); launch(a, quiet=True)
-        tails = [(a, *tail_state(workdir(a))) for a in op]
-        fresh = [a for a, wait, run in tails if wait]           # an allocation still launching jobs
-        down = [a for a in op if not ours(workdir(a))[0] and not os.path.exists(os.path.join(workdir(a), "STOP"))
-                and "ALLDONE" not in (open(os.path.join(workdir(a), "run.log")).read() if os.path.exists(os.path.join(workdir(a), "run.log")) else "")]
-        if not fresh and not down and end - now > 1800:         # no new claim while one of ours has its driver down
-            busy = sum(run for _, _, run in tails); kern = machine(C["machine"])["kernels"]
-            a = cmd_claim(c, min(hours, (end - now) / 3600), kern, shinshu=shinshu, shugeki=shugeki, quiet=True)
-            if a:
-                open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n"); launch(a)
-            elif not until and not op:
-                held_by = sorted({x["machine"] for x in allocs(c) if x["status"] == "open"})
-                if not held_by: cmd_done(); print(f"{time.strftime('%H:%M:%S')} {c} is complete: nothing free, no allocation open; watch ends", flush=True); return
-                if now - said > 1800: said = now; print(f"{time.strftime('%H:%M:%S')} nothing free in {c} for now, waiting on {', '.join(held_by)}", flush=True)
-        if fresh and len(op) > 1:                               # the newest allocation takes the kernels the tails free
-            busy = sum(run for a, wait, run in tails if not wait); kern = machine(C["machine"])["kernels"]
-            for a in fresh: open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n")
-        if now > end and not any(run for _, _, run in tails): cmd_done(); print(f"{time.strftime('%H:%M:%S')} watch ends", flush=True); return
+        try:
+            now = time.time()
+            if end > now and os.path.exists(flag) and os.path.getmtime(flag) > t0:
+                end = now; print(f"{time.strftime('%H:%M:%S')} uchikiri or chushi: no more claims, the watch ends with its drivers", flush=True)
+            if now - last > 1800: cmd_done(); last = now
+            sync(); op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
+            if newer(): os.environ["TENGO_WATCH_T0"] = str(t0); os.execv(sys.executable, [sys.executable, os.path.realpath(__file__)] + sys.argv[1:])
+            for a in op:
+                W = workdir(a); log = open(os.path.join(W, "run.log")).read() if os.path.exists(os.path.join(W, "run.log")) else ""
+                if not ours(W)[0] and "ALLDONE" not in log.split("tengo-launch")[-1] and not os.path.exists(os.path.join(W, "STOP")):
+                    if restarts.get(a["id"], 0) >= 3:   # it does not start: its pumps back to the pool, not held until the deadline
+                        print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} down after 3 starts: released", flush=True)
+                        open(os.path.join(W, "STOP"), "w").write("released by the watch\n"); cmd_done(a["id"], final="released"); continue
+                    restarts[a["id"]] = restarts.get(a["id"], 0) + 1; print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} not running: start {restarts[a['id']]}", flush=True)
+                    open(os.path.join(W, "run.log"), "a").write(f"{time.strftime('%H:%M:%S')} tengo-launch (watch)\n"); launch(a, quiet=True)
+            tails = [(a, *tail_state(workdir(a))) for a in op]
+            fresh = [a for a, wait, run in tails if wait]           # an allocation still launching jobs
+            down = [a for a in op if not ours(workdir(a))[0] and not os.path.exists(os.path.join(workdir(a), "STOP"))
+                    and "ALLDONE" not in (open(os.path.join(workdir(a), "run.log")).read() if os.path.exists(os.path.join(workdir(a), "run.log")) else "")]
+            if not fresh and not down and end - now > 1800:         # no new claim while one of ours has its driver down
+                busy = sum(run for _, _, run in tails); kern = machine(C["machine"])["kernels"]
+                a = cmd_claim(c, min(hours, (end - now) / 3600), kern, shinshu=shinshu, shugeki=shugeki, quiet=True)
+                if a:
+                    open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n"); launch(a)
+                elif not until and not op:
+                    held_by = sorted({x["machine"] for x in allocs(c) if x["status"] == "open"})
+                    if not held_by: cmd_done(); print(f"{time.strftime('%H:%M:%S')} {c} is complete: nothing free, no allocation open; watch ends", flush=True); return
+                    if now - said > 1800: said = now; print(f"{time.strftime('%H:%M:%S')} nothing free in {c} for now, waiting on {', '.join(held_by)}", flush=True)
+            if fresh and len(op) > 1:                               # the newest allocation takes the kernels the tails free
+                busy = sum(run for a, wait, run in tails if not wait); kern = machine(C["machine"])["kernels"]
+                for a in fresh: open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n")
+            if now > end and not any(run for _, _, run in tails): cmd_done(); print(f"{time.strftime('%H:%M:%S')} watch ends", flush=True); return
+            if lost: print(f"{time.strftime('%H:%M:%S')} the watch works again", flush=True); lost = None
+        except (SystemExit, Exception) as e:   # a git that fails (the network gone), or a file half written: said once, tried again in a minute
+            what = str(e) if isinstance(e, SystemExit) else f"{type(e).__name__}: {e}"
+            if what != lost: lost = what; print(f"{time.strftime('%H:%M:%S')} {what}\n  (the watch tries again every minute)", flush=True)
         time.sleep(60)
 
 
@@ -728,6 +742,37 @@ def mk_close004():
 CAMPAIGNS = {"close-0.004": mk_close004}
 
 
+def refit(path, dry=False):
+    """--kaiso: the orders of the pumps of one part that no allocation holds or has done changed by the map of a spec ({"name":
+    campaign, "part": prefix, "orders": {old: new}, "ref": {new: seconds} for an order without a reference time yet, "about": why});
+    each refit is noted in the campaign (refits); returns the change for transact"""
+    sp = json.load(open(path)); name, prefix, mp = sp.get("name", ""), sp.get("part", ""), sp.get("orders", {})
+    if not mp: die("--kaiso: the spec has no orders to change")
+    for o in list(mp) + list(mp.values()):
+        if not re.fullmatch(r"(\d+)([we])(\d*)", o): die(f"--kaiso: {o} is not an order (like 300e, 150w, 300e80)")
+    def change():
+        if not os.path.exists(R("campaigns", name + ".json")): die(f"--kaiso: no campaign {name} in the pool")
+        cm = campaign(name); A = allocs(name); ref = dict(cm["ref"], **sp.get("ref", {}))
+        if prefix not in {q["prefix"] for q in parts(cm)}: die(f"--kaiso: no part {prefix} in {name} ({', '.join(q['prefix'] for q in parts(cm))})")
+        missing = sorted({o for o in mp.values() if o not in ref})
+        if missing: die(f"--kaiso: no reference time for {', '.join(missing)}: give it in the spec (\"ref\")")
+        out = set()   # held: done, or in an open allocation, past its deadline or not (its driver may still finish it with the old orders)
+        for a in A: out |= set(a["done"]) | (set(a["pumps"]) if a["status"] == "open" else set())
+        mine = [p for p in cm["pumps"] if pre(cm, p[0]) == prefix]; n = 0; kept = sum(p[0] in out for p in mine)
+        for p in mine:
+            if p[0] in out: continue
+            new = [mp.get(o, o) for o in p[2]]
+            if new != p[2]: p[2] = new; n += 1
+        if dry:
+            print(f"ten-go: --kaiso {name} {prefix} (dry): {n} pumps would change ({', '.join(f'{a} -> {b}' for a, b in mp.items())}), {kept} held or done keep their orders")
+            return None
+        if not n: return None
+        cm["ref"] = ref; cm.setdefault("refits", []).append(dict(t=int(time.time()), part=prefix, orders=mp, pumps=n, kept=kept, about=sp.get("about", "")))
+        save(R("campaigns", name + ".json"), cm)
+        return (name, prefix, n, kept, mp)
+    return change
+
+
 def main():
     ap = argparse.ArgumentParser(prog="ten-go", description="Operation Ten-Go: a shared pool of pump jobs in a git repository", allow_abbrev=False)
     ap.add_argument("cmd", nargs="?"); ap.add_argument("arg", nargs="?"); ap.add_argument("more", nargs="*"); ap.add_argument("--sakusen", dest="campaign")
@@ -738,7 +783,7 @@ def main():
     ap.add_argument("--chushi", nargs="?", const=10, type=float); ap.add_argument("--now", action="store_true"); ap.add_argument("--wait", action="store_true")
     ap.add_argument("--kido", metavar="MACHINE"); ap.add_argument("--senkyo", action="store_true"); ap.add_argument("--tassei", action="store_true")
     ap.add_argument("--shushu", nargs="?", const=".", metavar="DIR"); ap.add_argument("--shugeki", action="store_true")
-    ap.add_argument("--sensen", metavar="NAME"); ap.add_argument("--zoen", metavar="SPEC")
+    ap.add_argument("--sensen", metavar="NAME"); ap.add_argument("--zoen", metavar="SPEC"); ap.add_argument("--kaiso", metavar="SPEC")
     OLD = {"--kernels": "--ki N, the kernels of the allocation", "-c": "--sakusen C, the campaign", "--campaign": "--sakusen C, the campaign",
            "--hours": "--jikan H, the hours", "claim": "--honkai", "release": "--chushi, or --uchikiri", "init": "--kido MACHINE --repo CLONE --work DIR",
            "status": "--senkyo", "done": "--tassei", "fetch": "--shushu [DIR]", "mkcampaign": "--sensen NAME"}
@@ -753,7 +798,7 @@ def main():
             except (OSError, KeyError, ValueError): pass
         return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
-    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None), ("--sensen", a.sensen is not None), ("--zoen", a.zoen is not None)) if on]
+    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None), ("--sensen", a.sensen is not None), ("--zoen", a.zoen is not None), ("--kaiso", a.kaiso is not None)) if on]
     if len(opts) > 1: die(f"{' and '.join(opts)}: one at a time")
     if opts and a.cmd: die(f"{opts[0]} stands alone, without a command ({a.cmd})")
     if a.now and a.wait: die("--now or --wait, not both")
@@ -783,6 +828,10 @@ def main():
     elif a.zoen is not None:
         r = transact(reinforce(a.zoen), lambda o: f"zoen {o[0]}: +{o[1]} pumps ({', '.join(o[2])})")
         print(f"ten-go: {r[0]}: +{r[1]} pumps, the parts {', '.join(r[2])} added; the watches take them up at their next claim")
+    elif a.kaiso is not None:
+        r = transact(refit(a.kaiso, a.dry), lambda o: f"kaiso {o[0]}: {o[2]} pumps of {o[1]} refitted ({', '.join(f'{x} -> {y}' for x, y in o[4].items())})")
+        if r: print(f"ten-go: {r[0]}: {r[2]} pumps of {r[1]} refitted ({', '.join(f'{x} -> {y}' for x, y in r[4].items())}), {r[3]} held or done keep their orders; the watches take them up at their next claim")
+        elif not a.dry: print(f"ten-go: --kaiso: nothing to change")
     elif a.sensen is not None:
         if a.sensen.endswith(".json"): cm, seed = declare(a.sensen)
         elif a.sensen in CAMPAIGNS: cm, seed = dict(CAMPAIGNS[a.sensen](), name=a.sensen), None
