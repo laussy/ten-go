@@ -20,6 +20,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go done                                   # push the pumps finished (results/*.tgz) and the job times
     ten-go release                                # stop this machine's jobs, push what is done, free the rest
     ten-go release --uchikiri [--dry]             # end as soon as possible WITHOUT LOSS (also: ten-go --uchikiri); says when
+    ten-go release --chushi [MIN] [--now|--wait|--dry]   # stop NOW, but first offer to wait for jobs within MIN (10) minutes
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
     ten-go watch --until TAG [--hours 10]         # unattended: claim, launch, push every 30 min, restart
     ten-go fetch DIR                              # unpack every result into DIR
@@ -36,6 +37,10 @@ the retreat is quick (no job is killed). Outside Ten-Go, a file `shinshu` (a num
 done or in flight), and says when it will end and what a STOP or a kill would waste instead; the pumps not started go back to the
 pool at once, a watch claims nothing more, and the driver pushes the last results when it ends. `--dry` only says when. Outside
 Ten-Go: `python3 run_window.py --uchikiri [--dry]` in the run's directory.
+
+`--chushi` stops now, but a job within 10 minutes of completion is first offered to wait for: "One job is 3 min from completion;
+the next are 17 min, 2 h 20, 6 h away, so those are aborted. Abort this one too [n]ow, or [a]fter it completes?" `--now` or `--wait`
+answers ahead (needed without a terminal), `--dry` only asks. Outside Ten-Go: `python3 run_window.py --chushi [--soon MIN]`.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 

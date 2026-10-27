@@ -13,10 +13,13 @@ so that the retreat is quick (a lower count stops new launches; no job is killed
   python3 run_window.py --kill       stop now: the driver, its front-ends and their kernels (a file STOP only stops new launches)
   python3 run_window.py --uchikiri   end as soon as possible without loss: no new pump, only the jobs that complete the pumps started
                                      (one with a job done or in flight), and say when the run will end; --dry only says it
-  python3 run_window.py ... --dir D  the run of directory D rather than this file's own (for --progress and --uchikiri --dry)
+  python3 run_window.py --chushi     stop now, but a job within 10 minutes of completion (--soon MIN) is first offered to wait for:
+                                     abort it too [n]ow, or [a]fter it completes; --now or --wait answers ahead, --dry only says it
+  python3 run_window.py ... --dir D  the run of directory D rather than this file's own (for --progress and the --dry runs)
 A file atend holds a command run at the end of the run (Ten-Go's uchikiri: push the last results)."""
 import heapq, os, re, shlex, signal, subprocess, sys, time
 WORK = os.path.realpath(sys.argv[sys.argv.index("--dir") + 1]) if "--dir" in sys.argv else os.path.dirname(os.path.realpath(__file__)); os.chdir(WORK)
+if "--dir" in sys.argv and not {"--progress", "--dry"} & set(sys.argv): sys.exit("--dir only reads: with --progress or --dry")   # never stop another run by mistake
 P = dict(l.split("=", 1) for l in open("params.txt").read().split() if "=" in l)
 GA, GS, PREC, MEMMIN = P["GA"], P["GS"], P["PREC"], float(P["MEMMIN"])
 T = {"150w": 1118, "150w80": 1409, "200e": 760, "250e": 1580, "300e": 2685, "400e": 11076}   # seconds per job, azag at home on ~30 kernels
@@ -44,6 +47,54 @@ def tree(pid):   # pid and all its descendants
 
 
 def order(pre): return pre.split("_nt")[-1]
+def hm(x): m = round(x / 60); return f"{m} min" if m < 60 else f"{m // 60} h" + (f" {m % 60:02d}" if m % 60 else "")   # 3 min, 2 h 20, 6 h
+
+
+def few(xs):   # 17 min, 2 h 20, 6 h; or, past four, the first three ... the last (n jobs)
+    t = [hm(x[4]) for x in xs]; return ", ".join(t) if len(t) <= 4 else f"{', '.join(t[:3])} ... {t[-1]} ({len(t)} jobs)"
+
+
+def driving():   # is the driver of this directory running
+    try: os.kill(int(open("driver.pid").read()), 0); return True
+    except (OSError, ValueError): return False
+
+
+def inflight():
+    """the jobs running here, [(pid, prefix, j, seconds since they started, seconds still expected)], the expected from this run's own
+    job times per order (its log), else T; and that cost per order"""
+    took = {}
+    for l in (open("run.log") if os.path.exists("run.log") else []):
+        m = re.search(r" done (\S+) j=\S+ P=\S+ in (\d+) s", l)
+        if m and "NO FILE" not in l: took.setdefault(order(m[1]), []).append(int(m[2]))
+    per = lambda o: sum(took[o]) / len(took[o]) if took.get(o) else tcost(o)
+    hz = os.sysconf("SC_CLK_TCK"); boot = next(int(l.split()[1]) for l in open("/proc/stat") if l.startswith("btime")); now = time.time(); out = []
+    for pid, (pre, j) in ours().items():
+        try: el = now - boot - int(open(f"/proc/{pid}/stat").read().rsplit(")", 1)[1].split()[19]) / hz   # since the job started
+        except OSError: continue
+        out.append((pid, pre, j, el, max(per(order(pre)) - el, 60)))
+    return out, per
+
+
+def kill(pids):   # these front-ends and all their descendants (wolframscript ignores SIGTERM and leaves its kernel behind)
+    for q in [q for pid in pids for q in tree(pid)]:
+        try: os.kill(q, signal.SIGKILL)
+        except OSError: pass
+
+
+def killall():   # the driver, its front-ends and their kernels; the number of jobs killed
+    open("STOP", "w").write("killed\n")
+    if os.path.exists("driver.pid"):
+        try: os.kill(int(open("driver.pid").read()), signal.SIGKILL)
+        except OSError: pass
+    fe = ours(); kill(fe)
+    for k in range(10):   # a kernel can outlive its front-end for a moment: any WolframKernel still working in this directory
+        time.sleep(1); left = [int(l.split()[0]) for l in subprocess.run(["ps", "-eo", "pid=,comm="], capture_output=True, text=True).stdout.splitlines()
+                               if "WolframKernel" in l and os.path.realpath(f"/proc/{l.split()[0]}/cwd") == WORK]
+        for q in left:
+            try: os.kill(q, signal.SIGKILL)
+            except OSError: pass
+        if not left: break
+    return len(fe)
 
 
 if "--progress" in sys.argv:
@@ -63,30 +114,9 @@ if "--progress" in sys.argv:
           + (f" (shinshu: {open('shinshu.now').read().strip()} now, up to {open('shinshu').read().strip() or 'max'})" if os.path.exists("shinshu") and os.path.exists("shinshu.now") else "")
           + f"; {mem:.0f} GB free; end about {eta}")
     sys.exit()
-if "--kill" in sys.argv:
-    open("STOP", "w").write("killed\n")
-    if os.path.exists("driver.pid"):
-        try: os.kill(int(open("driver.pid").read()), signal.SIGKILL)
-        except OSError: pass
-    fe = ours()
-    for pid in fe:   # wolframscript ignores SIGTERM and leaves its kernel behind: kill -9 the whole tree
-        for q in tree(pid):
-            try: os.kill(q, signal.SIGKILL)
-            except OSError: pass
-    for k in range(10):   # a kernel can outlive its front-end for a moment: any WolframKernel still working in this directory
-        time.sleep(1); left = [int(l.split()[0]) for l in subprocess.run(["ps", "-eo", "pid=,comm="], capture_output=True, text=True).stdout.splitlines()
-                               if "WolframKernel" in l and os.path.realpath(f"/proc/{l.split()[0]}/cwd") == WORK]
-        for q in left:
-            try: os.kill(q, signal.SIGKILL)
-            except OSError: pass
-        if not left: break
-    print(f"killed the driver and {len(fe)} jobs; remove the file STOP before running again"); sys.exit()
+if "--kill" in sys.argv: n = killall(); print(f"killed the driver and {n} jobs; remove the file STOP before running again"); sys.exit()
 if "--uchikiri" in sys.argv:
-    alive = False
-    if os.path.exists("driver.pid"):
-        try: os.kill(int(open("driver.pid").read()), 0); alive = True
-        except OSError: pass
-    dry = "--dry" in sys.argv or not alive
+    alive = driving(); dry = "--dry" in sys.argv or not alive
     if not dry and not os.path.exists("UCHIKIRI"):
         if os.path.exists("uchikiri.kept"): os.remove("uchikiri.kept")
         open("UCHIKIRI", "w").write(f"{int(time.time())}\n")
@@ -95,32 +125,51 @@ if "--uchikiri" in sys.argv:
         time.sleep(1)
     else:
         if not dry: sys.exit("uchikiri: the driver did not answer (an older run_window.py?); the file UCHIKIRI stays for it")
-    fe = ours(); fl = set(fe.values()); have = lambda f: os.path.exists(f"{f[0]}_{f[3]}.dat")
+    fly, per = inflight(); fl = {(pre, j) for _, pre, j, _, _ in fly}; have = lambda f: os.path.exists(f"{f[0]}_{f[3]}.dat")
     kept = set(open("uchikiri.kept").read().split()) if os.path.exists("uchikiri.kept") else {j for _, j in fl} | {f[3] for f in plan if have(f)}
-    took = {}   # this run's own job times per order, from its log
-    for l in (open("run.log") if os.path.exists("run.log") else []):
-        m = re.search(r" done (\S+) j=\S+ P=\S+ in (\d+) s", l)
-        if m and "NO FILE" not in l: took.setdefault(order(m[1]), []).append(int(m[2]))
-    per = lambda o: sum(took[o]) / len(took[o]) if took.get(o) else tcost(o)
-    hz = os.sysconf("SC_CLK_TCK"); boot = next(int(l.split()[1]) for l in open("/proc/stat") if l.startswith("btime"))
-    now = time.time(); left = []; spent = 0
-    for pid, (pre, j) in fe.items():
-        try: el = now - boot - int(open(f"/proc/{pid}/stat").read().rsplit(")", 1)[1].split()[19]) / hz   # since the job started
-        except OSError: continue
-        left.append(max(per(order(pre)) - el, 60)); spent += el
     todo = [f for f in plan if f[3] in kept and not have(f) and (f[0], f[3]) not in fl]
     k = int(open("shinshu.now").read()) if os.path.exists("shinshu") and os.path.exists("shinshu.now") else int(open("nproc").read())
-    free = left + [0.0] * max(0, k - len(left)); heapq.heapify(free)
+    free = [x[4] for x in fly] + [0.0] * max(0, k - len(fly)); heapq.heapify(free)
     for f in todo: heapq.heappush(free, heapq.heappop(free) + per(order(f[0])))   # launched in the plan's order as kernels free
-    end = max(free, default=0); hm = lambda x: f"{int(x // 3600)} h {int(x % 3600 // 60):02d} min"
+    end = max(free, default=0)
     under = {f[3] for f in plan if f[3] in kept and not have(f)}; drop = {f[3] for f in plan if not have(f)} - kept
     cut = {f[3] for f in todo}   # the pumps a STOP would leave incomplete: their jobs done, and those in flight, for nothing
     stop = sum(per(order(f[0])) for f in plan if f[3] in cut and have(f)) + sum(per(order(pre)) for pre, j in fl if j in cut)
-    kill = spent + sum(per(order(f[0])) for f in plan if f[3] in under and have(f))   # the time in flight, and every pump under way
+    lose = sum(x[3] for x in fly) + sum(per(order(f[0])) for f in plan if f[3] in under and have(f))   # in flight, and every pump under way
     print(f"uchikiri{' (dry run: nothing changed)' if dry else ''}{'' if alive else ', no driver running'}: {len(drop)} pumps not started "
-          f"{'would be ' if dry else ''}given up; {len(fe)} jobs in flight and {len(todo)} to launch complete the {len(under)} pumps under way, "
-          f"on {k} kernels; the run ends about {time.strftime('%a %H:%M', time.localtime(now + end))} (in {hm(end)}) without loss. "
-          f"Instead, a STOP now would waste {stop / 3600:.1f} kh ({len(cut)} pumps left incomplete), --kill {kill / 3600:.1f} kh")
+          f"{'would be ' if dry else ''}given up; {len(fly)} jobs in flight and {len(todo)} to launch complete the {len(under)} pumps under way, "
+          f"on {k} kernels; the run ends about {time.strftime('%a %H:%M', time.localtime(time.time() + end))} (in {hm(end)}) without loss. "
+          f"Instead, a STOP now would waste {stop / 3600:.1f} kh ({len(cut)} pumps left incomplete), --kill {lose / 3600:.1f} kh")
+    sys.exit()
+if "--chushi" in sys.argv:
+    soon = 60 * float(sys.argv[sys.argv.index("--soon") + 1]) if "--soon" in sys.argv else 600
+    how = "wait" if "--wait" in sys.argv else "now" if "--now" in sys.argv else None
+    fly, per = inflight(); fly.sort(key=lambda x: x[4]); near = [x for x in fly if x[4] <= soon]; far = [x for x in fly if x[4] > soon]
+    one = len(near) == 1
+    if near:
+        print(f"{'One job is' if one else f'{len(near)} jobs are'} {few(near)} from completion"
+              + (f" ({', '.join(f'{order(x[1])} at P={pumps[x[2]]}' for x in near)})" if len(near) <= 3 else "")
+              + (f"; the next {'is' if len(far) == 1 else 'are'} {few(far)} away, so {'it is' if len(far) == 1 else 'those are'} aborted" if far else "") + ".")
+    if "--dry" in sys.argv:
+        print(f"chushi (dry run: nothing changed): {len(fly)} jobs in flight, {sum(x[3] for x in fly) / 3600:.1f} kh in them; none within {hm(soon)} of completion" if not near
+              else f"chushi (dry run: nothing changed): [n]ow would lose {sum(x[3] for x in fly) / 3600:.1f} kh, [a]fter {sum(x[3] for x in far) / 3600:.1f} kh, ending in {hm(near[-1][4])}"); sys.exit()
+    if near and not how:
+        if not sys.stdin.isatty(): print(f"chushi: nothing done; say --wait (abort the others now, {'this one' if one else 'these'} after completion) or --now (abort all)"); sys.exit(3)
+        a = input(f"Abort {'this one' if one else 'these'} too [n]ow, or [a]fter {'it completes' if one else 'they complete'}? (anything else: nothing done) ").strip().lower()[:1]
+        how = {"n": "now", "a": "wait"}.get(a)
+        if not how: print("chushi: nothing done"); sys.exit(3)
+    need = {}   # the jobs not done of each pump
+    for f in plan:
+        if not os.path.exists(f"{f[0]}_{f[3]}.dat"): need.setdefault(f[3], set()).add(f[0])
+    wait = {(x[1], x[2]) for x in near} if how == "wait" else set()
+    kept = {f[3] for f in plan if f[3] not in need} | {j for j, s in need.items() if all((pre, j) in wait for pre in s)}
+    open("chushi.kept", "w").write(" ".join(sorted(kept)) + "\n")   # the pumps complete at the end (for Ten-Go)
+    if wait:
+        open("STOP", "w").write("chushi\n"); time.sleep(2); keep = {x[0] for x in near}
+        kill([pid for pid in ours() if pid not in keep])   # also a job the driver launched before it saw the STOP
+        print(f"chushi: {len(far)} jobs aborted ({sum(x[3] for x in far) / 3600:.1f} kh lost), {len(near)} left to complete; "
+              f"the run ends about {time.strftime('%H:%M', time.localtime(time.time() + near[-1][4]))}")
+    else: n = killall(); print(f"chushi: the driver and {n} jobs aborted ({sum(x[3] for x in fly) / 3600:.1f} kh lost); remove the file STOP before running again")
     sys.exit()
 if os.path.exists("driver.pid"):
     try: os.kill(int(open("driver.pid").read()), 0); sys.exit(f"a driver is already running here (pid {open('driver.pid').read()})")
