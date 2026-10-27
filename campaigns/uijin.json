@@ -20,7 +20,8 @@
   "300e160": 9000,
   "300e240": 7000,
   "300e320": 9000,
-  "250e80": 2100
+  "250e80": 2100,
+  "400e80": 14000
  },
  "kind": "parts",
  "pumps": [
@@ -179,6 +180,20 @@
    [
     "300e80",
     "300e160"
+   ]
+  ],
+  [
+   60000000,
+   "5.2085",
+   [
+    "400e80"
+   ]
+  ],
+  [
+   60000001,
+   "5.206",
+   [
+    "400e80"
    ]
   ],
   [
@@ -18046,6 +18061,14 @@
    "base": 50000000,
    "about": "the precision study: 5.2085 g at 240 and 320 digits (with hpQ and hpR, 40 to 320) and 250e at 80 (is certificate D sound at 80?); 5.206, 5.2025, 5.2135 g (the dust) and 5.4 g (a control) at 80 and 160; the boiling window, 12.83 and 35.23 g, at 80 and 160 (is 40 enough for hpK?)",
    "pumps": 7,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpU",
+   "base": 60000000,
+   "about": "order 400 at 80 digits at 5.2085 g (the dust) and 5.206 g (Sec. 33's order-400 test, there at 40 digits)",
+   "pumps": 2,
    "left_out": 0
   },
   {
