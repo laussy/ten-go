@@ -11,11 +11,30 @@
   20000103,
   20000023
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  20000103,
+  20000023
+ ],
+ "times": {
+  "150w80": [
+   1129,
+   1221
+  ],
+  "250e": [
+   1270,
+   1267
+  ],
+  "300e": [
+   2396,
+   2368
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261027-154258-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.21",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1793114864
 }
