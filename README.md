@@ -5,7 +5,8 @@ The pool of jobs shared by my machines (azag, yzao) for a long-running task [e.g
 A machine asks for a **budget**, not for tasks: `ten-go --honkai --jikan 10` takes, in one go, the free task of the ongoing "campaign" in its
 global (van der Corput) order until their cost on that machine fills the ten hours, the longest job kept back. The claim is a commit;
 a push refused because another machine pushed first is redone from the new state, so that no pump is ever in two allocations. An
-allocation has a deadline (start + 1.5 budget + 2 h), after which its tasks not done are free again.
+allocation has a deadline (start + 1.5 budget + 2 h, the budget at least its longest job), after which its tasks not done are free
+again.
 
 ## Commands
 
@@ -21,6 +22,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go --chushi [MIN] [--now|--wait|--dry]    # stop NOW (the only stop), but first offer to wait for jobs within MIN (10) min
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
     ten-go watch [--until TAG] [--jikan 10]       # unattended (without --until: until the campaign is complete): claim, launch, push every 30 min, restart
+                                                  # (a new version pushed to the pool takes the watch over at its next sync)
     ten-go --shushu DIR                           # unpack every result into DIR
     ten-go kh [TASK]                              # kernel-hours (kh) spent, per task and machine (ledger.tsv)
     ten-go kh import DIR [TASK] [--note TEXT]     # book (or bring up to date) any run of run_window.py, in Ten-Go or not
@@ -50,7 +52,8 @@ starts from the runs it names, whose files enter the pool as the results of an a
 campaign, refined only when a claim is made.
 A campaign in **parts** joins several (each its own kind and file prefix); a claim takes from the parts in their order. The
 first, `uijin` (`specs/uijin.json`): the 4 pumps of the adaptive run left half done, a probe of the lines that jump at
-5.2085 g below the lattice step (and once at 80 digits), then the boiling window at 0.08 g. Parts may also be explicit lists. `watch` without `--until`
+5.2085 g below the lattice step (and once at 80 digits), a study of the working precision (`hpR`, `hpS`: 40 to 320 digits), then the boiling window at 0.08 g, and the close grid at
+0.004 g as a filler, added later by `ten-go --zoen SPEC.json`. Parts may also be explicit lists. `watch` without `--until`
 runs until the campaign is complete.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.

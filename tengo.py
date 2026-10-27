@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.20 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.21 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
 commit pushed to the repository; a push refused because another machine pushed first is redone from the new state, so that no pump
-can be in two allocations.  An allocation has a deadline (its start + 1.5 budget + 2 h): the pumps it has not done by then go back to
+can be in two allocations.  An allocation has a deadline (its start + 1.5 budget + 2 h, the budget at least its longest job): the pumps it has not done by then go back to
 the pool.  The jobs are run by run_window.py (kit/), one work directory per allocation.
 
 Repository (the clone is Ten-Go's alone: every command starts by resetting it to origin/main):
@@ -56,7 +56,7 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
 from fractions import Fraction
-VERSION = "1.20"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders
+VERSION = "1.21"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -282,7 +282,7 @@ def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=Fal
         if not take: return None
         aid = base = f"{m}-{time.strftime('%Y%m%d-%H%M%S')}"; k = 1
         while os.path.exists(R("allocs", c, aid + ".json")): k += 1; aid = f"{base}-{k}"   # two claims in the same second
-        a = dict(id=aid, campaign=c, machine=m, kernels=kern, hours=hours, created=int(now), deadline=int(now + 1.5 * hours * 3600 + 7200),
+        a = dict(id=aid, campaign=c, machine=m, kernels=kern, hours=hours, created=int(now), deadline=int(now + 1.5 * max(hours * 3600, hold) + 7200),   # a job longer than the claim keeps it
                  cost_kernel_h=round(tot / 3600, 1), pumps=take, done=[], times={}, results=[], status="open", tengo=VERSION, shinshu=sh, shugeki=shugeki)
         if grew: a["grown"], a["open"] = grew; save(R("campaigns", c + ".json"), cm)   # the new pumps, in the claim's commit
         save(R("allocs", c, aid + ".json"), a); return a
@@ -481,8 +481,10 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
     """the unattended loop: claim and launch an allocation while time remains before `until` (None: until the campaign is complete,
     nothing free and no allocation open anywhere), push the pumps done every 30 min,
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
-    its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail)"""
-    end = moment(until) if until else float("inf"); restarts = {}; last = 0; c = pick(c); t0 = time.time(); flag = os.path.join(C["work"], "ENDING"); said = 0
+    its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail); a new
+    version pushed to the pool takes the watch over at its next sync"""
+    end = moment(until) if until else float("inf"); restarts = {}; last = 0; c = pick(c); flag = os.path.join(C["work"], "ENDING"); said = 0
+    t0 = float(os.environ.get("TENGO_WATCH_T0", time.time()))   # the start of the first watch: an uchikiri before a new version still counts
     print(f"ten-go watch until {stamp(end) if until else 'the campaign is complete'} ({C['machine']}, {c})", flush=True)
     while True:
         now = time.time()
@@ -490,6 +492,7 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
             end = now; print(f"{time.strftime('%H:%M:%S')} uchikiri or chushi: no more claims, the watch ends with its drivers", flush=True)
         if now - last > 1800: cmd_done(); last = now
         sync(); op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
+        if newer(): os.environ["TENGO_WATCH_T0"] = str(t0); os.execv(sys.executable, [sys.executable, os.path.realpath(__file__)] + sys.argv[1:])
         for a in op:
             W = workdir(a); log = open(os.path.join(W, "run.log")).read() if os.path.exists(os.path.join(W, "run.log")) else ""
             if not ours(W)[0] and "ALLDONE" not in log.split("tengo-launch")[-1] and not os.path.exists(os.path.join(W, "STOP")):
@@ -516,6 +519,18 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
             for a in fresh: open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n")
         if now > end and not any(run for _, _, run in tails): cmd_done(); print(f"{time.strftime('%H:%M:%S')} watch ends", flush=True); return
         time.sleep(60)
+
+
+def newer():
+    """the pool's tengo.py is a version other than the one running, and it starts: the watch goes on in it"""
+    f = os.path.realpath(__file__); m = re.search(r'^VERSION = "([^"]+)"', open(f).read(), re.M)
+    if not m or m[1] in (VERSION, *newer.bad): return False
+    try: ok = subprocess.run([sys.executable, f, "version"], capture_output=True, text=True, timeout=120).stdout.strip() == f"ten-go {m[1]}"
+    except subprocess.TimeoutExpired: ok = False
+    print(f"{time.strftime('%H:%M:%S')} the pool brings ten-go {m[1]}: " + ("the watch goes on in it" if ok else "it does not start, the watch stays in " + VERSION), flush=True)
+    if not ok: newer.bad.add(m[1])   # said once
+    return ok
+newer.bad = set()
 
 
 def cmd_fetch(c, dest):
