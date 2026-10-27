@@ -15,7 +15,9 @@
   "250e": 1580,
   "300e": 2685,
   "300e80": 3400,
-  "400e": 11076
+  "400e": 11076,
+  "300e120": 6000,
+  "300e160": 9000
  },
  "kind": "parts",
  "pumps": [
@@ -102,6 +104,20 @@
    "5.2085",
    [
     "300e80"
+   ]
+  ],
+  [
+   40000000,
+   "5.2085",
+   [
+    "300e120"
+   ]
+  ],
+  [
+   40000001,
+   "5.2085",
+   [
+    "300e160"
    ]
   ],
   [
@@ -17953,6 +17969,14 @@
    "base": 10000000,
    "about": "the probe: 5.2085 g + h, h = 1.95 ug down to 0.48 ng by quarters, inside the 3.9 ug interval J 2176-2177 where lines at gamma ~ 7 g jump by 0.08 g; and 5.2085 g again at 80 digits (does precision move them?)",
    "pumps": 8,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpR",
+   "base": 40000000,
+   "about": "the precision probe: 5.2085 g, order 300, at 120 and 160 digits (the probe hpQ has it at 40 and 80)",
+   "pumps": 2,
    "left_out": 0
   },
   {
