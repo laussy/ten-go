@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.14 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.15 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -43,10 +43,10 @@ ledger keeps what each task cost: `ten-go kh` shows the totals per task and mach
 
 Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]] [--shugeki]
        | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--jikan 10] [--sakusen C] [--shinshu [N]] [--shugeki]
-       | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | mkcampaign NAME
+       | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME (declare a campaign)
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
-VERSION = "1.14"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki
+VERSION = "1.15"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -514,9 +514,10 @@ def main():
     ap.add_argument("--chushi", nargs="?", const=10, type=float); ap.add_argument("--now", action="store_true"); ap.add_argument("--wait", action="store_true")
     ap.add_argument("--kido", metavar="MACHINE"); ap.add_argument("--senkyo", action="store_true"); ap.add_argument("--tassei", action="store_true")
     ap.add_argument("--shushu", nargs="?", const=".", metavar="DIR"); ap.add_argument("--shugeki", action="store_true")
+    ap.add_argument("--sensen", metavar="NAME")
     OLD = {"--kernels": "--ki N, the kernels of the allocation", "-c": "--sakusen C, the campaign", "--campaign": "--sakusen C, the campaign",
            "--hours": "--jikan H, the hours", "claim": "--honkai", "release": "--chushi, or --uchikiri", "init": "--kido MACHINE --repo CLONE --work DIR",
-           "status": "--senkyo", "done": "--tassei", "fetch": "--shushu [DIR]"}
+           "status": "--senkyo", "done": "--tassei", "fetch": "--shushu [DIR]", "mkcampaign": "--sensen NAME"}
     first = next((x for x in sys.argv[1:] if not x.startswith("-")), None)   # an old command only as the command, an old option anywhere
     for x in sys.argv[1:]:
         if x.split("=")[0] in OLD and (x.startswith("-") or x is first): die(f"no {'option' if x.startswith('-') else 'command'} {x.split('=')[0]} any more: {OLD[x.split('=')[0]]}")
@@ -528,7 +529,7 @@ def main():
             except (OSError, KeyError, ValueError): pass
         return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
-    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None)) if on]
+    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None), ("--sensen", a.sensen is not None)) if on]
     if len(opts) > 1: die(f"{' and '.join(opts)}: one at a time")
     if opts and a.cmd: die(f"{opts[0]} stands alone, without a command ({a.cmd})")
     if a.now and a.wait: die("--now or --wait, not both")
@@ -556,10 +557,12 @@ def main():
         cmd_watch(a.until, a.hours or 10, a.campaign, a.shinshu, a.shugeki)
     elif a.shushu is not None: cmd_fetch(a.campaign, a.shushu)
     elif a.cmd == "kh": cmd_kh(([a.arg] if a.arg else []) + a.more, a.machine, a.note)
-    elif a.cmd == "mkcampaign":
-        if a.arg not in CAMPAIGNS: die(f"known campaigns: {', '.join(CAMPAIGNS)}")
-        cm = CAMPAIGNS[a.arg](); transact(lambda: save(R("campaigns", a.arg + ".json"), cm) or a.arg, lambda o: f"campaign {o}: {len(cm['pumps'])} pumps")
-        print(f"ten-go: campaign {a.arg}, {len(cm['pumps'])} pumps")
+    elif a.sensen is not None:
+        if a.sensen not in CAMPAIGNS: die(f"known campaigns: {', '.join(CAMPAIGNS)}")
+        cm = CAMPAIGNS[a.sensen]()   # declared once: its pump ids are what the allocations point to, so it is never rewritten
+        new = transact(lambda: None if os.path.exists(R("campaigns", a.sensen + ".json")) else save(R("campaigns", a.sensen + ".json"), cm) or a.sensen,
+                       lambda o: f"sensen {o}: {len(cm['pumps'])} pumps")
+        print(f"ten-go: campaign {a.sensen}, {len(cm['pumps'])} pumps" + ("" if new else ": already declared in the pool, left as it is"))
     else: die(f"unknown command {a.cmd}\n{__doc__}")
 
 
