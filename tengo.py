@@ -560,10 +560,11 @@ def declare(path):
         if q["kind"] != "adaptive": die(f"{path}: kind grid, adaptive or parts")
         if q.get("seed") and base: die(f"{path}: an adaptive part with a seed comes first (its files keep their numbers)")
         r = q["rule"]; x0 = Fraction(str(r["x0"])); step = Fraction(str(r["h0"])) / 2 ** r["lev"]; have, files = {}, []
+        jmax = int((Fraction(str(r["x1"])) - x0) / step)   # only the seed's pumps in the window [x0, x1]
         for d in q.get("seed", []):
             for f in sorted(glob.glob(os.path.join(at(d), f"{q['prefix']}_nt*_*.dat"))):
                 m = re.search(rf"{re.escape(q['prefix'])}_nt(\d+[we]\d*)_(\d+)\.dat$", f)
-                if not m or os.path.getsize(f) <= 1000: continue
+                if not m or os.path.getsize(f) <= 1000 or not 0 <= int(m[2]) <= jmax: continue
                 if Fraction(open(f).readline().split()[1]) != x0 + int(m[2]) * step: die(f"{f}: not on the rule's lattice")
                 have.setdefault(int(m[2]), set()).add(m[1]); files.append(f)
         full = sorted(J for J, o in have.items() if set(r["orders"]) <= o)

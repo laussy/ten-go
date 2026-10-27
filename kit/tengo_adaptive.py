@@ -37,11 +37,12 @@ def grow(rule, prefix, cache, known, waiting, kern, base=0):
     (named by the pump number base + J); waiting, the Js of the campaign still to come (an interval with such an end waits).  The gaps
     are kept in cache/gaps.json, since two pumps done never change"""
     step = Fraction(rule["h0"]) / 2 ** rule["lev"]; delta, hmax = rule["delta"], rule["hmax"]
+    jmax = int((Fraction(str(rule["x1"])) - Fraction(str(rule["x0"]))) / step)   # the window [x0, x1]: the pumps outside it do not count
     gf = os.path.join(cache, f"gaps-{prefix}.json"); G = json.load(open(gf)) if os.path.exists(gf) else {}; C = {}
     def c(J):
         if J not in C: C[J] = cert(loadfile(os.path.join(cache, f"{prefix}_nt250e_{base + J}.dat")), loadfile(os.path.join(cache, f"{prefix}_nt300e_{base + J}.dat")), rule["eps"])
         return C[J]
-    Js = sorted(set(known) | set(waiting)); iv = []
+    Js = sorted(J for J in set(known) | set(waiting) if 0 <= J <= jmax); iv = []
     for J1, J2 in zip(Js, Js[1:]):
         if J1 in waiting or J2 in waiting or J2 - J1 < 2: continue
         k = f"{J1},{J2}"

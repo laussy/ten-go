@@ -49,7 +49,8 @@ driver, `kit/tengo_adaptive.py`, applied at each claim to the results in the poo
 starts from the runs it names, whose files enter the pool as the results of an allocation `seed`). Short claims suit an adaptive
 campaign, refined only when a claim is made.
 A campaign in **parts** joins several (each its own kind and file prefix); a claim takes from the parts in their order. The
-first, `uijin` (`specs/uijin.json`): the adaptive grid on 5.2–5.6 g, then the boiling window at 0.08 g. `watch` without `--until`
+first, `uijin` (`specs/uijin.json`): the 4 pumps left half done, a zoom on 5.20–5.22 g with the adaptive grid (spacing
+ceiling 0.1 mg), then the boiling window at 0.08 g. `watch` without `--until`
 runs until the campaign is complete.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
