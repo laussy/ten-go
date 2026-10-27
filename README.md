@@ -1,12 +1,11 @@
-# Operation Ten-Go
+# Ten-Go
 
-The pool of pump jobs shared by Fabrice's machines (azag, yzao) for the one-atom-laser skeleton (report 0JOalb). Design: the page
-*Operation Ten-Go* of laussywiki. No machine ever computes a pump that another one has done or holds.
+The pool of jobs shared by my machines (azag, yzao) for a long-running task [e.g., computing the one-atom-laser skeleton, cf. 0JOalb].
 
-A machine asks for a **budget**, not for pumps: `tengo claim --hours 10` takes, in one go, the free pumps of the campaign in its
+A machine asks for a **budget**, not for tasks: `tengo claim --hours 10` takes, in one go, the free task of the ongoing "campaign" in its
 global (van der Corput) order until their cost on that machine fills the ten hours, the longest job kept back. The claim is a commit;
 a push refused because another machine pushed first is redone from the new state, so that no pump is ever in two allocations. An
-allocation has a deadline (start + 1.5 budget + 2 h), after which its pumps not done are free again.
+allocation has a deadline (start + 1.5 budget + 2 h), after which its tasks not done are free again.
 
 ## Commands
 
