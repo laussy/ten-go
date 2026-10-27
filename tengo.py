@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.10 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
-github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --hours 10` takes, in one
+"""Operation Ten-Go v1.11 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
 commit pushed to the repository; a push refused because another machine pushed first is redone from the new state, so that no pump
@@ -14,10 +14,10 @@ Repository (the clone is Ten-Go's alone: every command starts by resetting it to
   results/<c>/<id>-<n>.tgz   the .dat files of the pumps done, one archive per push
   ledger.tsv           the kernel-hours (kh) spent, per task: one line per allocation (brought up to date by done) or per run log
                        imported (any run of run_window.py, in Ten-Go or not), or booked by hand
-The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `ten-go init`; env TENGO_CONF names another file).
+The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `ten-go --kido`; env TENGO_CONF names another file).
 
 --until TAG, an AF tag (read back by ~/bin/AF, lw page [[AF]]) or 'YYYY-MM-DD HH:MM', ends a claim or a watch at that moment: --honkai
-takes the hours from now until then in place of --hours.  Given both --hours and --until, --honkai only prints itself again, its --hours
+takes the hours from now until then in place of --jikan.  Given both --jikan and --until, --honkai only prints itself again, its --jikan
 set to those hours and --until dropped, with the kernel-hours (kh) they make as a comment.
 
 --shinshu [N] (--honkai, launch, watch) lets the allocation take the threads that stay idle, from its kernels up to N (no N: every
@@ -37,12 +37,12 @@ complete go back to the pool at once, and those the jobs waited for complete are
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
-Usage: ten-go init MACHINE --repo CLONE --work DIR | status [--sakusen C] | --honkai --hours H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]]
-       | done [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--hours 10] [--sakusen C] [--shinshu [N]]
+Usage: ten-go --kido MACHINE --repo CLONE --work DIR | status [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]]
+       | done [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--jikan 10] [--sakusen C] [--shinshu [N]]
        | fetch [--sakusen C] [DIR] (unpack every result into DIR) | mkcampaign NAME
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
-VERSION = "1.10"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen
+VERSION = "1.11"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -70,12 +70,12 @@ def hours_until(s):
 
 
 def restated(h):
-    """the command line as typed, its --hours set to h and --until dropped (the options as argparse takes them, abbreviated or with =)"""
+    """the command line as typed, its --jikan set to h and --until dropped (an option as is or with =; no abbreviations)"""
     out, args = ["ten-go"], iter(sys.argv[1:])
     for x in args:
         k = x.split("=", 1)[0]
-        if len(k) > 3 and "--hours".startswith(k): out += ["--hours", f"{h:g}"]
-        elif len(k) > 2 and "--until".startswith(k): pass
+        if k == "--jikan": out += ["--jikan", f"{h:g}"]
+        elif k == "--until": pass
         else: out.append(x); continue
         if "=" not in x: next(args, None)
     return " ".join(map(shlex.quote, out))
@@ -500,15 +500,19 @@ CAMPAIGNS = {"close-0.004": mk_close004}
 
 
 def main():
-    ap = argparse.ArgumentParser(prog="ten-go", description="Operation Ten-Go: a shared pool of pump jobs in a git repository")
+    ap = argparse.ArgumentParser(prog="ten-go", description="Operation Ten-Go: a shared pool of pump jobs in a git repository", allow_abbrev=False)
     ap.add_argument("cmd", nargs="?"); ap.add_argument("arg", nargs="?"); ap.add_argument("more", nargs="*"); ap.add_argument("--sakusen", dest="campaign")
-    ap.add_argument("--hours", type=float); ap.add_argument("--ki", type=int); ap.add_argument("--go", action="store_true")
+    ap.add_argument("--jikan", dest="hours", type=float); ap.add_argument("--ki", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
     ap.add_argument("--machine"); ap.add_argument("--note", default=""); ap.add_argument("--shinshu", nargs="?", const="max")
     ap.add_argument("--honkai", action="store_true"); ap.add_argument("--uchikiri", action="store_true"); ap.add_argument("--dry", action="store_true")
     ap.add_argument("--chushi", nargs="?", const=10, type=float); ap.add_argument("--now", action="store_true"); ap.add_argument("--wait", action="store_true")
-    if any(x.split("=")[0] == "--kernels" for x in sys.argv[1:]): die("no option --kernels any more: --ki N, the kernels of the allocation")
-    if any(x == "-c" or x.split("=")[0] == "--campaign" for x in sys.argv[1:]): die("no option --campaign (-c) any more: --sakusen C, the campaign")
+    ap.add_argument("--kido", metavar="MACHINE")
+    OLD = {"--kernels": "--ki N, the kernels of the allocation", "-c": "--sakusen C, the campaign", "--campaign": "--sakusen C, the campaign",
+           "--hours": "--jikan H, the hours", "claim": "--honkai", "release": "--chushi, or --uchikiri", "init": "--kido MACHINE --repo CLONE --work DIR"}
+    first = next((x for x in sys.argv[1:] if not x.startswith("-")), None)   # an old command only as the command, an old option anywhere
+    for x in sys.argv[1:]:
+        if x.split("=")[0] in OLD and (x.startswith("-") or x is first): die(f"no {'option' if x.startswith('-') else 'command'} {x.split('=')[0]} any more: {OLD[x.split('=')[0]]}")
     a = ap.parse_args()
     if a.honkai and a.hours and a.until:
         h = hours_until(a.until)[0]; k = a.ki
@@ -517,24 +521,23 @@ def main():
             except (OSError, KeyError, ValueError): pass
         return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
-    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None)) if on]
-    if a.cmd in ("claim", "release"): die(f"no command {a.cmd} any more: {'--honkai' if a.cmd == 'claim' else '--chushi, or --uchikiri'}")
+    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None)) if on]
     if len(opts) > 1: die(f"{' and '.join(opts)}: one at a time")
     if opts and a.cmd: die(f"{opts[0]} stands alone, without a command ({a.cmd})")
     if a.now and a.wait: die("--now or --wait, not both")
     if not (opts or a.cmd): die(f"no command\n{__doc__}")
-    if a.cmd == "init":
-        if not (a.arg and a.repo and a.work): die("ten-go init MACHINE --repo CLONE --work DIR")
-        save(CONF, dict(machine=a.arg, repo=os.path.abspath(os.path.expanduser(a.repo)), work=os.path.abspath(os.path.expanduser(a.work))))
-        return print(f"ten-go: {CONF} written ({a.arg})")
+    if a.kido is not None:
+        if not (a.kido and a.repo and a.work): die("ten-go --kido MACHINE --repo CLONE --work DIR")
+        save(CONF, dict(machine=a.kido, repo=os.path.abspath(os.path.expanduser(a.repo)), work=os.path.abspath(os.path.expanduser(a.work))))
+        return print(f"ten-go: {CONF} written ({a.kido})")
     try: C.update(json.load(open(CONF)))
-    except FileNotFoundError: die(f"no {CONF}: run `ten-go init MACHINE --repo CLONE --work DIR` first")
+    except FileNotFoundError: die(f"no {CONF}: run `ten-go --kido MACHINE --repo CLONE --work DIR` first")
     if a.uchikiri: cmd_uchikiri(a.alloc, a.dry)
     elif a.chushi is not None: cmd_chushi(a.alloc, a.chushi, "dry" if a.dry else "wait" if a.wait else "now" if a.now else None)
     elif a.cmd == "status": cmd_status(a.campaign)
     elif a.honkai:
         if a.until: a.hours, t = hours_until(a.until); print(f"ten-go: until {a.until}, {stamp(t)}: {a.hours:g} h from now")
-        if not a.hours: die("--honkai --hours H, or --until TAG")
+        if not a.hours: die("--honkai --jikan H, or --until TAG")
         cmd_claim(a.campaign, a.hours, a.ki, a.go, a.shinshu)
     elif a.cmd == "done": cmd_done(a.alloc)
     elif a.cmd == "launch":
