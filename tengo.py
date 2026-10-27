@@ -57,9 +57,10 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
        | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch [--until TAG] [--jikan 10] [--sakusen C] [--shinshu [N]] [--shugeki]
        | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME|SPEC.json (declare a campaign) | --zoen SPEC.json (add parts to one) | --kaiso SPEC.json [--dry] (refit a part)
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
-import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
+import argparse, fcntl, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
+from contextlib import contextmanager
 from fractions import Fraction
-VERSION = "1.24"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso
+VERSION = "1.25"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits)
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -104,17 +105,32 @@ def git(*a, check=True):
     return r
 
 
-def sync(): git("fetch", "-q", "origin"); git("reset", "-q", "--hard", "origin/main")
+HOLD = [0, None]
+@contextmanager
+def clone():
+    """the clone to this process alone, re-entrant: a watch and a command run by hand share it, and the reset of one between the
+    commit and the push of the other lost that commit (the push then said up to date and the command reported it done)"""
+    if not HOLD[0]: HOLD[1] = open(os.path.join(C["repo"], ".git", "tengo.lock"), "w"); fcntl.flock(HOLD[1], fcntl.LOCK_EX)
+    HOLD[0] += 1
+    try: yield
+    finally:
+        HOLD[0] -= 1
+        if not HOLD[0]: HOLD[1].close()
+
+
+def sync():
+    with clone(): git("fetch", "-q", "origin"); git("reset", "-q", "--hard", "origin/main")
 
 
 def transact(change, msg):
     """apply `change` to the fresh state of the repository (it returns what it did, or None when there is nothing to do) and push; a
     refused push (another machine pushed first) is redone from the new state, so that a claim is recomputed from what is still free"""
     for attempt in range(10):
-        sync(); out = change()
-        if out is None: return None
-        git("add", "-A"); git("commit", "-q", "-m", msg(out))
-        if git("push", "-q", "origin", "HEAD:main", check=False).returncode == 0: return out
+        with clone():
+            sync(); out = change()
+            if out is None: return None
+            git("add", "-A"); git("commit", "-q", "-m", msg(out))
+            if git("push", "-q", "origin", "HEAD:main", check=False).returncode == 0: return out
         print("ten-go: push refused (another machine pushed first), redoing from the new state", file=sys.stderr)
         time.sleep(random.uniform(2, 10))
     die("could not push after 10 attempts")
