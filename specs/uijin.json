@@ -1,0 +1,15 @@
+{"name": "uijin", "kind": "parts",
+ "about": "uijin, the first campaign of Ten-Go (27 Oct 2026): complete the finest window 5.2-5.6 g with the adaptive grid, then the boiling window at 0.08 g",
+ "params": {"GA": "1/10", "GS": "293/780364", "PREC": "40", "MEMMIN": "8"},
+ "parts": [
+  {"kind": "adaptive", "prefix": "hpN",
+   "about": "the adaptive grid on 5.2-5.6 g at delta 0.001 g (Sec. 33), from yzao's run stopped on 27 Oct 08:29",
+   "rule": {"x0": "5.2", "x1": "5.6", "h0": "0.004", "lev": 10, "delta": 0.001, "hmax": 0.001, "wmax": 0.3, "eps": 1e-6, "src": 1e-7,
+            "orders": ["300e", "250e", "150w"]},
+   "seed": ["../../work/ad56-yzao"]},
+  {"kind": "grid", "prefix": "hpK",
+   "about": "the boiling window 12.51-42.91 g at 0.08 g (colours at 80 digits from 25 g, as in boil16)",
+   "grid": [["12.51", "42.91", "0.08"]],
+   "orders": [["0", "25", ["300e", "250e", "150w"]], ["25", "inf", ["300e", "250e", "150w80"]]],
+   "have": ["../../work/boil", "../../work/boil16", "../../data/window-boil-12.83-42.91-0PRIw.tgz", "../../data/skeleton-lin-ga0.1-s0.tgz"]}
+ ]}

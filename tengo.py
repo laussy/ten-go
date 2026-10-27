@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.16 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.17 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -41,18 +41,20 @@ taken ahead for a kernel above the allocation's), so that an uchikiri ends withi
 --sensen SPEC.json declares a campaign from a spec file (see declare): a grid, whose pumps already computed in the runs it names are
 left out, or an adaptive campaign, whose pumps grow at each claim by the rule of adaptwin.py (kit/tengo_adaptive.py) applied to the results
 in the pool, seeded with the pumps of the runs it names (they go to the pool as the results of an allocation "seed").  Short claims
-suit an adaptive campaign: it is refined only when a claim is made.
+suit an adaptive campaign: it is refined only when a claim is made.  A campaign in parts (kind parts) joins several, each with its own
+file prefix and kind, its pumps numbered from its own base; a claim takes from the parts in their order (an adaptive part first, say,
+the next parts filling what it cannot).  watch without --until runs until the campaign is complete.
 
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
 Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]] [--shugeki]
-       | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--jikan 10] [--sakusen C] [--shinshu [N]] [--shugeki]
+       | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch [--until TAG] [--jikan 10] [--sakusen C] [--shinshu [N]] [--shugeki]
        | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME|SPEC.json (declare a campaign)
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
 from fractions import Fraction
-VERSION = "1.16"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns
+VERSION = "1.17"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -137,6 +139,10 @@ def ceiling(v, kern):   # --shinshu: None, max (every thread of the machine), or
     try: n = int(v)
     except ValueError: die(f"--shinshu {v}: a number of kernels, or nothing for every thread of the machine")
     return n if n > kern else die(f"--shinshu {n}: not above the {kern} kernels of the allocation")
+def parts(cm):   # the parts of a campaign, each {kind, prefix, base[, rule]}; a campaign of one kind is its own single part
+    return cm.get("parts") or [dict(kind=cm.get("kind", "grid"), prefix=cm["prefix"], base=0, rule=cm.get("rule"))]
+def part(cm, pid): return max((q for q in parts(cm) if pid >= q["base"]), key=lambda q: q["base"])
+def pre(cm, pid): return part(cm, pid)["prefix"]   # the file prefix of a pump
 def tilde(p): h = os.path.expanduser("~"); return "~" + p[len(h):] if p.startswith(h + "/") else p
 
 
@@ -216,7 +222,7 @@ def setup(a):
         f.write(f"# prefix nt withWeights j [prec]   (Ten-Go allocation {a['id']} of {a['campaign']}: {len(a['pumps'])} pumps in the global order)\n")
         for pid in a["pumps"]:
             for o in P[pid][1]:
-                nt, w, prec = parse(o); f.write(f"{cm['prefix']}_nt{o} {nt} {w} {pid}" + (f" {prec}" if prec else "") + "\n")
+                nt, w, prec = parse(o); f.write(f"{pre(cm, pid)}_nt{o} {nt} {w} {pid}" + (f" {prec}" if prec else "") + "\n")
     save(os.path.join(W, "alloc.json"), a)
     return W
 
@@ -249,11 +255,11 @@ def launch(a, quiet=False, shinshu=None):
 
 
 # ----------------------------------------------------------------------------------------------------------------------- commands
-def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=False):
+def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=False, quiet=False):
     m = C["machine"]; kern = kernels or machine(m)["kernels"]; c = pick(c); sh = ceiling(shinshu, kern)
     def change():
         cm = campaign(c); A = allocs(c); now = time.time(); busy = held(A, now); pumps, grew = cm["pumps"], None
-        if cm.get("kind") == "adaptive": pumps, grew = grown(c, cm, A, busy, kern)   # the rule, now: new pumps appended to cm
+        if any(q["kind"] == "adaptive" for q in parts(cm)): pumps, grew = grown(c, cm, A, busy, kern)   # the rule, now: new pumps appended
         S, K1 = cost(cm, A, m)
         take, tot, hold = [], 0.0, 0   # the budget in kernel-seconds, the longest job of the pumps taken kept back
         for pid, P, orders in (sorted(pumps, key=lambda x: K1[x[0]]) if shugeki else pumps):   # shugeki: the cheapest first
@@ -269,7 +275,7 @@ def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=Fal
         if grew: a["grown"], a["open"] = grew; save(R("campaigns", c + ".json"), cm)   # the new pumps, in the claim's commit
         save(R("allocs", c, aid + ".json"), a); return a
     a = transact(change, lambda a: f"honkai {a['id']}: {len(a['pumps'])} pumps of {c}, {a['hours']:g} h on {a['kernels']} kernels")
-    if a is None: return print(f"ten-go: nothing free in {c}")
+    if a is None: return None if quiet else print(f"ten-go: nothing free in {c}")
     W = setup(a); P = {pid: Pv for pid, Pv, _ in campaign(c)["pumps"]}; xs = sorted(float(Fraction(P[p])) for p in a["pumps"])
     print(f"ten-go: claimed {a['id']}: {len(a['pumps'])} pumps of {c} ({xs[0]:g}-{xs[-1]:g} g, {f"{a['grown']} new by the rule, {a['open']} intervals to split now" if "grown" in a else 'the cheapest first, a sortie' if shugeki else 'spread in the global order'}), "
           f"{a['cost_kernel_h']} kh for {hours:g} h on {kern} kernels; deadline {stamp(a['deadline'])}; work directory {W}"
@@ -281,7 +287,7 @@ def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=Fal
 def complete(a, cm):
     W = workdir(a); O = {pid: orders for pid, _, orders in cm["pumps"]}
     ok = lambda f: os.path.exists(f) and os.path.getsize(f) > 1000
-    return [p for p in a["pumps"] if all(ok(os.path.join(W, f"{cm['prefix']}_nt{o}_{p}.dat")) for o in O[p])]
+    return [p for p in a["pumps"] if all(ok(os.path.join(W, f"{pre(cm, p)}_nt{o}_{p}.dat")) for o in O[p])]
 
 
 def jobtimes(W, prefix, pids):
@@ -306,9 +312,10 @@ def cmd_done(aid=None, final=None):
                     rel = f"results/{c}/{a['id']}-{len(a['results']) + 1}.tgz"; os.makedirs(R("results", c), exist_ok=True)
                     with tarfile.open(R(rel), "w:gz") as t:
                         for p in new:
-                            for o in O[p]: n = f"{cm['prefix']}_nt{o}_{p}.dat"; t.add(os.path.join(W, n), arcname=n)
+                            for o in O[p]: n = f"{pre(cm, p)}_nt{o}_{p}.dat"; t.add(os.path.join(W, n), arcname=n)
                     a["results"].append(rel); a["done"] += new
-                    for o, v in jobtimes(W, cm["prefix"], set(new)).items(): a["times"].setdefault(o, []).extend(v)
+                    for px in {pre(cm, p) for p in new}:
+                        for o, v in jobtimes(W, px, {p for p in new if pre(cm, p) == px}).items(): a["times"].setdefault(o, []).extend(v)
                 st = final or ("finished" if set(a["done"]) >= set(a["pumps"]) else "open")
                 sp = logspent(W); b = book(L, c, a["machine"], "alloc " + a["id"], sp); booked |= b
                 if new or st != a["status"]:
@@ -459,11 +466,12 @@ def tail_state(W):
 
 
 def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
-    """the unattended loop: claim and launch an allocation while time remains before `until`, push the pumps done every 30 min,
+    """the unattended loop: claim and launch an allocation while time remains before `until` (None: until the campaign is complete,
+    nothing free and no allocation open anywhere), push the pumps done every 30 min,
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail)"""
-    end = moment(until); restarts = {}; last = 0; c = pick(c); t0 = time.time(); flag = os.path.join(C["work"], "ENDING")
-    print(f"ten-go watch until {stamp(end)} ({C['machine']}, {c})", flush=True)
+    end = moment(until) if until else float("inf"); restarts = {}; last = 0; c = pick(c); t0 = time.time(); flag = os.path.join(C["work"], "ENDING"); said = 0
+    print(f"ten-go watch until {stamp(end) if until else 'the campaign is complete'} ({C['machine']}, {c})", flush=True)
     while True:
         now = time.time()
         if end > now and os.path.exists(flag) and os.path.getmtime(flag) > t0:
@@ -480,9 +488,13 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
         fresh = [a for a, wait, run in tails if wait]           # an allocation still launching jobs
         if not fresh and end - now > 1800:
             busy = sum(run for _, _, run in tails); kern = machine(C["machine"])["kernels"]
-            a = cmd_claim(c, min(hours, (end - now) / 3600), kern, shinshu=shinshu, shugeki=shugeki)
+            a = cmd_claim(c, min(hours, (end - now) / 3600), kern, shinshu=shinshu, shugeki=shugeki, quiet=True)
             if a:
                 open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n"); launch(a)
+            elif not until and not op:
+                held_by = sorted({x["machine"] for x in allocs(c) if x["status"] == "open"})
+                if not held_by: cmd_done(); print(f"{time.strftime('%H:%M:%S')} {c} is complete: nothing free, no allocation open; watch ends", flush=True); return
+                if now - said > 1800: said = now; print(f"{time.strftime('%H:%M:%S')} nothing free in {c} for now, waiting on {', '.join(held_by)}", flush=True)
         if fresh and len(op) > 1:                               # the newest allocation takes the kernels the tails free
             busy = sum(run for a, wait, run in tails if not wait); kern = machine(C["machine"])["kernels"]
             for a in fresh: open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n")
@@ -525,39 +537,54 @@ def declare(path):
          "except": [[lo, hi], ...], "have": [runs]: a pump whose orders are all in these runs (directories or .tgz archives) is left out;
        or "kind": "adaptive", "rule": {x0, x1, h0, lev, delta, hmax, wmax, eps, src, orders}, "seed": [run directories]: the pumps of
          these runs (files <prefix>_nt<order>_<J>.dat on the rule's lattice) are its first pumps, those complete done (their files go
-         to the pool as the results of an allocation "seed"), the others to be completed}
+         to the pool as the results of an allocation "seed"), the others to be completed;
+       or "kind": "parts", "parts": [part, ...]: each part a grid or adaptive spec with its own prefix (an adaptive part with a seed
+         first), its pumps numbered from k 10^7, a claim taking from the parts in their order}
     returns the campaign and the seed (None, or the seed allocation with the files of its archives)"""
     sp = json.load(open(path)); here = os.path.dirname(os.path.abspath(path))
     at = lambda f: os.path.join(here, os.path.expanduser(f))
     if not re.fullmatch(r"[\w.-]+", sp.get("name", "")): die(f"{path}: a name of letters, digits, . - _")
-    cm = dict(name=sp["name"], prefix=sp["prefix"], about=sp.get("about", ""), params=sp["params"], ref=sp.get("ref", REF), kind=sp.get("kind", "grid"))
-    if cm["kind"] == "grid":
-        pts = set()
-        for a, b, st in sp["grid"]:
-            a, b, st = Fraction(str(a)), Fraction(str(b)), Fraction(str(st)); pts |= {a + i * st for i in range(int((b - a) / st) + 1)}
-        pts = {P for P in pts if not any(Fraction(str(lo)) <= P <= Fraction(str(hi)) for lo, hi in sp.get("except", []))}
-        def orders(P):
-            for lo, hi, o in sp["orders"]:
-                if Fraction(str(lo)) <= P and (hi == "inf" or P < Fraction(str(hi))): return o
-            die(f"{path}: no orders for P = {dec(P)}")
-        have = computed([at(f) for f in sp.get("have", [])])
-        keep = sorted(P for P in pts if not set(orders(P)) <= have.get(P, set()))
-        cm["pumps"] = [[i, dec(keep[i]), orders(keep[i])] for i in vdc(len(keep))]
-        cm["left_out"] = len(pts) - len(keep); seed = None
-    elif cm["kind"] == "adaptive":
-        r = cm["rule"] = sp["rule"]; x0 = Fraction(str(r["x0"])); step = Fraction(str(r["h0"])) / 2 ** r["lev"]; have, files = {}, []
-        for d in sp.get("seed", []):
-            for f in sorted(glob.glob(os.path.join(at(d), f"{cm['prefix']}_nt*_*.dat"))):
-                m = re.search(rf"{re.escape(cm['prefix'])}_nt(\d+[we]\d*)_(\d+)\.dat$", f)
+    def build(q, base):   # one part: its pumps (numbered from base), the pumps done of its seed and their files, the pumps left out
+        if q.get("kind", "grid") == "grid":
+            pts = set()
+            for a, b, st in q["grid"]:
+                a, b, st = Fraction(str(a)), Fraction(str(b)), Fraction(str(st)); pts |= {a + i * st for i in range(int((b - a) / st) + 1)}
+            pts = {P for P in pts if not any(Fraction(str(lo)) <= P <= Fraction(str(hi)) for lo, hi in q.get("except", []))}
+            def orders(P):
+                for lo, hi, o in q["orders"]:
+                    if Fraction(str(lo)) <= P and (hi == "inf" or P < Fraction(str(hi))): return o
+                die(f"{path}: no orders for P = {dec(P)}")
+            have = computed([at(f) for f in q.get("have", [])])
+            keep = sorted(P for P in pts if not set(orders(P)) <= have.get(P, set()))
+            return [[base + i, dec(keep[i]), orders(keep[i])] for i in vdc(len(keep))], [], [], len(pts) - len(keep)
+        if q["kind"] != "adaptive": die(f"{path}: kind grid, adaptive or parts")
+        if q.get("seed") and base: die(f"{path}: an adaptive part with a seed comes first (its files keep their numbers)")
+        r = q["rule"]; x0 = Fraction(str(r["x0"])); step = Fraction(str(r["h0"])) / 2 ** r["lev"]; have, files = {}, []
+        for d in q.get("seed", []):
+            for f in sorted(glob.glob(os.path.join(at(d), f"{q['prefix']}_nt*_*.dat"))):
+                m = re.search(rf"{re.escape(q['prefix'])}_nt(\d+[we]\d*)_(\d+)\.dat$", f)
                 if not m or os.path.getsize(f) <= 1000: continue
                 if Fraction(open(f).readline().split()[1]) != x0 + int(m[2]) * step: die(f"{f}: not on the rule's lattice")
                 have.setdefault(int(m[2]), set()).add(m[1]); files.append(f)
         full = sorted(J for J, o in have.items() if set(r["orders"]) <= o)
-        cm["pumps"] = [[J, dec(x0 + J * step), list(r["orders"]) if J in full else [o for o in r["orders"] if o not in have[J]]] for J in sorted(have)]
-        seed = dict(id="seed", campaign=cm["name"], machine="seed", kernels=0, hours=0, created=int(time.time()), deadline=int(time.time()),
-                    cost_kernel_h=0, pumps=full, done=full, times={}, results=[], status="finished", tengo=VERSION,
-                    about=f"the pumps of {', '.join(sp.get('seed', []))} before Ten-Go"), files
-    else: die(f"{path}: kind grid or adaptive")
+        return ([[base + J, dec(x0 + J * step), list(r["orders"]) if J in full else [o for o in r["orders"] if o not in have[J]]] for J in sorted(have)],
+                [base + J for J in full], files, 0)
+    kind = sp.get("kind", "grid"); qs = sp["parts"] if kind == "parts" else [sp]
+    cm = dict(name=sp["name"], prefix=qs[0]["prefix"], about=sp.get("about", ""), params=sp["params"], ref=sp.get("ref", REF), kind=kind, pumps=[])
+    full, files, out, P = [], [], 0, []
+    for k, q in enumerate(qs):
+        base = k * 10 ** 7   # the pumps of part k are numbered from k 10^7
+        pumps, f1, f2, lo = build(q, base); cm["pumps"] += pumps; full += f1; files += f2; out += lo
+        P.append(dict(kind=q.get("kind", "grid"), prefix=q["prefix"], base=base, about=q.get("about", ""), pumps=len(pumps), left_out=lo,
+                      **({"rule": q["rule"]} if q.get("kind") == "adaptive" else {})))
+    if kind == "parts":
+        cm["parts"] = P
+        if len({q["prefix"] for q in P}) < len(P): die(f"{path}: each part its own prefix")
+    elif kind == "adaptive": cm["rule"] = sp["rule"]
+    if out: cm["left_out"] = out
+    seed = (dict(id="seed", campaign=cm["name"], machine="seed", kernels=0, hours=0, created=int(time.time()), deadline=int(time.time()),
+                 cost_kernel_h=0, pumps=full, done=full, times={}, results=[], status="finished", tengo=VERSION,
+                 about=f"the pumps of {', '.join(d for q in qs for d in q.get('seed', []))} before Ten-Go"), files) if files else None
     for p in cm["pumps"]:
         if not set(p[2]) <= set(cm["ref"]): die(f"{path}: no reference time for the orders {set(p[2]) - set(cm['ref'])}")
     return cm, seed
@@ -587,22 +614,26 @@ def cache(c):   # this machine's copy of the results of campaign c, each archive
 
 
 def grown(c, cm, A, busy, kern):
-    """an adaptive campaign at a claim: its rule applied to the pumps whose 250e and 300e files are in the pool and to those still to
-    come; the new pumps are appended to cm; returns the pumps to offer (those free again first, then the new ones, worst interval
-    first) and (number new, intervals open)"""
+    """a campaign with an adaptive part, at a claim: the rule of each adaptive part applied to its pumps whose 250e and 300e files are in
+    the pool and to those still to come, the new pumps appended to cm; returns the pumps to offer, part after part in their order (in an
+    adaptive part those free again first, then the new ones, worst interval first; in a grid part its free pumps in the global order),
+    and (number new, intervals to split)"""
     sys.path[:0] = [R("kit"), os.path.dirname(os.path.realpath(__file__))]; import tengo_adaptive as adaptive   # the pool's kit first
     D = cache(c); have = {}
     for f in os.listdir(D):
-        x = re.match(rf"{re.escape(cm['prefix'])}_nt(\w+)_(\d+)\.dat$", f)
-        if x and os.path.getsize(os.path.join(D, f)) > 1000: have.setdefault(int(x[2]), set()).add(x[1])
-    known = {J for J, o in have.items() if {"250e", "300e"} <= o}
-    done = set().union(*(set(a["done"]) for a in A)) if A else set()
-    waiting = {p for p, _, _ in cm["pumps"] if p not in done and p not in known}
-    new, nopen = adaptive.grow(cm["rule"], cm["prefix"], D, known, waiting, kern)
-    r = cm["rule"]; x0 = Fraction(str(r["x0"])); step = Fraction(str(r["h0"])) / 2 ** r["lev"]
-    cm["pumps"] += [[J, dec(x0 + J * step), list(r["orders"])] for J in new]
-    E = {p[0]: p for p in cm["pumps"]}
-    return [p for p in cm["pumps"] if p[0] not in done and p[0] not in busy and p[0] not in new] + [E[J] for J in new], (len(new), nopen)
+        x = re.match(r"(.+)_nt(\d+[we]\d*)_(\d+)\.dat$", f)
+        if x and os.path.getsize(os.path.join(D, f)) > 1000: have.setdefault((x[1], int(x[3])), set()).add(x[2])
+    done = set().union(*(set(a["done"]) for a in A)) if A else set(); offer, added, nopen = [], 0, 0
+    for q in parts(cm):
+        mine = [p for p in cm["pumps"] if part(cm, p[0]) is q]
+        if q["kind"] != "adaptive": offer += [p for p in mine if p[0] not in done and p[0] not in busy]; continue
+        r = q["rule"]; b = q["base"]; x0 = Fraction(str(r["x0"])); step = Fraction(str(r["h0"])) / 2 ** r["lev"]
+        known = {i - b for (px, i), o in have.items() if px == q["prefix"] and i >= b and {"250e", "300e"} <= o}
+        waiting = {p[0] - b for p in mine if p[0] not in done and p[0] - b not in known}
+        new, n = adaptive.grow(r, q["prefix"], D, known, waiting, kern, b); added += len(new); nopen += n
+        fresh = [[b + J, dec(x0 + J * step), list(r["orders"])] for J in new]; cm["pumps"] += fresh
+        offer += [p for p in mine if p[0] not in done and p[0] not in busy] + fresh
+    return offer, (added, nopen)
 
 
 def vdc(n):
@@ -676,7 +707,6 @@ def main():
         for x in op: launch(x, shinshu=a.shinshu)
         if not op: print("ten-go: no open allocation of this machine")
     elif a.cmd == "watch":
-        if not a.until: die("watch --until TAG (an AF tag, or 'YYYY-MM-DD HH:MM')")
         cmd_watch(a.until, a.hours or 10, a.campaign, a.shinshu, a.shugeki)
     elif a.shushu is not None: cmd_fetch(a.campaign, a.shushu)
     elif a.cmd == "kh": cmd_kh(([a.arg] if a.arg else []) + a.more, a.machine, a.note)

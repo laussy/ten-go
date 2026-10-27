@@ -20,7 +20,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go --uchikiri [--dry]                     # end as soon as possible WITHOUT LOSS; says when
     ten-go --chushi [MIN] [--now|--wait|--dry]    # stop NOW (the only stop), but first offer to wait for jobs within MIN (10) min
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
-    ten-go watch --until TAG [--jikan 10]         # unattended: claim, launch, push every 30 min, restart
+    ten-go watch [--until TAG] [--jikan 10]       # unattended (without --until: until the campaign is complete): claim, launch, push every 30 min, restart
     ten-go --shushu DIR                           # unpack every result into DIR
     ten-go kh [TASK]                              # kernel-hours (kh) spent, per task and machine (ledger.tsv)
     ten-go kh import DIR [TASK] [--note TEXT]     # book (or bring up to date) any run of run_window.py, in Ten-Go or not
@@ -48,6 +48,9 @@ already computed, whose pumps are left out, read from each file's header) or an 
 driver, `kit/tengo_adaptive.py`, applied at each claim to the results in the pool, so that its pumps grow as the results come; it
 starts from the runs it names, whose files enter the pool as the results of an allocation `seed`). Short claims suit an adaptive
 campaign, refined only when a claim is made.
+A campaign in **parts** joins several (each its own kind and file prefix); a claim takes from the parts in their order. The
+first, `uijin` (`specs/uijin.json`): the adaptive grid on 5.2–5.6 g, then the boiling window at 0.08 g. `watch` without `--until`
+runs until the campaign is complete.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 

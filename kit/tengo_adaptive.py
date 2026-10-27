@@ -32,14 +32,14 @@ def gap(a, b, src, wmax):   # as adaptwin.gap
     return g
 
 
-def grow(rule, prefix, cache, known, waiting, kern):
-    """the Js to add, worst interval first, and the number of intervals open: known, the Js whose 250e and 300e files are in cache;
-    waiting, the Js of the campaign still to come (an interval with such an end waits).  The gaps are kept in cache/gaps.json, since
-    two pumps done never change"""
+def grow(rule, prefix, cache, known, waiting, kern, base=0):
+    """the Js to add, worst interval first, and the number of intervals open: known, the Js whose 250e and 300e files are in cache
+    (named by the pump number base + J); waiting, the Js of the campaign still to come (an interval with such an end waits).  The gaps
+    are kept in cache/gaps.json, since two pumps done never change"""
     step = Fraction(rule["h0"]) / 2 ** rule["lev"]; delta, hmax = rule["delta"], rule["hmax"]
-    gf = os.path.join(cache, "gaps.json"); G = json.load(open(gf)) if os.path.exists(gf) else {}; C = {}
+    gf = os.path.join(cache, f"gaps-{prefix}.json"); G = json.load(open(gf)) if os.path.exists(gf) else {}; C = {}
     def c(J):
-        if J not in C: C[J] = cert(loadfile(os.path.join(cache, f"{prefix}_nt250e_{J}.dat")), loadfile(os.path.join(cache, f"{prefix}_nt300e_{J}.dat")), rule["eps"])
+        if J not in C: C[J] = cert(loadfile(os.path.join(cache, f"{prefix}_nt250e_{base + J}.dat")), loadfile(os.path.join(cache, f"{prefix}_nt300e_{base + J}.dat")), rule["eps"])
         return C[J]
     Js = sorted(set(known) | set(waiting)); iv = []
     for J1, J2 in zip(Js, Js[1:]):
