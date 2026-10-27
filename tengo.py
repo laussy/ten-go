@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.18 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.19 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -43,18 +43,20 @@ left out, or an adaptive campaign, whose pumps grow at each claim by the rule of
 in the pool, seeded with the pumps of the runs it names (they go to the pool as the results of an allocation "seed").  Short claims
 suit an adaptive campaign: it is refined only when a claim is made.  A campaign in parts (kind parts) joins several, each with its own
 file prefix and kind, its pumps numbered from its own base; a claim takes from the parts in their order (an adaptive part first, say,
-the next parts filling what it cannot).  watch without --until runs until the campaign is complete.
+the next parts filling what it cannot).  watch without --until runs until the campaign is complete.  --zoen SPEC.json (増援,
+reinforcements) adds the parts of SPEC to the campaign it names, while it runs: new pump numbers (nothing claimed changes), the same
+parameters, at the end or before the part "before" (an index); the watches take them up at their next claim.
 
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
 Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]] [--shugeki]
        | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch [--until TAG] [--jikan 10] [--sakusen C] [--shinshu [N]] [--shugeki]
-       | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME|SPEC.json (declare a campaign)
+       | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME|SPEC.json (declare a campaign) | --zoen SPEC.json (add parts to one)
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
 from fractions import Fraction
-VERSION = "1.18"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh)
+VERSION = "1.19"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -544,7 +546,7 @@ def computed(sources):
     return out
 
 
-def declare(path):
+def declare(path, sp=None, here=None):
     """a campaign from a spec file (JSON; its relative paths from the file's directory):
       {"name", "about", "prefix", "params": {GA, GS, PREC, MEMMIN}, "ref": {order: seconds} (default REF), and either
        "kind": "grid", "grid": [[from, to, step], ...], "orders": [[lo, hi, [orders]], ...] (for P in [lo, hi), hi may be "inf"),
@@ -555,8 +557,9 @@ def declare(path):
        or "kind": "list", "pumps": [[id, P, orders] or [P, orders], ...]: these pumps, as given;
        or "kind": "parts", "parts": [part, ...]: each part a grid, list or adaptive spec with its own prefix (an adaptive part with a
          seed first), its pumps numbered from k 10^7, a claim taking from the parts in their order}
-    returns the campaign and the seed (None, or the seed allocation with the files of its archives)"""
-    sp = json.load(open(path)); here = os.path.dirname(os.path.abspath(path))
+    returns the campaign and the seed (None, or the seed allocation with the files of its archives); sp and here give the spec and its
+    directory directly (for --zoen)"""
+    if sp is None: sp = json.load(open(path)); here = os.path.dirname(os.path.abspath(path))
     at = lambda f: os.path.join(here, os.path.expanduser(f))
     if not re.fullmatch(r"[\w.-]+", sp.get("name", "")): die(f"{path}: a name of letters, digits, . - _")
     def build(q, base):   # one part: its pumps (numbered from base), the pumps done of its seed and their files, the pumps left out
@@ -611,6 +614,34 @@ def declare(path):
     for p in cm["pumps"]:
         if not set(p[2]) <= set(cm["ref"]): die(f"{path}: no reference time for the orders {set(p[2]) - set(cm['ref'])}")
     return cm, seed
+
+
+def reinforce(path):
+    """--zoen: the parts of a spec ({"name": campaign, "before": index (default: at the end), "parts": [...]}) added to a campaign in
+    parts, each from a new base, the pumps of the campaign kept in the order of its parts; returns the change for transact"""
+    sp = json.load(open(path)); here = os.path.dirname(os.path.abspath(path)); name = sp.get("name", "")
+    def change():
+        if not os.path.exists(R("campaigns", name + ".json")): die(f"--zoen: no campaign {name} in the pool")
+        cm = campaign(name)
+        if cm.get("kind") != "parts": die(f"--zoen: {name} is not a campaign in parts")
+        if sp.get("params", cm["params"]) != cm["params"]: die("--zoen: the parameters differ from the campaign's (one driver runs a claim)")
+        add, seed = declare(path, dict(sp, kind="parts", params=cm["params"], ref=cm.get("ref", REF)), here)
+        k0 = max(q["base"] for q in cm["parts"]) // 10 ** 7 + 1   # the new parts' bases, after every existing one
+        old = {q["prefix"] for q in cm["parts"]}
+        for q in add["parts"]:
+            if q["prefix"] in old: die(f"--zoen: the prefix {q['prefix']} is already a part of {name}")
+        shift = {q["base"]: (k0 + i) * 10 ** 7 for i, q in enumerate(add["parts"])}
+        moved = lambda pid: shift[max(b for b in shift if pid >= b)] + pid - max(b for b in shift if pid >= b)
+        for q in add["parts"]: q["base"] = shift[q["base"]]
+        newp = [[moved(p[0]), p[1], p[2]] for p in add["pumps"]]
+        at = sp.get("before", len(cm["parts"]))
+        cm["parts"][at:at] = add["parts"]
+        order = {q["base"]: i for i, q in enumerate(cm["parts"])}
+        cm["pumps"] = sorted(cm["pumps"] + newp, key=lambda p: order[part(dict(parts=cm["parts"]), p[0])["base"]])   # stable: each part's own order kept
+        save(R("campaigns", name + ".json"), cm)
+        if seed: die("--zoen: an added part with a seed is not supported yet")
+        return (name, len(newp), [q["prefix"] for q in add["parts"]])
+    return change
 
 
 def seeded(cm, seed):   # the seed allocation and its archives (60 MB of files at most each, under GitHub's 100 MB a file)
@@ -691,7 +722,7 @@ def main():
     ap.add_argument("--chushi", nargs="?", const=10, type=float); ap.add_argument("--now", action="store_true"); ap.add_argument("--wait", action="store_true")
     ap.add_argument("--kido", metavar="MACHINE"); ap.add_argument("--senkyo", action="store_true"); ap.add_argument("--tassei", action="store_true")
     ap.add_argument("--shushu", nargs="?", const=".", metavar="DIR"); ap.add_argument("--shugeki", action="store_true")
-    ap.add_argument("--sensen", metavar="NAME")
+    ap.add_argument("--sensen", metavar="NAME"); ap.add_argument("--zoen", metavar="SPEC")
     OLD = {"--kernels": "--ki N, the kernels of the allocation", "-c": "--sakusen C, the campaign", "--campaign": "--sakusen C, the campaign",
            "--hours": "--jikan H, the hours", "claim": "--honkai", "release": "--chushi, or --uchikiri", "init": "--kido MACHINE --repo CLONE --work DIR",
            "status": "--senkyo", "done": "--tassei", "fetch": "--shushu [DIR]", "mkcampaign": "--sensen NAME"}
@@ -706,7 +737,7 @@ def main():
             except (OSError, KeyError, ValueError): pass
         return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
-    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None), ("--sensen", a.sensen is not None)) if on]
+    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None), ("--sensen", a.sensen is not None), ("--zoen", a.zoen is not None)) if on]
     if len(opts) > 1: die(f"{' and '.join(opts)}: one at a time")
     if opts and a.cmd: die(f"{opts[0]} stands alone, without a command ({a.cmd})")
     if a.now and a.wait: die("--now or --wait, not both")
@@ -733,6 +764,9 @@ def main():
         cmd_watch(a.until, a.hours or 10, a.campaign, a.shinshu, a.shugeki)
     elif a.shushu is not None: cmd_fetch(a.campaign, a.shushu)
     elif a.cmd == "kh": cmd_kh(([a.arg] if a.arg else []) + a.more, a.machine, a.note)
+    elif a.zoen is not None:
+        r = transact(reinforce(a.zoen), lambda o: f"zoen {o[0]}: +{o[1]} pumps ({', '.join(o[2])})")
+        print(f"ten-go: {r[0]}: +{r[1]} pumps, the parts {', '.join(r[2])} added; the watches take them up at their next claim")
     elif a.sensen is not None:
         if a.sensen.endswith(".json"): cm, seed = declare(a.sensen)
         elif a.sensen in CAMPAIGNS: cm, seed = dict(CAMPAIGNS[a.sensen](), name=a.sensen), None
