@@ -1,7 +1,7 @@
 {
  "name": "uijin",
  "kind": "parts",
- "about": "uijin, the first campaign of Ten-Go (27 Oct 2026): finish the 4 pumps left half done, zoom on 5.20-5.22 g with the adaptive grid (the scattered dots: fractal dust?), and complete the boiling window at 0.08 g",
+ "about": "uijin, the first campaign of Ten-Go (27 Oct 2026): the 4 pumps of the adaptive run left half done, a probe of the jumping lines below the lattice step, and the boiling window at 0.08 g",
  "params": {
   "GA": "1/10",
   "GS": "293/780364",
@@ -10,27 +10,94 @@
  },
  "parts": [
   {
-   "kind": "adaptive",
+   "kind": "list",
    "prefix": "hpN",
-   "about": "the adaptive grid on 5.20-5.22 g, delta 0.001 g and a spacing ceiling of 0.0001 g (ten times finer than ad56), from yzao's run stopped on 27 Oct 08:29 (its 4 pumps left half done are in the window)",
-   "rule": {
-    "x0": "5.2",
-    "x1": "5.22",
-    "h0": "0.004",
-    "lev": 10,
-    "delta": 0.001,
-    "hmax": 0.0001,
-    "wmax": 0.3,
-    "eps": 1e-06,
-    "src": 1e-07,
-    "orders": [
-     "300e",
-     "250e",
-     "150w"
+   "about": "the 4 pumps of the adaptive run on 5.2-5.6 g left half done (yzao, stopped 27 Oct 08:29), their missing orders only; the files keep the run's numbering J (x = 5.2 + J 0.004/1024 g)",
+   "pumps": [
+    [
+     637,
+     "5.20248828125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     639,
+     "5.20249609375",
+     [
+      "300e"
+     ]
+    ],
+    [
+     649,
+     "5.20253515625",
+     [
+      "300e"
+     ]
+    ],
+    [
+     2182,
+     "5.2085234375",
+     [
+      "300e",
+      "250e"
+     ]
     ]
-   },
-   "seed": [
-    "../../work/ad56-yzao"
+   ]
+  },
+  {
+   "kind": "list",
+   "prefix": "hpQ",
+   "about": "the probe: 5.2085 g + h, h = 1.95 ug down to 0.48 ng by quarters, inside the 3.9 ug interval J 2176-2177 where lines at gamma ~ 7 g jump by 0.08 g; and 5.2085 g again at 80 digits (does precision move them?)",
+   "pumps": [
+    [
+     "5.208501953125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     "5.20850048828125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     "5.2085001220703125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     "5.208500030517578125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     "5.20850000762939453125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     "5.2085000019073486328125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     "5.208500000476837158203125",
+     [
+      "300e"
+     ]
+    ],
+    [
+     "5.2085",
+     [
+      "300e80"
+     ]
+    ]
    ]
   },
   {

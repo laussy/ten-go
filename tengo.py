@@ -510,7 +510,7 @@ def cmd_fetch(c, dest):
 
 
 # ------------------------------------------------------------------------------------------------------------------------ campaigns
-REF = {"150w": 1118, "150w80": 1409, "200e": 760, "250e": 1580, "300e": 2685, "400e": 11076}   # seconds per job, azag at home, 30 kernels
+REF = {"150w": 1118, "150w80": 1409, "200e": 760, "250e": 1580, "300e": 2685, "300e80": 3400, "400e": 11076}   # seconds per job, azag at home, 30 kernels
 
 
 def computed(sources):
@@ -538,8 +538,9 @@ def declare(path):
        or "kind": "adaptive", "rule": {x0, x1, h0, lev, delta, hmax, wmax, eps, src, orders}, "seed": [run directories]: the pumps of
          these runs (files <prefix>_nt<order>_<J>.dat on the rule's lattice) are its first pumps, those complete done (their files go
          to the pool as the results of an allocation "seed"), the others to be completed;
-       or "kind": "parts", "parts": [part, ...]: each part a grid or adaptive spec with its own prefix (an adaptive part with a seed
-         first), its pumps numbered from k 10^7, a claim taking from the parts in their order}
+       or "kind": "list", "pumps": [[id, P, orders] or [P, orders], ...]: these pumps, as given;
+       or "kind": "parts", "parts": [part, ...]: each part a grid, list or adaptive spec with its own prefix (an adaptive part with a
+         seed first), its pumps numbered from k 10^7, a claim taking from the parts in their order}
     returns the campaign and the seed (None, or the seed allocation with the files of its archives)"""
     sp = json.load(open(path)); here = os.path.dirname(os.path.abspath(path))
     at = lambda f: os.path.join(here, os.path.expanduser(f))
@@ -557,7 +558,14 @@ def declare(path):
             have = computed([at(f) for f in q.get("have", [])])
             keep = sorted(P for P in pts if not set(orders(P)) <= have.get(P, set()))
             return [[base + i, dec(keep[i]), orders(keep[i])] for i in vdc(len(keep))], [], [], len(pts) - len(keep)
-        if q["kind"] != "adaptive": die(f"{path}: kind grid, adaptive or parts")
+        if q["kind"] == "list":   # explicit pumps, [id, P, orders] (the id within the part, < 10^7) or [P, orders] (numbered in order)
+            out = []
+            for i, e in enumerate(q["pumps"]):
+                pid, P, o = e if len(e) == 3 else (i, *e)
+                if not 0 <= pid < 10 ** 7: die(f"{path}: a pump id within 0..10^7 ({pid})")
+                out.append([base + pid, dec(Fraction(str(P))), list(o)])
+            return out, [], [], 0
+        if q["kind"] != "adaptive": die(f"{path}: kind grid, list, adaptive or parts")
         if q.get("seed") and base: die(f"{path}: an adaptive part with a seed comes first (its files keep their numbers)")
         r = q["rule"]; x0 = Fraction(str(r["x0"])); step = Fraction(str(r["h0"])) / 2 ** r["lev"]; have, files = {}, []
         jmax = int((Fraction(str(r["x1"])) - x0) / step)   # only the seed's pumps in the window [x0, x1]
