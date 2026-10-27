@@ -14,7 +14,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
 
     ten-go --kido MACHINE --repo CLONE --work DIR # once per machine: ~/.config/tengo.json
     ten-go --senkyo                               # what is done, held (by whom, until when) and free
-    ten-go --honkai --jikan 10 [--ki N] [--go] [--shinshu [N]]   # claim an allocation (and launch it)
+    ten-go --honkai --jikan 10 [--ki N] [--go] [--shinshu [N]] [--shugeki]   # claim an allocation (and launch it)
     ten-go --honkai --until TAG [--ki N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
     ten-go --honkai --jikan 10 --until TAG ...    # only prints the same command, its --jikan set to the hours until TAG
     ten-go --tassei                               # push the pumps finished (results/*.tgz) and the job times
@@ -40,6 +40,9 @@ Ten-Go: `python3 run_window.py --uchikiri [--dry]` in the run's directory.
 `--chushi` stops now, but a job within 10 minutes of completion is first offered to wait for: "One job is 3 min from completion;
 the next are 17 min, 2 h 20, 6 h away, so those are aborted. Abort this one too [n]ow, or [a]fter it completes?" `--now` or `--wait`
 answers ahead (needed without a terminal), `--dry` only asks. Outside Ten-Go: `python3 run_window.py --chushi [--soon MIN]`.
+
+`--shugeki` (with `--honkai` or `watch`) is a sortie, for a machine that may be stopped any moment: the cheapest pumps first, run
+whole one after the other, so that an uchikiri ends within a job or two and a chushi wastes little.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 

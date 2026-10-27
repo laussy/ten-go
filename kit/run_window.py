@@ -8,6 +8,7 @@ An optional file shinshu (a ceiling of kernels, or max: every thread of the mach
 the threads that stay idle: one kernel more after 10 minutes in which at least that many threads were free of any other work, back
 toward nproc (never below) as soon as other work has taken them for 2 minutes.  A kernel above nproc runs the shortest job waiting,
 so that the retreat is quick (a lower count stops new launches; no job is killed).  The current count is in shinshu.now.
+A file shugeki (Ten-Go's sortie) keeps the plan's order for every kernel, the pumps whole, so that an uchikiri ends soon.
   python3 run_window.py              run the plan to the end (rerun to resume: files present are skipped, jobs in flight adopted)
   python3 run_window.py --progress   one line: ASCII bar of the kernel time done, files per order, kernels, memory, end estimate
   python3 run_window.py --kill       stop now: the driver, its front-ends and their kernels (a file STOP only stops new launches)
@@ -228,7 +229,7 @@ def shinshu(limit, base, cap, free, hist):
 
 
 def pick(extra):   # the next job: in the plan's order, or for a kernel above nproc the shortest waiting
-    if not extra: return 0
+    if not extra or os.path.exists("shugeki"): return 0   # a sortie: whole pumps, in the plan's order
     t = tcost
     m = {o: sum(v) / len(v) for o, v in took.items() if len(v) >= 3}   # this run's own times (3 jobs at least), and its speed against T
     f = sum(m[o] / t(o) for o in m) / len(m) if m else 1
