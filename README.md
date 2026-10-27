@@ -22,7 +22,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go --chushi [MIN] [--now|--wait|--dry]    # stop NOW (the only stop), but first offer to wait for jobs within MIN (10) min
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
     ten-go watch --until TAG [--jikan 10]         # unattended: claim, launch, push every 30 min, restart
-    ten-go fetch DIR                              # unpack every result into DIR
+    ten-go --shushu DIR                           # unpack every result into DIR
     ten-go kh [TASK]                              # kernel-hours (kh) spent, per task and machine (ledger.tsv)
     ten-go kh import DIR [TASK] [--note TEXT]     # book (or bring up to date) any run of run_window.py, in Ten-Go or not
     ten-go kh add TASK KH [--note TEXT]           # book by hand a run without a log
