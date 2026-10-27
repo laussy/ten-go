@@ -4,14 +4,19 @@ The work directory is made by window_setup.py: hp3.wls, this file, pumps.txt (li
 in the order to run, an optional 5th field giving that job's precision), params.txt (GA, GS, PREC, MEMMIN), nproc (number of kernels, re-read every minute).  One hp3.wls front-end per
 job, nproc at a time, a job is launched only if MemAvailable > MEMMIN GB.  Only jobs started in THIS directory are counted or killed,
 so several runs (and other people's) can share a machine.
+An optional file shinshu (a ceiling of kernels, or max: every thread of the machine; read every minute like nproc) lets the run take
+the threads that stay idle: one kernel more after 10 minutes in which at least that many threads were free of any other work, back
+toward nproc (never below) as soon as other work has taken them for 2 minutes.  A kernel above nproc runs the shortest job waiting,
+so that the retreat is quick (a lower count stops new launches; no job is killed).  The current count is in shinshu.now.
   python3 run_window.py              run the plan to the end (rerun to resume: files present are skipped, jobs in flight adopted)
   python3 run_window.py --progress   one line: ASCII bar of the kernel time done, files per order, kernels, memory, end estimate
   python3 run_window.py --kill       stop now: the driver, its front-ends and their kernels (a file STOP only stops new launches)"""
-import subprocess, time, os, sys, signal
+import subprocess, time, os, re, sys, signal
 WORK = os.path.dirname(os.path.realpath(__file__)); os.chdir(WORK)
 P = dict(l.split("=", 1) for l in open("params.txt").read().split() if "=" in l)
 GA, GS, PREC, MEMMIN = P["GA"], P["GS"], P["PREC"], float(P["MEMMIN"])
-T = {"150w": 811, "150w80": 1025, "200e": 587, "250e": 742, "300e": 1276, "400e": 2980}   # seconds per job on a loaded i9-14900HX, for the bar only
+T = {"150w": 1118, "150w80": 1409, "200e": 760, "250e": 1580, "300e": 2685, "400e": 11076}   # seconds per job, azag at home on ~30 kernels
+# (Ten-Go's reference): for the bar, and, scaled to this run's own speed, to choose the job of a kernel above nproc
 pumps = dict(l.split() for l in open("pumps.txt") if l.strip())
 plan = [l.split() for l in open("plan.txt") if l.strip() and not l.startswith("#")]
 
@@ -48,7 +53,9 @@ if "--progress" in sys.argv:
     eta = time.strftime("%a %H:%M", time.localtime(time.time() + el * (1 - new) / new)) if 0 < new < 1 else "-"
     mem = next(int(l.split()[1]) / 1e6 for l in open("/proc/meminfo") if l.startswith("MemAvailable"))
     print(f"{time.strftime('%H:%M')} [{'#' * b}{'.' * (40 - b)}] {pct:.0f} % of the kernel time; {', '.join(parts)}; "
-          f"running {len(ours())}/{open('nproc').read().strip()}; {mem:.0f} GB free; end about {eta}")
+          f"running {len(ours())}/{open('nproc').read().strip()}"
+          + (f" (shinshu: {open('shinshu.now').read().strip()} now, up to {open('shinshu').read().strip() or 'max'})" if os.path.exists("shinshu") and os.path.exists("shinshu.now") else "")
+          + f"; {mem:.0f} GB free; end about {eta}")
     sys.exit()
 if "--kill" in sys.argv:
     open("STOP", "w").write("killed\n")
@@ -85,23 +92,78 @@ def memavail():
     return 99
 
 
+NCPU = os.cpu_count(); EVERY = float(os.environ.get("SHINSHU_EVERY", 60)); RAISE, LOWER = 10, 2   # looks: one a minute; 10 free, 2 busy
+
+
+def ceiling():   # the file shinshu: a ceiling of kernels (a number, or max: every thread); 0 without it
+    try: s = open("shinshu").read().strip()
+    except OSError: return 0
+    return NCPU if s in ("", "max") else int(s)
+
+
+def others(roots, prev):
+    """threads the machine spent since the last look on anything but this run's jobs (roots: their front-ends, with all their
+    descendants), from /proc; prev carries the counters from one look to the next.  SHINSHU_OTHERS names a file of made-up values,
+    one per look, for the tests"""
+    if "SHINSHU_OTHERS" in os.environ:
+        v = open(os.environ["SHINSHU_OTHERS"]).read().split(); prev["n"] = prev.get("n", -1) + 1; return float(v[min(prev["n"], len(v) - 1)])
+    kids, ticks = {}, {}
+    for d in os.listdir("/proc"):
+        if d.isdigit():
+            try: f = open(f"/proc/{d}/stat").read().rsplit(")", 1)[1].split()
+            except OSError: continue
+            kids.setdefault(int(f[1]), []).append(int(d)); ticks[int(d)] = int(f[11]) + int(f[12])   # by parent; utime + stime
+    mine, todo = set(), list(roots)
+    while todo: q = todo.pop(); mine.add(q); todo += kids.get(q, [])
+    c = list(map(int, open("/proc/stat").readline().split()[1:9])); busy, tot = sum(c) - c[3] - c[4], sum(c)   # all but idle, iowait
+    old = dict(prev); prev.clear(); prev.update(busy=busy, tot=tot, ticks={q: ticks[q] for q in mine if q in ticks})
+    if "tot" not in old or tot == old["tot"]: return None
+    ours = sum(t - old["ticks"].get(q, 0) for q, t in prev["ticks"].items())   # a process born since the last look: all its ticks
+    return max(0.0, (busy - old["busy"] - ours) / ((tot - old["tot"]) / NCPU))
+
+
+def shinshu(limit, base, cap, free, hist):
+    """the kernels of the run after one look (free: the threads no other work used): one more when at least that many were free for
+    RAISE looks, back toward base as soon as other work has taken them for LOWER looks"""
+    hist.append(max(base, min(cap, int(free)))); del hist[:-RAISE]
+    if len(hist) >= LOWER and max(hist[-LOWER:]) < limit: return max(hist[-LOWER:])
+    if len(hist) == RAISE and min(hist) > limit: return limit + 1
+    return limit
+
+
+def pick(extra):   # the next job: in the plan's order, or for a kernel above nproc the shortest waiting
+    if not extra: return 0
+    t = lambda o: T.get(o, 600 * (int(re.match(r"\d+", o)[0]) / 150) ** 3)
+    m = {o: sum(v) / len(v) for o, v in took.items() if len(v) >= 3}   # this run's own times (3 jobs at least), and its speed against T
+    f = sum(m[o] / t(o) for o in m) / len(m) if m else 1
+    return min(range(len(jobs)), key=lambda i: m.get(order(jobs[i][0]), f * t(order(jobs[i][0]))))
+
+
 jobs = [(f[0], int(f[1]), int(f[2]), f[3], f[4] if len(f) > 4 else PREC) for f in plan if not os.path.exists(f"{f[0]}_{f[3]}.dat")]   # a 5th field = the precision of that job
 foreign = ours(); jobs = [j for j in jobs if (j[0], j[3]) not in foreign.values()]
 if not os.path.exists("launch-epoch"):   # the launch time and the kernel time of the files present then (copied pumps), for the end estimate
     seed = sum(T.get(order(f[0]), 600 * (int(order(f[0])[:-1]) / 150) ** 3) for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat"))
     open("launch-epoch", "w").write(f"{int(time.time())} {seed:.0f}")
-print(f"{time.strftime('%H:%M:%S')} {len(jobs)} jobs to run ({len(foreign)} adopted in flight), GA={GA} GS={GS} PREC={PREC}", flush=True)
-running = []; t0 = time.time(); done = 0; lastmem = 0
+print(f"{time.strftime('%H:%M:%S')} {len(jobs)} jobs to run ({len(foreign)} adopted in flight), GA={GA} GS={GS} PREC={PREC}"
+      + (f", shinshu up to {ceiling()} kernels" if ceiling() else ""), flush=True)
+running = []; t0 = time.time(); done = 0; lastmem = 0; took = {}; limit = nproc(); hist = []; prev = {}; look = 0
 while jobs or running or foreign:
-    now = time.time()
+    now = time.time(); base, cap = nproc(), ceiling()
+    if not cap: hist.clear(); prev.clear(); limit = base
+    elif now - look >= EVERY:
+        look = now; o = others([p.pid for p, *_ in running] + list(foreign), prev)
+        new = limit if o is None else shinshu(max(base, min(cap, limit)), base, cap, NCPU - o - 0.2, hist)
+        if new != limit: print(f"{time.strftime('%H:%M:%S')} shinshu: {limit} -> {new} kernels (other work: {o:.1f} of {NCPU} threads)", flush=True)
+        limit = new; open("shinshu.now", "w").write(f"{limit}\n")
+    limit = max(base, min(cap, limit)) if cap else base
     if os.path.exists("STOP") and jobs: print(f"{time.strftime('%H:%M:%S')} STOP: {len(jobs)} jobs dropped", flush=True); jobs = []
     for pid in list(foreign):
         if not os.path.exists(f"/proc/{pid}"): pre, j = foreign.pop(pid); done += 1; print(f"{time.strftime('%H:%M:%S')} done (adopted) {pre} j={j}", flush=True)
-    while jobs and len(running) + len(foreign) < nproc() and not os.path.exists("STOP"):
+    while jobs and len(running) + len(foreign) < limit and not os.path.exists("STOP"):
         if memavail() < MEMMIN:
             if now - lastmem > 300: print(f"{time.strftime('%H:%M:%S')} memory low ({memavail():.1f} GB available), holding launches", flush=True); lastmem = now
             break
-        pre, nt, w, j, prec = jobs.pop(0)
+        pre, nt, w, j, prec = jobs.pop(pick(len(running) + len(foreign) >= base))
         log = open(f"{pre}.log", "a")
         p = subprocess.Popen(["nice", "-n", "10", "wolframscript", "-file", "hp3.wls", str(nt), GA, GS, prec, pre, str(w), f"{j}:{pumps[j]}", "Ps", "manifold"],
                              stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
@@ -112,8 +174,10 @@ while jobs or running or foreign:
         if p.poll() is None: still.append((p, ts, pre, j))
         else:
             done += 1; ok = os.path.exists(f"{pre}_{j}.dat")
+            if ok: took.setdefault(order(pre), []).append(time.time() - ts)
             print(f"{time.strftime('%H:%M:%S')} done {pre} j={j} P={pumps[j]} in {time.time()-ts:.0f} s {'' if ok else 'NO FILE'}; "
                   f"{done} done, {len(jobs)} waiting, {len(still)+len(foreign)} running, {(time.time()-t0)/60:.0f} min elapsed, {memavail():.0f} GB free", flush=True)
     running = still
 print(f"{time.strftime('%H:%M:%S')} ALLDONE", flush=True)
 os.remove("driver.pid")
+if os.path.exists("shinshu.now"): os.remove("shinshu.now")

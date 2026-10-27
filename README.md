@@ -14,17 +14,22 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
 
     ten-go init MACHINE --repo CLONE --work DIR   # once per machine: ~/.config/tengo.json
     ten-go status                                 # what is done, held (by whom, until when) and free
-    ten-go claim --hours 10 [--kernels N] [--go]
+    ten-go claim --hours 10 [--kernels N] [--go] [--shinshu [N]]
     ten-go claim --until TAG [--kernels N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
     ten-go claim --hours 10 --until TAG ...       # only prints the same command, its --hours set to the hours until TAG
     ten-go done                                   # push the pumps finished (results/*.tgz) and the job times
     ten-go release                                # stop this machine's jobs, push what is done, free the rest
-    ten-go launch                                 # (re)start the driver of this machine's open allocation
+    ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
     ten-go watch --until TAG [--hours 10]         # unattended: claim, launch, push every 30 min, restart
     ten-go fetch DIR                              # unpack every result into DIR
     ten-go kh [TASK]                              # kernel-hours (kh) spent, per task and machine (ledger.tsv)
     ten-go kh import DIR [TASK] [--note TEXT]     # book (or bring up to date) any run of run_window.py, in Ten-Go or not
     ten-go kh add TASK KH [--note TEXT]           # book by hand a run without a log
+
+`--shinshu [N]` lets an allocation take the threads that stay idle, from its kernels up to N (no N: every thread), and give them
+back when other work wants them: the driver looks every minute, adds a kernel after 10 minutes of free threads, comes back toward
+the allocation's kernels after 2 minutes of other activity, and runs the shortest jobs waiting on the kernels above them, so that
+the retreat is quick (no job is killed). Outside Ten-Go, a file `shinshu` (a number, or `max`) in a run's directory does the same.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 

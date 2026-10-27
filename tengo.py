@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.4 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.5 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go claim --hours 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -20,15 +20,20 @@ The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~
 takes the hours from now until then in place of --hours.  Given both --hours and --until, claim only prints itself again, its --hours
 set to those hours and --until dropped, with the kernel-hours (kh) they make as a comment.
 
+--shinshu [N] (claim, launch, watch) lets the allocation take the threads that stay idle, from its kernels up to N (no N: every
+thread of the machine), and give them back as soon as other work wants them: the driver looks every minute (kit/run_window.py), one
+kernel more after 10 minutes of threads free of any other work, back toward the allocation's kernels after 2 minutes of activity; a
+kernel above them runs the shortest job waiting, so that the retreat is quick.  The budget is unchanged: shinshu only ends it sooner.
+
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
-Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H|--until TAG [-c C] [--kernels N] [--go]
-       | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] | watch --until TAG [--hours 10] [-c C]
+Usage: ten-go init MACHINE --repo CLONE --work DIR | status [-c C] | claim --hours H|--until TAG [-c C] [--kernels N] [--go] [--shinshu [N]]
+       | done [--alloc ID] | release [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch --until TAG [--hours 10] [-c C] [--shinshu [N]]
        | fetch [-c C] [DIR] (unpack every result into DIR) | mkcampaign NAME
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
-VERSION = "1.3"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger
+VERSION = "1.5"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -101,6 +106,12 @@ def machine(m): return json.load(open(R("machines", m + ".json")))
 def workdir(a): return os.path.join(C["work"], a["campaign"], a["id"])
 def parse(o): m = re.fullmatch(r"(\d+)([we])(\d*)", o); return int(m[1]), int(m[2] == "w"), m[3]   # "150w80": n_t 150, weights, 80 digits
 def kh(s): return f"{s / 3600:.1f}"
+def upto(v): return "every thread" if v == "max" else f"{v} kernels"
+def ceiling(v, kern):   # --shinshu: None, max (every thread of the machine), or a number of kernels above kern
+    if v in (None, "max"): return v
+    try: n = int(v)
+    except ValueError: die(f"--shinshu {v}: a number of kernels, or nothing for every thread of the machine")
+    return n if n > kern else die(f"--shinshu {n}: not above the {kern} kernels of the allocation")
 def tilde(p): h = os.path.expanduser("~"); return "~" + p[len(h):] if p.startswith(h + "/") else p
 
 
@@ -174,6 +185,7 @@ def setup(a):
     open(os.path.join(W, "pumps.txt"), "w").write("".join(f"{pid} {P[pid][0]}\n" for pid in a["pumps"]))
     open(os.path.join(W, "params.txt"), "w").write("".join(f"{k}={v}\n" for k, v in cm["params"].items()))
     open(os.path.join(W, "nproc"), "w").write(f"{a['kernels']}\n")
+    if a.get("shinshu"): open(os.path.join(W, "shinshu"), "w").write(f"{a['shinshu']}\n")   # read by the driver every minute
     with open(os.path.join(W, "plan.txt"), "w") as f:
         f.write(f"# prefix nt withWeights j [prec]   (Ten-Go allocation {a['id']} of {a['campaign']}: {len(a['pumps'])} pumps in the global order)\n")
         for pid in a["pumps"]:
@@ -196,21 +208,23 @@ def ours(W):
     return drv, fe
 
 
-def launch(a, quiet=False):
+def launch(a, quiet=False, shinshu=None):
     W = workdir(a)
     if not os.path.isdir(W): setup(a)
+    if shinshu: open(os.path.join(W, "shinshu"), "w").write(f"{ceiling(shinshu, a['kernels'])}\n")
     if ours(W)[0]: return quiet or print(f"ten-go: the driver of {a['id']} is already running")
     if os.path.exists(os.path.join(W, "STOP")): die(f"{W}/STOP exists (released or stopped by hand): remove it to run again")
     for f in glob.glob(os.path.join(W, "*.dat")):
         if os.path.getsize(f) < 1000: os.remove(f)   # the leftover of a killed job
     cmd = (["systemd-inhibit", "--what=sleep:idle", f"--why=Ten-Go {a['id']}"] if shutil.which("systemd-inhibit") else []) + ["python3", "run_window.py"]
     subprocess.Popen(cmd, cwd=W, stdin=subprocess.DEVNULL, stdout=open(os.path.join(W, "run.log"), "a"), stderr=subprocess.STDOUT, start_new_session=True)
-    print(f"ten-go: launched {a['id']} in {W} on {a['kernels']} kernels")
+    sh = open(os.path.join(W, "shinshu")).read().strip() if os.path.exists(os.path.join(W, "shinshu")) else ""
+    print(f"ten-go: launched {a['id']} in {W} on {a['kernels']} kernels" + (f", shinshu up to {upto(sh)}" if sh else ""))
 
 
 # ----------------------------------------------------------------------------------------------------------------------- commands
-def cmd_claim(c, hours, kernels=None, do_launch=False):
-    m = C["machine"]; kern = kernels or machine(m)["kernels"]; c = pick(c)
+def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None):
+    m = C["machine"]; kern = kernels or machine(m)["kernels"]; c = pick(c); sh = ceiling(shinshu, kern)
     def change():
         cm = campaign(c); A = allocs(c); now = time.time(); busy = held(A, now); S, K1 = cost(cm, A, m)
         budget = kern * max(hours * 3600 - max(S.values()), 0)   # kernel-seconds, the longest job kept back
@@ -220,15 +234,17 @@ def cmd_claim(c, hours, kernels=None, do_launch=False):
             if take and tot + K1[pid] > budget: break
             take.append(pid); tot += K1[pid]
         if not take: return None
-        aid = f"{m}-{time.strftime('%Y%m%d-%H%M%S')}"
+        aid = base = f"{m}-{time.strftime('%Y%m%d-%H%M%S')}"; k = 1
+        while os.path.exists(R("allocs", c, aid + ".json")): k += 1; aid = f"{base}-{k}"   # two claims in the same second
         a = dict(id=aid, campaign=c, machine=m, kernels=kern, hours=hours, created=int(now), deadline=int(now + 1.5 * hours * 3600 + 7200),
-                 cost_kernel_h=round(tot / 3600, 1), pumps=take, done=[], times={}, results=[], status="open", tengo=VERSION)
+                 cost_kernel_h=round(tot / 3600, 1), pumps=take, done=[], times={}, results=[], status="open", tengo=VERSION, shinshu=sh)
         save(R("allocs", c, aid + ".json"), a); return a
     a = transact(change, lambda a: f"claim {a['id']}: {len(a['pumps'])} pumps of {c}, {a['hours']:g} h on {a['kernels']} kernels")
     if a is None: return print(f"ten-go: nothing free in {c}")
     W = setup(a); P = {pid: Pv for pid, Pv, _ in campaign(c)["pumps"]}; xs = sorted(float(P[p]) for p in a["pumps"])
     print(f"ten-go: claimed {a['id']}: {len(a['pumps'])} pumps of {c} ({xs[0]:g}-{xs[-1]:g} g, spread in the global order), "
-          f"{a['cost_kernel_h']} kh for {hours:g} h on {kern} kernels; deadline {stamp(a['deadline'])}; work directory {W}")
+          f"{a['cost_kernel_h']} kh for {hours:g} h on {kern} kernels; deadline {stamp(a['deadline'])}; work directory {W}"
+          + (f"; shinshu up to {upto(sh)}" if sh else ""))
     if do_launch: launch(a)
     return a
 
@@ -305,7 +321,8 @@ def cmd_status(c=None):
                   + (f"holds {sum(len(a['pumps']) - len(a['done']) for a in op)}, {rest / 3600:.0f} kh, end about {stamp(now + rest / kern)}" if op else "holds nothing"))
         for a in sorted(A, key=lambda a: a["created"])[-12:]:
             late = a["status"] == "open" and now > a["deadline"]
-            print(f"    {a['id']:24s} {len(a['done']):4d}/{len(a['pumps']):<4d} {a['status']:9s} {a['hours']:g} h x {a['kernels']}, deadline {stamp(a['deadline'])}"
+            print(f"    {a['id']:24s} {len(a['done']):4d}/{len(a['pumps']):<4d} {a['status']:9s} {a['hours']:g} h x {a['kernels']}"
+                  + (f" (shinshu up to {upto(a['shinshu'])})" if a.get("shinshu") else "") + f", deadline {stamp(a['deadline'])}"
                   + ("  PASSED: its pumps not done are free again" if late else ""))
 
 
@@ -357,7 +374,7 @@ def tail_state(W):
     return wait, len(ours(W)[1])
 
 
-def cmd_watch(until, hours, c):
+def cmd_watch(until, hours, c, shinshu=None):
     """the unattended loop: claim and launch an allocation while time remains before `until`, push the pumps done every 30 min,
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail)"""
@@ -377,7 +394,7 @@ def cmd_watch(until, hours, c):
         fresh = [a for a, wait, run in tails if wait]           # an allocation still launching jobs
         if not fresh and end - now > 1800:
             busy = sum(run for _, _, run in tails); kern = machine(C["machine"])["kernels"]
-            a = cmd_claim(c, min(hours, (end - now) / 3600), kern)
+            a = cmd_claim(c, min(hours, (end - now) / 3600), kern, shinshu=shinshu)
             if a:
                 open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n"); launch(a)
         if fresh and len(op) > 1:                               # the newest allocation takes the kernels the tails free
@@ -422,7 +439,7 @@ def main():
     ap.add_argument("cmd"); ap.add_argument("arg", nargs="?"); ap.add_argument("more", nargs="*"); ap.add_argument("-c", "--campaign")
     ap.add_argument("--hours", type=float); ap.add_argument("--kernels", type=int); ap.add_argument("--go", action="store_true")
     ap.add_argument("--alloc"); ap.add_argument("--until"); ap.add_argument("--repo"); ap.add_argument("--work")
-    ap.add_argument("--machine"); ap.add_argument("--note", default="")
+    ap.add_argument("--machine"); ap.add_argument("--note", default=""); ap.add_argument("--shinshu", nargs="?", const="max")
     a = ap.parse_args()
     if a.cmd == "claim" and a.hours and a.until:
         h = hours_until(a.until)[0]; k = a.kernels
@@ -441,16 +458,16 @@ def main():
     elif a.cmd == "claim":
         if a.until: a.hours, t = hours_until(a.until); print(f"ten-go: until {a.until}, {stamp(t)}: {a.hours:g} h from now")
         if not a.hours: die("claim --hours H, or --until TAG")
-        cmd_claim(a.campaign, a.hours, a.kernels, a.go)
+        cmd_claim(a.campaign, a.hours, a.kernels, a.go, a.shinshu)
     elif a.cmd == "done": cmd_done(a.alloc)
     elif a.cmd == "release": cmd_release(a.alloc)
     elif a.cmd == "launch":
         sync(); op = [x for c in campaigns() for x in allocs(c) if x["machine"] == C["machine"] and x["status"] == "open" and (not a.alloc or x["id"] == a.alloc)]
-        for x in op: launch(x)
+        for x in op: launch(x, shinshu=a.shinshu)
         if not op: print("ten-go: no open allocation of this machine")
     elif a.cmd == "watch":
         if not a.until: die("watch --until TAG (an AF tag, or 'YYYY-MM-DD HH:MM')")
-        cmd_watch(a.until, a.hours or 10, a.campaign)
+        cmd_watch(a.until, a.hours or 10, a.campaign, a.shinshu)
     elif a.cmd == "fetch": cmd_fetch(a.campaign, a.arg or ".")
     elif a.cmd == "kh": cmd_kh(([a.arg] if a.arg else []) + a.more, a.machine, a.note)
     elif a.cmd == "mkcampaign":
