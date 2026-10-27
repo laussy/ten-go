@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.23 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.26 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -14,6 +14,7 @@ Repository (the clone is Ten-Go's alone: every command starts by resetting it to
   results/<c>/<id>-<n>.tgz   the .dat files of the pumps done, one archive per push
   ledger.tsv           the kernel-hours (kh) spent, per task: one line per allocation (brought up to date by --tassei) or per run log
                        imported (any run of run_window.py, in Ten-Go or not), or booked by hand
+  prio/<c>.json        the priorities of the pumps of campaign c, set in --kaizu: rules, the last that matches a pump deciding
 The command is `ten-go`, a link to this file on the PATH (ln -s CLONE/tengo.py ~/bin/ten-go).  Local: ~/.config/tengo.json {"machine", "repo", "work"} (written by `ten-go --kido`; env TENGO_CONF names another file).
 
 --until TAG, an AF tag (read back by ~/bin/AF, lw page [[AF]]) or 'YYYY-MM-DD HH:MM', ends a claim or a watch at that moment: --honkai
@@ -50,17 +51,25 @@ a refit) changes the orders of the pumps of a part that no allocation holds (ope
 the map of SPEC ({"name": campaign, "part": prefix, "orders": {"300e": "300e80", ...}}): to a higher precision, say, while it runs;
 the pumps held or done keep theirs.  --dry only says what would change.
 
+--kaizu [PORT] (海図, the sea chart) serves on this machine alone a page (http://127.0.0.1:1945/; kit/tengo_kaizu.py, kaizu.html) that
+draws the campaign as the pieces of a torrent, each pump as wide as its estimated time: done, held (this machine's jobs running filled
+as far as they have gone), free; in the order of the campaign or of g, with its parts, the priorities, the machines and the next claim
+each would make.  A drag over the pieces, or a part of the list, is given a priority, high, normal, low or skip (never claimed): a rule
+of prio/<c>.json, pushed like a claim.  A claim takes the free pumps high first, then normal, then low, each in the order of the
+campaign (--shugeki: the cheapest first); the watches take a change up at their next claim (what is claimed already runs on).
+
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
 
 Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | --honkai --jikan H|--until TAG [--sakusen C] [--ki N] [--go] [--shinshu [N]] [--shugeki]
        | --tassei [--alloc ID] | --uchikiri [--dry] [--alloc ID] | --chushi [MIN] [--now|--wait|--dry] [--alloc ID] | launch [--alloc ID] [--shinshu [N]] | watch [--until TAG] [--jikan 10] [--sakusen C] [--shinshu [N]] [--shugeki]
        | --shushu [DIR] [--sakusen C] (unpack every result into DIR) | --sensen NAME|SPEC.json (declare a campaign) | --zoen SPEC.json (add parts to one) | --kaiso SPEC.json [--dry] (refit a part)
+       | --kaizu [PORT] [--sakusen C] (the sea chart, a page on this machine)
        | kh [TASK] | kh import DIR [TASK] [--machine M] [--note TEXT] | kh add TASK KH [--machine M] [--note TEXT]"""
 import argparse, fcntl, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
 from contextlib import contextmanager
 from fractions import Fraction
-VERSION = "1.25"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits)
+VERSION = "1.26"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json)
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -229,6 +238,43 @@ def cost(cm, A, m):
     return S, {pid: sum(S[o] for o in orders) for pid, P, orders in cm["pumps"]}
 
 
+LEVELS = ("high", "normal", "low", "skip")   # the priorities set in --kaizu, in the order the claims take them (skip: never)
+
+
+def prio(c): f = R("prio", c + ".json"); return json.load(open(f))["rules"] if os.path.exists(f) else []
+
+
+def matcher(cm, r):   # does the rule r ({level, and part, g: [lo, hi] or pumps: [ids]}) hold for the pump p ([id, P, orders])
+    ids = set(r.get("pumps", [])); lo, hi = (Fraction(r["g"][0]), Fraction(r["g"][1])) if "g" in r else (None, None)
+    return lambda p: ("part" not in r or pre(cm, p[0]) == r["part"]) and ("pumps" not in r or p[0] in ids) and (lo is None or lo <= Fraction(p[1]) <= hi)
+
+
+def level(c, cm):
+    """the priority of a pump by the rules of prio/<c>.json, the last that matches deciding: p -> (level, index of the rule; normal,
+    None when none does)"""
+    M = [(r["level"], matcher(cm, r)) for r in prio(c)]
+    def f(p):
+        for k in range(len(M) - 1, -1, -1):
+            if M[k][1](p): return M[k][0], k
+        return "normal", None
+    return f
+
+
+def choose(c, cm, A, m, kern, hours, pumps, busy, shugeki=False):
+    """the pumps a claim of `hours` on `kern` kernels of machine m takes from `pumps`: those not busy, by their priority (high, normal,
+    low; skip never), within one priority in their order (shugeki: the cheapest first), until their cost fills the budget, the longest
+    job of the pumps taken kept back; returns them, their cost (kernel-seconds) and that longest job"""
+    S, K1 = cost(cm, A, m); lv = level(c, cm); L = {p[0]: LEVELS.index(lv(p)[0]) for p in pumps}
+    order = sorted(pumps, key=lambda x: K1[x[0]]) if shugeki else pumps   # shugeki: the cheapest first
+    take, tot, hold = [], 0.0, 0   # the budget in kernel-seconds, the longest job of the pumps taken kept back
+    for pid, P, orders in sorted((p for p in order if L[p[0]] < 3), key=lambda p: L[p[0]]):   # stable: the order within a priority kept
+        if pid in busy: continue
+        h = max(hold, *(S[o] for o in orders))
+        if take and tot + K1[pid] > kern * max(hours * 3600 - h, 0): break
+        take.append(pid); tot += K1[pid]; hold = h
+    return take, tot, hold
+
+
 # ----------------------------------------------------------------------------------------------------------------- the work directory
 def setup(a):
     cm = campaign(a["campaign"]); W = workdir(a); os.makedirs(W, exist_ok=True)
@@ -291,13 +337,7 @@ def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=Fal
     def change():
         cm = campaign(c); A = allocs(c); now = time.time(); busy = held(A, now); pumps, grew = cm["pumps"], None
         if any(q["kind"] == "adaptive" for q in parts(cm)): pumps, grew = grown(c, cm, A, busy, kern)   # the rule, now: new pumps appended
-        S, K1 = cost(cm, A, m)
-        take, tot, hold = [], 0.0, 0   # the budget in kernel-seconds, the longest job of the pumps taken kept back
-        for pid, P, orders in (sorted(pumps, key=lambda x: K1[x[0]]) if shugeki else pumps):   # shugeki: the cheapest first
-            if pid in busy: continue
-            h = max(hold, *(S[o] for o in orders))
-            if take and tot + K1[pid] > kern * max(hours * 3600 - h, 0): break
-            take.append(pid); tot += K1[pid]; hold = h
+        take, tot, hold = choose(c, cm, A, m, kern, hours, pumps, busy, shugeki)
         if not take: return None
         aid = base = f"{m}-{time.strftime('%Y%m%d-%H%M%S')}"; k = 1
         while os.path.exists(R("allocs", c, aid + ".json")): k += 1; aid = f"{base}-{k}"   # two claims in the same second
@@ -308,7 +348,7 @@ def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=Fal
     a = transact(change, lambda a: f"honkai {a['id']}: {len(a['pumps'])} pumps of {c}, {a['hours']:g} h on {a['kernels']} kernels")
     if a is None: return None if quiet else print(f"ten-go: nothing free in {c}")
     W = setup(a); P = {pid: Pv for pid, Pv, _ in campaign(c)["pumps"]}; xs = sorted(float(Fraction(P[p])) for p in a["pumps"])
-    print(f"ten-go: claimed {a['id']}: {len(a['pumps'])} pumps of {c} ({xs[0]:g}-{xs[-1]:g} g, {f"{a['grown']} new by the rule, {a['open']} intervals to split now" if "grown" in a else 'the cheapest first, a sortie' if shugeki else 'spread in the global order'}), "
+    print(f"ten-go: claimed {a['id']}: {len(a['pumps'])} pumps of {c} ({xs[0]:g}-{xs[-1]:g} g, {f"{a['grown']} new by the rule, {a['open']} intervals to split now" if "grown" in a else 'the cheapest first, a sortie' if shugeki else 'by the priorities of the kaizu' if prio(c) else 'spread in the global order'}), "
           f"{a['cost_kernel_h']} kh for {hours:g} h on {kern} kernels; deadline {stamp(a['deadline'])}; work directory {W}"
           + (f"; shinshu up to {upto(sh)}" if sh else ""))
     if do_launch: launch(a)
@@ -432,6 +472,9 @@ def cmd_status(c=None):
         left = sum(K1[p] for p, _, _ in cm["pumps"] if p not in done) / 3600; b = int(40 * len(done) / N)
         print(f"{c}: [{'#' * b}{'.' * (40 - b)}] {len(done)}/{N} pumps done, {len(hold)} held, {N - len(done) - len(hold)} free; "
               f"{left:.0f} kh left at the reference speed; {sum(float(e['kh']) for e in ledger() if e['task'] == c):.1f} kh spent")
+        if prio(c):
+            lv = level(c, cm); out = held(A, now); n = {L: sum(lv(p)[0] == L for p in cm["pumps"] if p[0] not in out) for L in LEVELS}
+            print(f"  priorities (--kaizu, prio/{c}.json): {len(prio(c))} rules; of the free pumps {n['high']} high, {n['normal']} normal, {n['low']} low, {n['skip']} skipped")
         for m in sorted({a["machine"] for a in A}):
             if m == "seed": print(f"  seed: {sum(len(a['done']) for a in A if a['machine'] == m)} pumps from the runs before Ten-Go"); continue
             op = [a for a in A if a["machine"] == m and a["status"] == "open"]
@@ -538,7 +581,9 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False):
                     open(os.path.join(workdir(a), "nproc"), "w").write(f"{max(kern - busy, 1)}\n"); launch(a)
                 elif not until and not op:
                     held_by = sorted({x["machine"] for x in allocs(c) if x["status"] == "open"})
-                    if not held_by: cmd_done(); print(f"{time.strftime('%H:%M:%S')} {c} is complete: nothing free, no allocation open; watch ends", flush=True); return
+                    if not held_by:
+                        cm = campaign(c); lv = level(c, cm); out = held(allocs(c), now); sk = sum(lv(p)[0] == "skip" for p in cm["pumps"] if p[0] not in out)
+                        cmd_done(); print(f"{time.strftime('%H:%M:%S')} {c} is complete: nothing free" + (f" but the {sk} pumps skipped (--kaizu)" if sk else "") + ", no allocation open; watch ends", flush=True); return
                     if now - said > 1800: said = now; print(f"{time.strftime('%H:%M:%S')} nothing free in {c} for now, waiting on {', '.join(held_by)}", flush=True)
             if fresh and len(op) > 1:                               # the newest allocation takes the kernels the tails free
                 busy = sum(run for a, wait, run in tails if not wait); kern = machine(C["machine"])["kernels"]
@@ -800,6 +845,7 @@ def main():
     ap.add_argument("--kido", metavar="MACHINE"); ap.add_argument("--senkyo", action="store_true"); ap.add_argument("--tassei", action="store_true")
     ap.add_argument("--shushu", nargs="?", const=".", metavar="DIR"); ap.add_argument("--shugeki", action="store_true")
     ap.add_argument("--sensen", metavar="NAME"); ap.add_argument("--zoen", metavar="SPEC"); ap.add_argument("--kaiso", metavar="SPEC")
+    ap.add_argument("--kaizu", nargs="?", const=1945, type=int, metavar="PORT")
     OLD = {"--kernels": "--ki N, the kernels of the allocation", "-c": "--sakusen C, the campaign", "--campaign": "--sakusen C, the campaign",
            "--hours": "--jikan H, the hours", "claim": "--honkai", "release": "--chushi, or --uchikiri", "init": "--kido MACHINE --repo CLONE --work DIR",
            "status": "--senkyo", "done": "--tassei", "fetch": "--shushu [DIR]", "mkcampaign": "--sensen NAME"}
@@ -814,7 +860,7 @@ def main():
             except (OSError, KeyError, ValueError): pass
         return print(restated(h) + (f"   # {h:g} h x {k} kernels = {h * k:.1f} kh" if k else ""))
     if a.cmd in ("-v", "version"): return print(f"ten-go {VERSION}")
-    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None), ("--sensen", a.sensen is not None), ("--zoen", a.zoen is not None), ("--kaiso", a.kaiso is not None)) if on]
+    opts = [o for o, on in (("--honkai", a.honkai), ("--uchikiri", a.uchikiri), ("--chushi", a.chushi is not None), ("--kido", a.kido is not None), ("--senkyo", a.senkyo), ("--tassei", a.tassei), ("--shushu", a.shushu is not None), ("--sensen", a.sensen is not None), ("--zoen", a.zoen is not None), ("--kaiso", a.kaiso is not None), ("--kaizu", a.kaizu is not None)) if on]
     if len(opts) > 1: die(f"{' and '.join(opts)}: one at a time")
     if opts and a.cmd: die(f"{opts[0]} stands alone, without a command ({a.cmd})")
     if a.now and a.wait: die("--now or --wait, not both")
@@ -848,6 +894,11 @@ def main():
         r = transact(refit(a.kaiso, a.dry), lambda o: f"kaiso {o[0]}: {o[2]} pumps of {o[1]} refitted ({', '.join(f'{x} -> {y}' for x, y in o[4].items())})")
         if r: print(f"ten-go: {r[0]}: {r[2]} pumps of {r[1]} refitted ({', '.join(f'{x} -> {y}' for x, y in r[4].items())}), {r[3]} held or done keep their orders; the watches take them up at their next claim")
         elif not a.dry: print(f"ten-go: --kaiso: nothing to change")
+    elif a.kaizu is not None:
+        sys.path[:0] = [R("kit"), os.path.dirname(os.path.realpath(__file__))]   # the pool's kit first
+        try: import tengo_kaizu
+        except ImportError: die("--kaizu needs kit/tengo_kaizu.py and kit/kaizu.html in the pool")
+        tengo_kaizu.serve(sys.modules[__name__], a.kaizu, a.campaign and pick(a.campaign))
     elif a.sensen is not None:
         if a.sensen.endswith(".json"): cm, seed = declare(a.sensen)
         elif a.sensen in CAMPAIGNS: cm, seed = dict(CAMPAIGNS[a.sensen](), name=a.sensen), None
