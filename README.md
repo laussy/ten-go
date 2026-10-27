@@ -44,14 +44,22 @@ answers ahead (needed without a terminal), `--dry` only asks. Outside Ten-Go: `p
 `--shugeki` (with `--honkai` or `watch`) is a sortie, for a machine that may be stopped any moment: the cheapest pumps first, run
 whole one after the other, so that an uchikiri ends within a job or two and a chushi wastes little.
 
+A campaign is declared once, by `ten-go --sensen SPEC.json`: a **grid** (lattices, orders by range of P, ranges left out, and the runs
+already computed, whose pumps are left out, read from each file's header) or an **adaptive** campaign (the rule of the adaptive
+driver, `kit/tengo_adaptive.py`, applied at each claim to the results in the pool, so that its pumps grow as the results come; it
+starts from the runs it names, whose files enter the pool as the results of an allocation `seed`). Short claims suit an adaptive
+campaign, refined only when a claim is made.
+
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 
 ## Layout
 
-- `campaigns/<c>.json`: parameters, file prefix, reference seconds per order, pumps `[id, P, orders]` in the global order
+- `campaigns/<c>.json`: parameters, file prefix, reference seconds per order, pumps `[id, P, orders]` in the global order (an
+  adaptive campaign: its rule too, and pumps that grow at each claim)
 - `machines/<m>.json`: kernels and speed factor (the costs are then refined from the measured jobs)
 - `allocs/<c>/<id>.json`: one allocation (machine, budget, deadline, pumps, done, job times, results, status)
 - `ledger.tsv`: the kernel-hours spent, one line per allocation (kept up to date by `--tassei`), per run log imported, or booked by
   hand. A kh is one kernel for one hour: the jobs' own times summed, a failed job's included.
 - `results/<c>/<id>-<n>.tgz`: the `.dat` files of the pumps done, one archive per push
-- `kit/`: `hp3.wls` and `run_window.py`, copied into each allocation's work directory
+- `kit/`: `hp3.wls` and `run_window.py`, copied into each allocation's work directory; `tengo_adaptive.py`, the rule of the adaptive
+  campaigns (needs numpy and scipy)
