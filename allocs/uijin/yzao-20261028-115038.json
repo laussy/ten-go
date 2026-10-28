@@ -47,11 +47,23 @@
   30001378,
   30000866
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  30000066
+ ],
+ "times": {
+  "200e80": [
+   602
+  ],
+  "150w80": [
+   882
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261028-115038-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.28",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1793185827
 }
