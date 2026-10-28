@@ -47,15 +47,15 @@ answers ahead (needed without a terminal), `--dry` only asks. Outside Ten-Go: `p
 `--shugeki` (with `--honkai` or `watch`) is a sortie, for a machine that may be stopped any moment: the cheapest pumps first, run
 whole one after the other, so that an uchikiri ends within a job or two and a chushi wastes little.
 
-`--kaizu` (海図, the sea chart) serves on this machine alone (http://127.0.0.1:1945/, or `--kaizu PORT`) a page that draws the
-campaign as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on azag, done (in its machine's
-colour), held (the block a machine runs: azag's reddish, yzao's purplish; this machine's jobs running filled as far as they have
-gone), free, or past its allocation's deadline; in the order of the campaign or of g, with the parts, the machines (allocations, end,
-watch) and the next claim each would make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces, or a part in
-the list, is given a priority, **high**, **normal**, **low** or **skip** (never claimed): a rule of `prio/<c>.json`, pushed like a
-claim, the last rule that matches a pump deciding. A claim takes the free pumps high first, then normal, then low, each in the order
-of the campaign (`--shugeki`: the cheapest first); the watches take a change up at their next claim, and what is claimed already runs
-on. Any machine with a clone can run its own.
+`--kaizu` (海図, the sea chart) serves on this machine alone (http://127.0.0.1:1945/, or `--kaizu PORT`) a page that draws the campaign
+as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on azag, done (in its machine's colour), held
+(paler; what this machine is computing in a sharp shade of its colour, as far as it has gone), free, or past its allocation's
+deadline; in the order of the campaign or of g, with the parts, the machines (allocations, end, watch) and the next claim each would
+make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces, or a part in the list, is given a priority, **high**,
+**normal**, **low** or **skip** (never claimed): a rule of `prio/<c>.json`, pushed like a claim, the last rule that matches a pump
+deciding. A claim takes the free pumps high first, then normal, then low, each in the order of the campaign (`--shugeki`: the cheapest
+first); the watches take a change up at their next claim, and what is claimed already runs on. Any machine with a clone can run its
+own.
 
 A campaign is declared once, by `ten-go --sensen SPEC.json`: a **grid** (lattices, orders by range of P, ranges left out, and the runs
 already computed, whose pumps are left out, read from each file's header) or an **adaptive** campaign (the rule of the adaptive

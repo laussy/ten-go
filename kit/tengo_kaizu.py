@@ -1,13 +1,13 @@
 """Ten-Go's sea chart (海図, kaizu): `ten-go --kaizu [PORT]` serves on this machine alone (http://127.0.0.1:1945/) the page kaizu.html,
 which draws a campaign as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on the reference machine,
-done (in the colour of the machine), held by an allocation, the block its machine runs (azag's reddish, yzao's purplish; the pumps of
-this machine's jobs running filled as far as they have gone), free, or past the deadline of its allocation; in the order of the
-campaign (its parts in their order, each in the global order) or in the order of g.  A drag over the map, or a part of the list, is
-given a priority, high, normal, low or skip (never claimed): a rule of prio/<c>.json in the pool, the last rule that matches a pump
-deciding, pushed like a claim; the next claim of each machine is drawn as the claim would take it (an adaptive part's new pumps aside:
-the rule makes them only at the claim).  The dates have their Anno Fabri tags (~/bin/AF; none where it is not), the page Ten-Go's
-logo (lw [[Ten-Go]], File:Ten-go-logo-0PQTC.png, here at 200 px).  The clone is fetched every minute; a watch of the machine fetches
-it too, and the two share the clone's lock."""
+done (in the colour of the machine), held by an allocation (paler; what this machine is computing in a sharp shade of its colour, as
+far as it has gone), free, or past the deadline of its allocation; in the order of the campaign (its parts in their order, each in the
+global order) or in the order of g.  A drag over the map, or a part of the list, is given a priority, high, normal, low or skip (never
+claimed): a rule of prio/<c>.json in the pool, the last rule that matches a pump deciding, pushed like a claim; the next claim of each
+machine is drawn as the claim would take it (an adaptive part's new pumps aside: the rule makes them only at the claim).  The dates
+have their Anno Fabri tags (~/bin/AF; none where it is not), the page Ten-Go's logo (lw [[Ten-Go]], File:Ten-go-logo-0PQTC.png, small,
+at 200 px under the pointer).  The clone is fetched every minute; a watch of the machine fetches it too, and the two share the clone's
+lock."""
 import functools, http.server, json, os, re, secrets, shutil, subprocess, threading, time, urllib.parse
 from fractions import Fraction
 
