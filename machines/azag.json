@@ -1,5 +1,5 @@
 {
- "kernels": 26,
+ "kernels": 28,
  "factor": 1.0,
- "about": "the reference machine (i9-14900HX laptop, 32 threads); the reference seconds of the campaigns are its job times on 30 kernels at home; 32 kernels from 27 Oct (Fabrice: 'push kerns to max, 32'), 26 from 27 Oct 20:00 (Fabrice: 'bring procs to 26')"
+ "about": "the reference machine (i9-14900HX laptop, 32 threads); the reference seconds of the campaigns are its job times on 30 kernels at home; 32 kernels from 27 Oct (Fabrice: 'push kerns to max, 32'), 26 from 27 Oct 20:00 (Fabrice: 'bring procs to 26'), 28 from 28 Oct 06:30 (Fabrice: 'go to 28 only')"
 }
