@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.26 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.27 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order until their cost on this machine fills the ten hours, the
 longest job kept back so that the last jobs launched still end in time (a single pump if the budget is very small).  The claim is a
@@ -52,11 +52,12 @@ the map of SPEC ({"name": campaign, "part": prefix, "orders": {"300e": "300e80",
 the pumps held or done keep theirs.  --dry only says what would change.
 
 --kaizu [PORT] (海図, the sea chart) serves on this machine alone a page (http://127.0.0.1:1945/; kit/tengo_kaizu.py, kaizu.html) that
-draws the campaign as the pieces of a torrent, each pump as wide as its estimated time: done, held (this machine's jobs running filled
-as far as they have gone), free; in the order of the campaign or of g, with its parts, the priorities, the machines and the next claim
-each would make.  A drag over the pieces, or a part of the list, is given a priority, high, normal, low or skip (never claimed): a rule
-of prio/<c>.json, pushed like a claim.  A claim takes the free pumps high first, then normal, then low, each in the order of the
-campaign (--shugeki: the cheapest first); the watches take a change up at their next claim (what is claimed already runs on).
+draws the campaign as the pieces of a torrent, each pump as wide as its estimated time: done, held (the block a machine runs, azag's
+reddish, yzao's purplish; this machine's jobs running filled as far as they have gone), free; in the order of the campaign or of g,
+with its parts, the priorities, the machines and the next claim each would make, the dates with their AF tags (~/bin/AF).  A drag
+over the pieces, or a part of the list, is given a priority, high, normal, low or skip (never claimed): a rule of prio/<c>.json,
+pushed like a claim.  A claim takes the free pumps high first, then normal, then low, each in the order of the campaign (--shugeki:
+the cheapest first); the watches take a change up at their next claim (what is claimed already runs on).
 
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
@@ -69,7 +70,7 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
 import argparse, fcntl, glob, json, os, random, re, shlex, shutil, subprocess, sys, tarfile, time
 from contextlib import contextmanager
 from fractions import Fraction
-VERSION = "1.26"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json)
+VERSION = "1.27"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 

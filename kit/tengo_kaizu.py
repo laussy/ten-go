@@ -1,16 +1,26 @@
 """Ten-Go's sea chart (海図, kaizu): `ten-go --kaizu [PORT]` serves on this machine alone (http://127.0.0.1:1945/) the page kaizu.html,
 which draws a campaign as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on the reference machine,
-done (in the colour of the machine), held by an allocation (paler; the pumps of this machine's jobs running filled as far as they have
-gone), free, or past the deadline of its allocation; in the order of the campaign (its parts in their order, each in the global order)
-or in the order of g.  A drag over the map, or a part of the list, is given a priority, high, normal, low or skip (never claimed): a rule
-of prio/<c>.json in the pool, the last rule that matches a pump deciding, pushed like a claim; the next claim of each machine is drawn as
-the claim would take it (an adaptive part's new pumps aside: the rule makes them only at the claim).  The clone is fetched every
-minute; a watch of the machine fetches it too, and the two share the clone's lock."""
-import http.server, json, os, re, secrets, threading, time, urllib.parse
+done (in the colour of the machine), held by an allocation, the block its machine runs (azag's reddish, yzao's purplish; the pumps of
+this machine's jobs running filled as far as they have gone), free, or past the deadline of its allocation; in the order of the
+campaign (its parts in their order, each in the global order) or in the order of g.  A drag over the map, or a part of the list, is
+given a priority, high, normal, low or skip (never claimed): a rule of prio/<c>.json in the pool, the last rule that matches a pump
+deciding, pushed like a claim; the next claim of each machine is drawn as the claim would take it (an adaptive part's new pumps aside:
+the rule makes them only at the claim).  The dates have their Anno Fabri tags (~/bin/AF; none where it is not), the page Ten-Go's
+logo (lw [[Ten-Go]], File:Ten-go-logo-0PQTC.png, here at 200 px).  The clone is fetched every minute; a watch of the machine fetches
+it too, and the two share the clone's lock."""
+import functools, http.server, json, os, re, secrets, shutil, subprocess, threading, time, urllib.parse
 from fractions import Fraction
 
 LOCK = threading.Lock()   # one thread at a time in tengo: its lock of the clone is re-entrant within a process, not between threads
 LAST = dict(fetched=0.0, lost=None)
+AFX = shutil.which("AF") or shutil.which("af") or os.path.expanduser("~/bin/AF")
+
+
+@functools.lru_cache(maxsize=4096)
+def af(t):   # the Anno Fabri tag of the moment t (an epoch), or None: no AF on this machine, or a moment before Anno Fabri
+    try: out = subprocess.run([AFX, f"@{t}"], capture_output=True, text=True, timeout=10).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired): return None
+    return out if re.fullmatch(r"[0-9A-Za-z]{5,6}", out) else None
 
 
 def running(W):
@@ -128,6 +138,7 @@ def change_prio(T, c, op):
 def serve(T, port, c=None):
     here = os.path.dirname(os.path.abspath(__file__)); token = secrets.token_hex(16)
     page = open(os.path.join(here, "kaizu.html")).read().replace("%%TOKEN%%", token)
+    logo = os.path.join(here, "ten-go-logo-0PQTC-200px.png"); logo = open(logo, "rb").read() if os.path.exists(logo) else None
     hosts = {f"127.0.0.1:{port}", f"localhost:{port}"}   # another name would be a page of elsewhere reaching this one (DNS rebinding)
     def fetch():
         with LOCK:
@@ -141,13 +152,16 @@ def serve(T, port, c=None):
     class H(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a): pass
         def send(self, code, body, kind="application/json"):
-            b = body.encode() if isinstance(body, str) else json.dumps(body).encode()
-            self.send_response(code); self.send_header("Content-Type", kind + "; charset=utf-8"); self.send_header("Content-Length", str(len(b)))
+            b = body if isinstance(body, bytes) else body.encode() if isinstance(body, str) else json.dumps(body).encode()
+            self.send_response(code); self.send_header("Content-Type", kind if isinstance(body, bytes) else kind + "; charset=utf-8"); self.send_header("Content-Length", str(len(b)))
             self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(b)
         def do_GET(self):
             if self.headers.get("Host") not in hosts: return self.send(403, {"error": "this page is served to 127.0.0.1 alone"})
             u = urllib.parse.urlparse(self.path); q = urllib.parse.parse_qs(u.query)
             if u.path == "/": return self.send(200, page, "text/html")
+            if u.path == "/logo.png" and logo: return self.send(200, logo, "image/png")
+            if u.path == "/af":   # the tags of the moments asked (?t=EPOCH,EPOCH...): {epoch: tag or null}
+                return self.send(200, {t: af(int(t)) for t in q.get("t", [""])[0].split(",")[:200] if t.isdigit()})
             if u.path == "/state":
                 with LOCK:
                     try: cc = q.get("c", [c])[0]; return self.send(200, state(T, cc if cc in T.campaigns() else c, float(q.get("h", ["2"])[0])))

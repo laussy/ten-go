@@ -49,12 +49,13 @@ whole one after the other, so that an uchikiri ends within a job or two and a ch
 
 `--kaizu` (海図, the sea chart) serves on this machine alone (http://127.0.0.1:1945/, or `--kaizu PORT`) a page that draws the
 campaign as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on azag, done (in its machine's
-colour), held (paler; this machine's jobs running filled as far as they have gone), free, or past its allocation's deadline; in the
-order of the campaign or of g, with the parts, the machines (allocations, end, watch) and the next claim each would make. A drag over
-the pieces, or a part in the list, is given a priority, **high**, **normal**, **low** or **skip** (never claimed): a rule of
-`prio/<c>.json`, pushed like a claim, the last rule that matches a pump deciding. A claim takes the free pumps high first, then
-normal, then low, each in the order of the campaign (`--shugeki`: the cheapest first); the watches take a change up at their next
-claim, and what is claimed already runs on. Any machine with a clone can run its own.
+colour), held (the block a machine runs: azag's reddish, yzao's purplish; this machine's jobs running filled as far as they have
+gone), free, or past its allocation's deadline; in the order of the campaign or of g, with the parts, the machines (allocations, end,
+watch) and the next claim each would make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces, or a part in
+the list, is given a priority, **high**, **normal**, **low** or **skip** (never claimed): a rule of `prio/<c>.json`, pushed like a
+claim, the last rule that matches a pump deciding. A claim takes the free pumps high first, then normal, then low, each in the order
+of the campaign (`--shugeki`: the cheapest first); the watches take a change up at their next claim, and what is claimed already runs
+on. Any machine with a clone can run its own.
 
 A campaign is declared once, by `ten-go --sensen SPEC.json`: a **grid** (lattices, orders by range of P, ranges left out, and the runs
 already computed, whose pumps are left out, read from each file's header) or an **adaptive** campaign (the rule of the adaptive
@@ -82,4 +83,5 @@ The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 - `results/<c>/<id>-<n>.tgz`: the `.dat` files of the pumps done, one archive per push
 - `prio/<c>.json`: the priorities set in `--kaizu`, rules (a part, a span of g, or pumps picked; a level), the last that matches deciding
 - `kit/`: `hp3.wls` and `run_window.py`, copied into each allocation's work directory; `tengo_adaptive.py`, the rule of the adaptive
-  campaigns (needs numpy and scipy); `tengo_kaizu.py` and `kaizu.html`, the sea chart
+  campaigns (needs numpy and scipy); `tengo_kaizu.py` and `kaizu.html`, the sea chart, with
+  `ten-go-logo-0PQTC-200px.png`, the logo (Ten-go-logo-0PQTC.png) at 200 px
