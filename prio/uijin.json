@@ -1,0 +1,24 @@
+{
+ "campaign": "uijin",
+ "rules": [
+  {
+   "level": "high",
+   "pumps": [
+    30001939,
+    30001940,
+    30001941,
+    30001942,
+    30001943,
+    30001944,
+    30001945,
+    30001946,
+    30001947,
+    30001949,
+    30001951
+   ],
+   "t": 1793251179,
+   "by": "azag"
+  }
+ ],
+ "about": "the priorities set by ten-go --kaizu: the last rule that matches a pump decides (none: normal)"
+}
