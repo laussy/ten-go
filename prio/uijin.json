@@ -87,6 +87,15 @@
    ],
    "t": 1793259006,
    "by": "azag"
+  },
+  {
+   "level": "high",
+   "g": [
+    "12.006",
+    "12.258"
+   ],
+   "t": 1793259030,
+   "by": "azag"
   }
  ],
  "about": "the priorities set by ten-go --kaizu: the last rule that matches a pump decides (none: normal)"
