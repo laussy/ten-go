@@ -52,6 +52,14 @@
    "part": "hpTb",
    "t": 1793254064,
    "by": "azag"
+  },
+  {
+   "level": "high",
+   "pumps": [
+    100000076
+   ],
+   "t": 1793254135,
+   "by": "azag"
   }
  ],
  "about": "the priorities set by ten-go --kaizu: the last rule that matches a pump decides (none: normal)"
