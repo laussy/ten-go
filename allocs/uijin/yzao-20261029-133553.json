@@ -9,12 +9,7 @@
  "cost_kernel_h": 7.1,
  "pumps": [
   30001457,
-  30000945,
-  30000113,
-  30001137,
-  30000625,
-  30001649,
-  30000369
+  30000945
  ],
  "done": [],
  "times": {},
@@ -22,5 +17,6 @@
  "status": "open",
  "tengo": "1.32",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "uchikiri": 1793279218
 }
