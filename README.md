@@ -19,6 +19,8 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go --honkai --jikan 10 --until TAG ...    # only prints the same command, its --jikan set to the hours until TAG
     ten-go --tassei                               # push the pumps finished (results/*.tgz) and the job times
     ten-go --uchikiri [--dry]                     # end as soon as possible WITHOUT LOSS; says when
+    ten-go --gensoku N [--jikan H]                # this machine down to N kernels, until --zensoku (or for H hours)
+    ten-go --zensoku [H]                          # all its kernels back, one at a time over H hours (1; 0: at once)
     ten-go --chushi [MIN] [--now|--wait|--dry]    # stop NOW (the only stop), but first offer to wait for jobs within MIN (10) min
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
     ten-go watch [--until TAG] [--jikan 10]       # unattended (without --until: until the campaign is complete): claim, launch, push every 30 min, restart
@@ -34,6 +36,13 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
 back when other work wants them: the driver looks every minute, adds a kernel after 10 minutes of free threads, comes back toward
 the allocation's kernels after 2 minutes of other activity, and runs the shortest jobs waiting on the kernels above them, so that
 the retreat is quick (no job is killed). Outside Ten-Go, a file `shinshu` (a number, or `max`) in a run's directory does the same.
+
+`--gensoku N` (減速) lowers this machine to N kernels for Ten-Go, its allocations together, from now until `--zensoku` (with
+`--jikan H`, for H hours): a job that ends is not replaced while N or more run (none is killed), the claims are made for N kernels,
+and no idle thread is borrowed. `--zensoku [H]` (全速) gives the kernels back one at a time over H hours (1; 0: at once), as the end
+of a `--gensoku --jikan` does over an hour. It is the machine's own (`gensoku.json` in its work directory, no commit), kept by its
+watch and said by `--senkyo` and its kaizu; when it is set, it says when the open allocations will end, and which would miss their
+deadline. The watch otherwise keeps every kernel of `machines/<m>.json` busy: an `nproc` lowered by hand is undone within a minute.
 
 `--uchikiri` ends the allocations of the machine without loss: each driver launches no new pump and completes those started (a job
 done or in flight), and says when it will end and what a STOP or a kill would waste instead; the pumps not started go back to the
@@ -51,11 +60,19 @@ whole one after the other, so that an uchikiri ends within a job or two and a ch
 as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on azag, done (in its machine's colour), held
 (paler; what this machine is computing in a sharp shade of its colour, as far as it has gone), free, or past its allocation's
 deadline; in the order of the campaign or of g, with the parts, the machines (allocations, end, watch) and the next claim each would
-make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces, or a part in the list, is given a priority, **high**,
-**normal**, **low** or **skip** (never claimed): a rule of `prio/<c>.json`, pushed like a claim, the last rule that matches a pump
-deciding. A claim takes the free pumps high first, then normal, then low, each in the order of the campaign (`--shugeki`: the cheapest
-first); the watches take a change up at their next claim, and what is claimed already runs on. Any machine with a clone can run its
-own.
+make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces, the pieces picked by a click (hpT #1951, #1949,
+#1947...), or a part in the list, is given a priority, **now**, **high**, **normal**, **low** or **skip** (never claimed): a rule of
+`prio/<c>.json`, pushed like a claim, the last rule that matches a pump deciding. The pieces picked can also be named, a
+**sub-campaign** of the campaign, listed under the parts, whose priority is raised or lowered there. A claim takes the free pumps now
+first, then high, normal, low, each in the order of the campaign (`--shugeki`: the cheapest first). The watches take normal, low and
+skip up at their next claim, and what is claimed already runs on; **now** and **high** they take at once: a watch claims the pumps of
+that level alone, and its allocations still launching pumps of a lower level end without loss (an uchikiri: the pumps started
+complete, the others go back to the pool). The pumps of high then take the kernels as that uchikiri frees them; those of now take them
+at once, the jobs of the other allocations being paused (SIGSTOP: the kernel waits in memory where it stands, nothing is lost; as many
+as the memory holds) and resumed, the nearest to completion first, as the kernels come back, their paused time left out of the job
+times; their deadlines are pushed back by the span of the claim of now. An uchikiri or a chushi by hand resumes the paused jobs first.
+A kaizu already on the port is stopped first (it ends the push it may be in), and the pages open on it reload into the new one. Any
+machine with a clone can run its own.
 
 A campaign is declared once, by `ten-go --sensen SPEC.json`: a **grid** (lattices, orders by range of P, ranges left out, and the runs
 already computed, whose pumps are left out, read from each file's header) or an **adaptive** campaign (the rule of the adaptive
@@ -81,7 +98,8 @@ The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 - `ledger.tsv`: the kernel-hours spent, one line per allocation (kept up to date by `--tassei`), per run log imported, or booked by
   hand. A kh is one kernel for one hour: the jobs' own times summed, a failed job's included.
 - `results/<c>/<id>-<n>.tgz`: the `.dat` files of the pumps done, one archive per push
-- `prio/<c>.json`: the priorities set in `--kaizu`, rules (a part, a span of g, or pumps picked; a level), the last that matches deciding
+- `prio/<c>.json`: the priorities set in `--kaizu`, rules (a part, a span of g, or pumps picked, these maybe named: a sub-campaign; a
+  level), the last that matches deciding
 - `kit/`: `hp3.wls` and `run_window.py`, copied into each allocation's work directory; `tengo_adaptive.py`, the rule of the adaptive
   campaigns (needs numpy and scipy); `tengo_kaizu.py` and `kaizu.html`, the sea chart, with
   `ten-go-logo-0PQTC-200px.png`, the logo (Ten-go-logo-0PQTC.png) at 200 px

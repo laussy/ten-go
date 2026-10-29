@@ -10,19 +10,19 @@
 :root {   /* --calc-<machine>: what a machine is computing, a sharp shade of its colour (a machine without one: its colour); --held: the opacity of what it holds */
   --bg: #f7f6f2; --card: #ffffff; --fg: #1c232b; --muted: #66707c; --line: #e2dfd6; --free: #d5d8dc; --late: #d98a1c;
   --hi: #d1495b; --lo: #6f86a0; --skip: #9aa1a9; --sel: rgba(255, 190, 0, .38); --tick: #c0392b; --ok: #2e7d4f; --err: #b3261e;
-  --calc-azag: #0091ea; --calc-yzao: #00c853; --held: .33;
+  --calc-azag: #0091ea; --calc-yzao: #00c853; --held: .33; --now: #a4167a;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #14171b; --card: #1b1f25; --fg: #e4e7ea; --muted: #98a2ad; --line: #2b3038; --free: #3b414a; --late: #e6a23c;
     --hi: #ef6f7f; --lo: #8fa6c0; --skip: #6c737b; --sel: rgba(255, 200, 40, .30); --tick: #ff7b6b; --ok: #5cc28a; --err: #ff8a80;
-    --calc-azag: #4fb3ff; --calc-yzao: #3ddc84; --held: .45;
+    --calc-azag: #4fb3ff; --calc-yzao: #3ddc84; --held: .45; --now: #f06bc8;
   }
 }
 :root[data-theme="dark"] {
   --bg: #14171b; --card: #1b1f25; --fg: #e4e7ea; --muted: #98a2ad; --line: #2b3038; --free: #3b414a; --late: #e6a23c;
   --hi: #ef6f7f; --lo: #8fa6c0; --skip: #6c737b; --sel: rgba(255, 200, 40, .30); --tick: #ff7b6b; --ok: #5cc28a; --err: #ff8a80;
-  --calc-azag: #4fb3ff; --calc-yzao: #3ddc84; --held: .45;
+  --calc-azag: #4fb3ff; --calc-yzao: #3ddc84; --held: .45; --now: #f06bc8;
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
@@ -58,9 +58,19 @@ canvas { display: block; touch-action: none; cursor: crosshair; }
   padding: 7px 10px; font-size: 12.5px; box-shadow: 0 4px 14px rgba(0,0,0,.15); max-width: 340px; display: none; z-index: 2; white-space: nowrap; }
 #selbar { margin-top: 10px; padding: 8px 10px; border: 1px dashed var(--muted); border-radius: 8px; display: none; }
 .lv { border-radius: 999px; padding: 1px 9px; font-size: 12.5px; border: 1px solid var(--line); }
+.lv.now { color: var(--now); border-color: var(--now); font-weight: 650; }
 .lv.high { color: var(--hi); border-color: var(--hi); } .lv.low { color: var(--lo); border-color: var(--lo); }
 .lv.skip { color: var(--skip); border-color: var(--skip); text-decoration: line-through; } .lv.normal { color: var(--muted); }
-button.lvb.high { color: var(--hi); } button.lvb.low { color: var(--lo); } button.lvb.skip { color: var(--skip); }
+button.lvb.now { color: var(--now); font-weight: 650; } button.lvb.high { color: var(--hi); } button.lvb.low { color: var(--lo); } button.lvb.skip { color: var(--skip); }
+#selbar .ids { color: var(--muted); font-size: 12.5px; }
+#selbar input { width: 130px; }
+tr.sub td:first-child { cursor: pointer; font-weight: 600; padding-left: 16px; white-space: nowrap; }
+.tscroll { overflow-x: auto; }
+@media (max-width: 600px) { .about { max-width: 150px; } }
+tr.sub td:first-child::before { content: "↳ "; color: var(--muted); font-weight: 400; }
+tr.sub.on td { background: var(--sel); }
+.flag { border-radius: 4px; padding: 0 5px; font-size: 11.5px; border: 1px solid var(--line); margin-left: 4px; }
+.flag.now { color: var(--now); border-color: var(--now); } .flag.high { color: var(--hi); border-color: var(--hi); }
 #legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
 #legend i { display: inline-block; width: 18px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
 .cols { display: grid; gap: 14px; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
@@ -115,7 +125,7 @@ tr.part.on td { background: var(--sel); }
   <div class="cols">
     <section class="card">
       <h2>Parts</h2>
-      <table id="parts"></table>
+      <div class="tscroll"><table id="parts"></table></div>
     </section>
     <div style="display:grid;gap:14px">
       <section class="card">
@@ -133,6 +143,7 @@ tr.part.on td { background: var(--sel); }
 <script>
 "use strict";
 const TOKEN = "%%TOKEN%%";
+const BOOT = "%%BOOT%%";   // this run of the kaizu: another one in /state, a new kaizu took the port, and the page reloads into it
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const PALETTE = ["#1f5fa8", "#1b9e77", "#8a55c4", "#c2571a", "#a07d00", "#c2185b"];
@@ -140,7 +151,10 @@ const RH = 16, GAP = 9, TOP = 16, GUT = 62;                 // row height, gap, 
 const PREF = (() => { try { return JSON.parse(localStorage.getItem("kaizu") || "{}"); } catch (e) { return {}; } })();
 const P = Object.assign({order: "campaign", rowh: 0, part: "", nextm: "", h: 2, c: ""}, PREF);
 const save = () => { try { localStorage.setItem("kaizu", JSON.stringify(P)); } catch (e) {} };
-let S = null, view = [], segs = [], rows = 0, drag = null, selPids = null, colour = {}, calc = {}, HA = .33, nextSet = new Set(), busy = false;
+let S = null, view = [], segs = [], rows = 0, drag = null, selPids = null, spanSel = false, colour = {}, calc = {}, HA = .33, nextSet = new Set(), busy = false;
+let SUB = {};   // the sub-campaigns (the rules with a name): name -> the set of their pumps
+const hm = s => { const m = Math.round(s / 60); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h` + (m % 60 ? ` ${String(m % 60).padStart(2, "0")}` : ""); };
+const label = p => `${S.parts[p[F.part]].prefix} #${p[F.id] - S.parts[p[F.part]].base}`;   // hpT #1951: the part and the pump's number in it
 const AF = {};   // the Anno Fabri tags of the moments shown, epoch -> tag (null where there is none), given by the kaizu (~/bin/AF)
 
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -168,6 +182,7 @@ async function load() {
     const r = await fetch(`/state?c=${encodeURIComponent(c)}&h=${encodeURIComponent(P.h)}`);
     const j = await r.json();
     if (j.error) throw new Error(j.error);
+    if (j.boot && j.boot !== BOOT) { location.reload(); return; }
     S = j; P.c = S.campaign; build();
   } catch (e) { $("#fetch").innerHTML = `<span class="warn">the kaizu does not answer (${esc(e.message)})</span>`; }
 }
@@ -194,8 +209,10 @@ function build() {
   colour = {}; S.machines.forEach((m, i) => colour[m.name] = PALETTE[i % PALETTE.length]);
   calc = {}; S.machines.forEach(m => calc[m.name] = css(`--calc-${m.name}`) || colour[m.name]); HA = parseFloat(css("--held")) || .33;
   const pre = S.parts.map(q => q.prefix);
-  // the view: the pumps of the part chosen, in the campaign's order or by g
-  view = S.pumps.filter(p => !P.part || pre[p[F.part]] === P.part);
+  SUB = {}; for (const r of S.rules) if (r.name) SUB[r.name] = new Set(r.pumps);
+  if (P.part[0] === "@" && !SUB[P.part.slice(1)]) P.part = "";
+  // the view: the pumps of the part (or sub-campaign, @name) chosen, in the campaign's order or by g
+  view = S.pumps.filter(p => !P.part || (P.part[0] === "@" ? SUB[P.part.slice(1)].has(p[F.id]) : pre[p[F.part]] === P.part));
   if (P.order === "g") view = view.map((p, i) => [p, i]).sort((a, b) => a[0][F.x] - b[0][F.x] || a[1] - b[1]).map(a => a[0]);
   const nm = S.machines.find(m => m.name === P.nextm);
   nextSet = new Set(nm ? nm.next.pumps : []);
@@ -219,8 +236,9 @@ function summary() {
   let pace = 0; const on = [];
   for (const m of S.machines) if (m.open.length) { pace += m.kernels * m.speed; on.push(`${m.name} ${m.kernels}`); }   // the watch keeps a driver to its machine's kernels
   const end = pace ? day(S.now + left / pace) : null;
+  const urge = l => A.filter(p => p[F.st] !== "d" && p[F.lv] === l).length, un = urge("now"), uh = urge("high");
   $("#sum").innerHTML = `<b>${esc(S.campaign)}</b>: ${cnt("d")} / ${n} pumps done · ${cnt("h")} held · ${cnt("f") + cnt("l")} free`
-    + (skipped.length ? ` (${skipped.length} skipped)` : "") + ` · <b>${khs(left)} kh</b> left on ${esc(S.ref)}'s scale`
+    + (skipped.length ? ` (${skipped.length} skipped)` : "") + (un || uh ? ` · to do first: ${un ? `<span class="lv now">${un} now</span> ` : ""}${uh ? `<span class="lv high">${uh} high</span>` : ""}` : "") + ` · <b>${khs(left)} kh</b> left on ${esc(S.ref)}'s scale`
     + (end ? ` · end about <b>${end}</b> at the present pace (${on.join(" + ")} kernels)` : " · no machine holds an allocation")
     + `<div class="muted about" style="max-width:none" title="${esc(S.about)}">${esc(S.about)}</div>`;
   const tot = sum(() => true) || 1, segsB = [];
@@ -236,7 +254,8 @@ function controls() {
   for (const b of document.querySelectorAll("#order button")) b.classList.toggle("on", b.dataset.v === P.order);
   $("#rowh").value = String(P.rowh);
   $("#rowof").textContent = `${P.rowh ? "" : `(${rowh()} h) `}of ${S.ref} at ${S.ref_kernels} kernels = ${(rowh() * S.ref_kernels).toFixed(0)} kh`;
-  $("#part").innerHTML = `<option value="">all</option>` + S.parts.map(q => `<option${q.prefix === P.part ? " selected" : ""}>${esc(q.prefix)}</option>`).join("");
+  $("#part").innerHTML = `<option value="">all</option>` + S.parts.map(q => `<option${q.prefix === P.part ? " selected" : ""}>${esc(q.prefix)}</option>`).join("")
+    + Object.keys(SUB).map(nm => `<option value="@${esc(nm)}"${"@" + nm === P.part ? " selected" : ""}>↳ ${esc(nm)}</option>`).join("");
   $("#nextm").innerHTML = `<option value="">none</option>` + S.machines.map(m => `<option${m.name === P.nextm ? " selected" : ""}>${esc(m.name)}</option>`).join("");
   $("#h").value = P.h;
   const nm = S.machines.find(m => m.name === P.nextm);
@@ -272,7 +291,7 @@ function draw() {
   const H = TOP + rows * (RH + GAP) + 4;
   cv.width = (W + GUT + 2) * dpr; cv.height = H * dpr; cv.style.width = (W + GUT + 2) + "px"; cv.style.height = H + "px";
   const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const bg = css("--card"), free = css("--free"), late = css("--late"), hi = css("--hi"), lo = css("--lo"), skip = css("--skip"), tick = css("--tick"), muted = css("--muted");
+  const bg = css("--card"), free = css("--free"), late = css("--late"), hi = css("--hi"), lo = css("--lo"), skip = css("--skip"), tick = css("--tick"), muted = css("--muted"), nowc = css("--now");
   hatch = pattern(ctx, skip);
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W + GUT + 2, H);
   const sel = selected(), y = r => TOP + r * (RH + GAP);
@@ -298,6 +317,7 @@ function draw() {
     }
     ctx.globalAlpha = 1;
     if (st !== "d" && (p[F.lv] === "high" || p[F.lv] === "low")) { ctx.fillStyle = p[F.lv] === "high" ? hi : lo; ctx.fillRect(x, top - 4, w - gap, 3); }
+    if (st !== "d" && p[F.lv] === "now") { ctx.fillStyle = nowc; ctx.fillRect(x, top - 6, w - gap, 5); }
     if (sel.has(p[F.id])) { ctx.fillStyle = css("--sel"); ctx.fillRect(x, top - 1, w - gap, RH + 2); }
   }
   // the next claim of a machine, as it would take its pumps
@@ -327,8 +347,12 @@ function at(e) {   // the index in the view of the piece under the pointer, or -
   for (const s of segs) if (s.r === r && x >= s.x0 && x < s.x1) return s.k;
   return -1;
 }
-function selected() {
-  if (drag) { const [a, b] = [Math.min(drag.a, drag.b), Math.max(drag.a, drag.b)]; return new Set(view.slice(a, b + 1).map(p => p[F.id])); }
+function selected() {   // a click picks a piece or drops it (the others kept); a drag takes a span, in place of the pieces picked (Shift, Ctrl: added to them)
+  if (drag) {
+    if (!drag.moved) { const s = new Set(drag.base), id = view[drag.a][F.id]; if (s.has(id)) s.delete(id); else s.add(id); return s; }
+    const [a, b] = [Math.min(drag.a, drag.b), Math.max(drag.a, drag.b)], span = view.slice(a, b + 1).map(p => p[F.id]);
+    return drag.add ? new Set([...drag.base, ...span]) : new Set(span);
+  }
   return new Set(selPids || []);
 }
 
@@ -340,30 +364,47 @@ function tip(e, k) {
     : st === "h" ? `held by <b>${esc(p[F.m])}</b> <span class="muted">(${esc(p[F.alloc])})</span>` + (p[F.prog] >= 1 ? " · done here, not pushed yet" : p[F.prog] ? ` · ${Math.round(100 * p[F.prog])} % done here` : "")
     : st === "l" ? `<span style="color:var(--late)">past the deadline</span> of ${esc(p[F.alloc])}: free again` : "free";
   const lv = p[F.lv], rule = p[F.rule] === null ? "no rule" : `rule ${p[F.rule] + 1}`;
+  const subs = Object.keys(SUB).filter(nm => SUB[nm].has(p[F.id]));
   t.innerHTML = `<b>${esc(q.prefix)}</b> #${p[F.id] - q.base} · P = <b>${esc(p[F.P])}</b> g<br>`
     + `${p[F.orders].map(esc).join(" ")} · ${kh(p[F.s])} kh on ${esc(S.ref)}<br>${where}<br>`
-    + `<span class="lv ${lv}">${lv}</span> <span class="muted">${rule}</span>` + (nextSet.has(p[F.id]) ? ` · <b>in the next claim of ${esc(P.nextm)}</b>` : "");
+    + `<span class="lv ${lv}">${lv}</span> <span class="muted">${rule}</span>` + (subs.length ? ` · ↳ ${subs.map(esc).join(", ")}` : "")
+    + (nextSet.has(p[F.id]) ? ` · <b>in the next claim of ${esc(P.nextm)}</b>` : "");
   t.style.display = "block";
   const b = $("#mapbox").getBoundingClientRect(); let x = e.clientX - b.left + 14, yy = e.clientY - b.top + 14;
   if (x + t.offsetWidth > b.width) x = e.clientX - b.left - t.offsetWidth - 10;
   t.style.left = x + "px"; t.style.top = yy + "px";
 }
 
+const WHAT = {now: "claimed at once by a watch, the jobs of its other allocations paused (nothing lost) until these are under way",
+  high: "claimed at once by a watch, its other allocations ending without loss (uchikiri), these taking their kernels as they free",
+  normal: "in the order of the campaign", low: "after the normal ones", skip: "never claimed"};
 function selbar() {
-  const box = $("#selbar"), ids = selPids ? new Set(selPids) : null;
+  const box = $("#selbar"), ids = selPids ? new Set(selPids) : null, old = $("#subname");
+  const keep = old ? [old.value, document.activeElement === old, old.selectionStart] : ["", false, 0];   // a name being typed outlives the reload every 30 s
   if (!ids || !ids.size) { box.style.display = "none"; return; }
-  const q = view.filter(p => ids.has(p[F.id])), xs = q.map(p => p[F.x]), pre = [...new Set(q.map(p => S.parts[p[F.part]].prefix))];
+  const q = S.pumps.filter(p => ids.has(p[F.id])), xs = q.map(p => p[F.x]), pre = [...new Set(q.map(p => S.parts[p[F.part]].prefix))];
   const lo = q.reduce((a, p) => p[F.x] < a[F.x] ? p : a), hi = q.reduce((a, p) => p[F.x] > a[F.x] ? p : a);
-  const rule = byG() ? `${P.part ? P.part + ", " : ""}${lo[F.P]}–${hi[F.P]} g (and any pump that comes there later)` : `these ${q.length} pumps`;
+  const span = byG() && spanSel && !P.part.startsWith("@");
+  const rule = span ? `${P.part ? P.part + ", " : ""}${lo[F.P]}–${hi[F.P]} g (and any pump that comes there later)` : `these ${q.length} pumps`;
+  const nd = q.filter(p => p[F.st] === "d").length, nh = q.filter(p => p[F.st] === "h").length;
+  const L = [...new Set(q.filter(p => p[F.st] !== "d").map(p => p[F.lv]))], lv0 = L.length === 1 ? L[0] : "normal";
   box.innerHTML = `<div class="row"><span class="num"><b>${q.length}</b> pumps · ${kh(q.reduce((a, p) => a + p[F.s], 0))} kh · ${Math.min(...xs).toFixed(3)}–${Math.max(...xs).toFixed(3)} g · ${pre.map(esc).join(", ")}</span>`
     + `<span class="muted">rule: ${esc(rule)}</span>`
-    + S.levels.map(l => `<button class="lvb ${l}" data-l="${l}">${l}</button>`).join("") + `<button data-l="">✕</button></div>`;
+    + S.levels.map(l => `<button class="lvb ${l}" data-l="${l}" title="${esc(WHAT[l] || "")}">${l}</button>`).join("") + `<button data-l="" title="drop the pieces picked (Esc)">✕</button></div>`
+    + `<div class="row" style="margin-top:6px"><span class="ids num">${q.length <= 16 ? q.map(label).map(esc).join(", ") : ""}</span>`
+    + (nd || nh ? `<span class="muted">${[nd && `${nd} done`, nh && `${nh} held`].filter(Boolean).join(", ")}: a priority acts on the pumps not done, those held as their allocation gives them back</span>` : "") + `</div>`
+    + `<div class="row" style="margin-top:6px"><label class="muted">sub-campaign <input id="subname" maxlength="40" placeholder="its name (none: an AF tag)"></label>`
+    + `<button id="mksub" title="these pumps as a sub-campaign of ${esc(S.campaign)}, listed with the parts, at the level they have (${lv0}); its priority is then set there">make a sub-campaign</button>`
+    + `<span class="muted">a click picks a piece or drops it; a drag takes a span (Shift: added)</span></div>`;
   box.style.display = "block";
-  for (const b of box.querySelectorAll("button")) b.onclick = () => {
+  for (const b of box.querySelectorAll("button[data-l]")) b.onclick = () => {
     if (!b.dataset.l) { selPids = null; draw(); selbar(); return; }
-    const r = byG() ? Object.assign({level: b.dataset.l, g: [lo[F.P], hi[F.P]]}, P.part ? {part: P.part} : {}) : {level: b.dataset.l, pumps: q.map(p => p[F.id])};
+    const r = span ? Object.assign({level: b.dataset.l, g: [lo[F.P], hi[F.P]]}, P.part ? {part: P.part} : {}) : {level: b.dataset.l, pumps: q.map(p => p[F.id])};
     selPids = null; post("/prio", {op: "add", rule: r});
   };
+  $("#mksub").onclick = () => { const nm = $("#subname").value.trim(); selPids = null; post("/prio", {op: "add", rule: {name: nm, level: lv0, pumps: q.map(p => p[F.id])}}); };
+  $("#subname").onkeydown = e => { if (e.key === "Enter") $("#mksub").click(); e.stopPropagation(); };
+  $("#subname").value = keep[0]; if (keep[1]) { $("#subname").focus(); $("#subname").setSelectionRange(keep[2], keep[2]); }
 }
 const byG = () => P.order === "g";
 
@@ -373,13 +414,20 @@ function legend() {
   for (const m of S.machines) items.push(`<span><i style="background:${colour[m.name]};opacity:${HA}"></i>held by ${esc(m.name)}</span>`);
   for (const m of S.machines) if (m.here) items.push(`<span><i style="background:${calc[m.name]}"></i>being computed on ${esc(m.name)}, as far as it has gone</span>`);
   items.push(`<span><i style="background:var(--free)"></i>free</span>`, `<span><i style="background:var(--free);border-bottom:3px solid var(--late)"></i>past the deadline</span>`,
+    `<span><i style="border-top:5px solid var(--now);background:var(--free)"></i>now</span>`,
     `<span><i style="border-top:3px solid var(--hi);background:var(--free)"></i>high</span>`, `<span><i style="border-top:3px solid var(--lo);background:var(--free)"></i>low</span>`,
     `<span><i style="background:repeating-linear-gradient(135deg,var(--skip) 0 1.5px,transparent 1.5px 4px)"></i>skip</span>`,
-    `<span><i style="outline:1.6px dashed var(--muted);outline-offset:-2px"></i>next claim</span>`, `<span>drag over the pieces to give them a priority</span>`);
+    `<span><i style="outline:1.6px dashed var(--muted);outline-offset:-2px"></i>next claim</span>`, `<span>click pieces to pick them, or drag over a span, to give them a priority or make them a sub-campaign</span>`);
   $("#legend").innerHTML = items.join("");
 }
 
 // ------------------------------------------------------------------------------------------------------------------- the panels
+function stats(A) {   // the done/held bar and counts of a set of pumps
+  const s = f => A.filter(f).reduce((a, p) => a + p[F.s], 0), tot = s(() => true) || 1;
+  const bar = S.machines.map(m => `<div style="width:${100 * s(p => p[F.st] === "d" && p[F.m] === m.name) / tot}%;background:${colour[m.name]}"></div>`).join("")
+    + S.machines.map(m => `<div style="width:${100 * s(p => p[F.st] === "h" && p[F.m] === m.name) / tot}%;background:${colour[m.name]};opacity:${HA}"></div>`).join("");
+  return {d: A.filter(p => p[F.st] === "d").length, h: A.filter(p => p[F.st] === "h").length, bar, left: s(p => p[F.st] !== "d")};
+}
 function parts() {
   const rowsH = S.parts.map((q, i) => {
     const A = S.pumps.filter(p => p[F.part] === i), s = f => A.filter(f).reduce((a, p) => a + p[F.s], 0), tot = s(() => true) || 1;
@@ -394,16 +442,27 @@ function parts() {
       + `<td class="r num">${khs(s(p => p[F.st] !== "d"))}</td>`
       + (lv ? `<td><select data-p="${esc(q.prefix)}">${opts}</select></td>` : `<td class="muted">done</td>`) + `</tr>`;
   });
-  $("#parts").innerHTML = `<tr><th>part</th><th>about</th><th class="r">done</th><th></th><th class="r">kh left</th><th>priority</th></tr>` + rowsH.join("");
+  const subsH = S.rules.map((r, k) => [r, k]).filter(([r]) => r.name).map(([r, k]) => {   // the sub-campaigns, under the parts
+    const A = S.pumps.filter(p => SUB[r.name].has(p[F.id])), t = stats(A), over = A.filter(p => p[F.st] !== "d" && p[F.rule] !== k).length;
+    const about = `${A.length} pumps picked` + (A.length <= 6 ? `: ${A.map(label).join(", ")}` : "") + (over ? ` (${over} decided by a later rule)` : "") + ` · ${r.by || ""}`;
+    return `<tr class="sub${"@" + r.name === P.part ? " on" : ""}" data-s="${esc(r.name)}"><td title="show this sub-campaign alone">${esc(r.name)}</td>`
+      + `<td><div class="about" title="${esc(about)}">${esc(about)} ${r.t ? day(r.t) : ""}</div></td>`
+      + `<td class="r num">${t.d}/${A.length}${t.h ? ` <span class="muted">+${t.h}</span>` : ""}</td><td><div class="pbar">${t.bar}</div></td>`
+      + `<td class="r num">${khs(t.left)}</td>`
+      + (t.d < A.length ? `<td><select data-s="${esc(r.name)}" title="${esc(WHAT[r.level] || "")}">${S.levels.map(l => `<option${l === r.level ? " selected" : ""}>${l}</option>`).join("")}</select></td>` : `<td class="muted">done</td>`) + `</tr>`;
+  });
+  $("#parts").innerHTML = `<tr><th>part</th><th>about</th><th class="r">done</th><th></th><th class="r">kh left</th><th>priority</th></tr>` + rowsH.join("") + subsH.join("");
   for (const tr of document.querySelectorAll("#parts tr.part")) tr.firstElementChild.onclick = () => { P.part = P.part === tr.dataset.p ? "" : tr.dataset.p; selPids = null; save(); build(); };
-  for (const s of document.querySelectorAll("#parts select")) s.onchange = () => post("/prio", {op: "add", rule: {level: s.value, part: s.dataset.p}});
+  for (const tr of document.querySelectorAll("#parts tr.sub")) tr.firstElementChild.onclick = () => { const v = "@" + tr.dataset.s; P.part = P.part === v ? "" : v; selPids = null; save(); build(); };
+  for (const s of document.querySelectorAll("#parts select[data-p]")) s.onchange = () => post("/prio", {op: "add", rule: {level: s.value, part: s.dataset.p}});
+  for (const s of document.querySelectorAll("#parts select[data-s]")) s.onchange = () => post("/prio", {op: "add", rule: {level: s.value, name: s.dataset.s}});
 }
 
 function rules() {
   const R = S.rules;
   if (!R.length) { $("#rules").innerHTML = `<div class="muted">No rule: every pump normal, the claims in the order of the campaign.</div>`; return; }
   $("#rules").innerHTML = R.map((r, i) => {
-    const what = [r.part, r.g && `${r.g[0]}–${r.g[1]} g`, r.pumps && `${r.pumps.length} pumps picked`].filter(Boolean).join(", ");
+    const what = [r.name && `sub-campaign ${r.name}`, r.part, r.g && `${r.g[0]}–${r.g[1]} g`, r.pumps && `${r.pumps.length} pumps picked`].filter(Boolean).join(", ");
     return `<div class="rule"><span class="muted num">${i + 1}</span><span class="lv ${r.level}">${r.level}</span><span>${esc(what)}</span>`
       + `<span class="muted num">decides ${r.decides} · ${esc(r.by || "")} ${r.t ? day(r.t) : ""}</span><button class="x" data-i="${i}" title="drop this rule">✕</button></div>`;
   }).join("") + `<div class="row" style="margin-top:8px"><button id="clear">clear all</button></div>`;
@@ -416,14 +475,17 @@ function machines() {
   $("#machines").innerHTML = S.machines.map(m => {
     const al = m.open.map(a => {
       const late = S.now > a.deadline;
-      return `<div class="alloc num">${esc(a.id)} · ${a.done}/${a.n} · ${a.hours} h × ${a.kernels}${a.shinshu ? ` (shinshu ${esc(a.shinshu)})` : ""}${a.shugeki ? " (shugeki)" : ""}`
-        + ` · ${kh(a.rest)} kh to go · deadline ${late ? `<span class="warn">${day(a.deadline)}, passed</span>` : day(a.deadline)}`
+      return `<div class="alloc num">${esc(a.id)}${a.prio ? `<span class="flag ${esc(a.prio)}" title="a claim of the kaizu's ${esc(a.prio)} pumps alone">${esc(a.prio)}</span>` : ""}`
+        + `${a.uchikiri ? `<span class="flag" title="ends without loss: its pumps started complete, the others went back to the pool">uchikiri</span>` : ""}`
+        + ` · ${a.done}/${a.n} · ${a.hours} h × ${a.kernels}${a.shinshu ? ` (shinshu ${esc(a.shinshu)})` : ""}${a.shugeki ? " (shugeki)" : ""}`
+        + (a.paused ? ` · <b>${a.paused} jobs paused</b> for now` : "")
+        + ` · ${kh(a.rest)} kh to go · deadline ${late ? `<span class="warn">${day(a.deadline)}, passed</span>` : day(a.deadline)}` + (a.delayed ? ` <span class="muted">(pushed back ${hm(a.delayed)} by now)</span>` : "")
         + (a.updated ? ` <span class="muted">· pushed ${ago(a.updated)}</span>` : "") + `</div>`;
     }).join("");
     const w = m.watch ? (m.watch.length ? ` · watch running (pid ${m.watch.join(", ")})` : ` · <span class="warn">no watch running</span>`) : "";
     const nx = m.next.pumps.length ? `next claim in ${m.next.hours} h: ${m.next.pumps.length} pumps, ${kh(m.next.cost)} kh` : "nothing free to claim";
     return `<div class="mach"><div><span class="sw" style="background:${colour[m.name]}"></span><b>${esc(m.name)}</b>${m.here ? " (this machine)" : ""}`
-      + ` <span class="muted num">· ${m.kernels} kernels · ${m.done} pumps done, ${m.kh.toFixed(1)} kh${w}</span></div>`
+      + ` <span class="muted num">· ${m.kernels} kernels${m.gensoku ? ` (${esc(m.gensoku)})` : ""} · ${m.done} pumps done, ${m.kh.toFixed(1)} kh${w}</span></div>`
       + (m.open.length ? al + (m.end ? `<div class="alloc muted num">holds ${kh(m.rest)} kh, ends about ${day(m.end)}</div>` : "") : `<div class="alloc muted">holds nothing</div>`)
       + `<div class="alloc muted num">${nx}</div></div>`;
   }).join("");
@@ -431,13 +493,16 @@ function machines() {
 
 // ------------------------------------------------------------------------------------------------------------------ interaction
 const cv = $("#map");
-cv.addEventListener("pointerdown", e => { const k = at(e); if (k < 0) { selPids = null; draw(); selbar(); return; } drag = {a: k, b: k}; cv.setPointerCapture(e.pointerId); tip(e, -1); draw(); });
+cv.addEventListener("pointerdown", e => {
+  const k = at(e); if (k < 0) { selPids = null; draw(); selbar(); return; }
+  drag = {a: k, b: k, moved: false, add: e.shiftKey || e.ctrlKey || e.metaKey, base: new Set(selPids || [])}; cv.setPointerCapture(e.pointerId); tip(e, -1); draw();
+});
 cv.addEventListener("pointermove", e => {
   const k = at(e);
-  if (drag) { if (k >= 0 && k !== drag.b) { drag.b = k; draw(); } return; }
+  if (drag) { if (k >= 0 && k !== drag.b) { drag.b = k; drag.moved = true; draw(); } return; }
   tip(e, k);
 });
-cv.addEventListener("pointerup", () => { if (!drag) return; selPids = [...selected()]; drag = null; draw(); selbar(); });
+cv.addEventListener("pointerup", () => { if (!drag) return; const s = [...selected()]; spanSel = drag.moved && !drag.add; selPids = s.length ? s : null; drag = null; draw(); selbar(); });
 cv.addEventListener("pointerleave", () => { if (!drag) $("#tip").style.display = "none"; });
 document.addEventListener("keydown", e => { if (e.key === "Escape") { selPids = null; drag = null; draw(); selbar(); } });
 for (const b of document.querySelectorAll("#order button")) b.onclick = () => { P.order = b.dataset.v; selPids = null; save(); build(); };
