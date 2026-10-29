@@ -14,12 +14,31 @@
   120000002,
   120000130
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  120000060,
+  120000188
+ ],
+ "times": {
+  "150w80": [
+   1876,
+   1949
+  ],
+  "250e80": [
+   2500,
+   2537
+  ],
+  "300e80": [
+   3699,
+   3702
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261029-171705-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.32",
  "shinshu": null,
  "shugeki": false,
- "prio": "high"
+ "prio": "high",
+ "updated": 1793295090
 }
