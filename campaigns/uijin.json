@@ -1990,6 +1990,105 @@
    ]
   ],
   [
+   140000000,
+   "11.41",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000001,
+   "11.47",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000002,
+   "11.49",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000003,
+   "11.55",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000004,
+   "11.56",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000005,
+   "11.57",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000006,
+   "11.67",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000007,
+   "11.71",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000008,
+   "11.77",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000009,
+   "11.83",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   140000010,
+   "11.85",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
    30000000,
    "0.154",
    [
@@ -22156,6 +22255,14 @@
    "base": 130000000,
    "about": "the nursing program, round 1 (refining where Fig. 0QEGB's orange patches ask for pumps, code/meshfig.py REFINE=0.01): the tiny pairs of 12.28-12.41 g at 160 digits (300e160, against the filler's 300e80); 19-20 g to 0.001 g in its 6 flagged intervals (80 digits); the midpoints of the 30 flagged 0.08 g intervals of 12.51-19 and 20-21 g (40 digits); rounds 2-4 halve the intervals still flagged, to 0.005 g",
    "pumps": 51,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpE",
+   "base": 140000000,
+   "about": "the condensation program, round 1: 11.4-11.9 g refined where code/meshfig.py REFINE=0.01 flags the 80-digit pumps (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g), at 80 digits",
+   "pumps": 11,
    "left_out": 0
   },
   {
