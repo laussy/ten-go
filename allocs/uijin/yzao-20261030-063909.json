@@ -11,12 +11,31 @@
   100000051,
   100000112
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  100000051,
+  100000112
+ ],
+ "times": {
+  "150w80": [
+   1894,
+   1911
+  ],
+  "250e80": [
+   2347,
+   2360
+  ],
+  "300e80": [
+   3328,
+   3356
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261030-063909-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.32",
  "shinshu": null,
  "shugeki": false,
- "prio": "now"
+ "prio": "now",
+ "updated": 1793343980
 }
