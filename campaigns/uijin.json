@@ -2404,6 +2404,42 @@
    ]
   ],
   [
+   170000000,
+   "11.547",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   170000001,
+   "11.573",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   170000002,
+   "11.767",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   170000003,
+   "11.853",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
    30000000,
    "0.154",
    [
@@ -22594,6 +22630,14 @@
    "base": 160000000,
    "about": "the nursing program, round 2: the midpoints of the intervals of 12.51-19 and 20-21 g still flagged by code/meshfig.py REFINE=0.01 inside the 30 of round 1 (hpG), at 40 digits",
    "pumps": 30,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpA",
+   "base": 170000000,
+   "about": "the condensation program, round 3: 11.4-11.9 g refined where code/meshfig.py REFINE=0.01 flags the 80-digit pumps (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g), at 80 digits",
+   "pumps": 4,
    "left_out": 0
   },
   {
