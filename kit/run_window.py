@@ -9,6 +9,9 @@ the threads that stay idle: one kernel more after 10 minutes in which at least t
 toward nproc (never below) as soon as other work has taken them for 2 minutes.  A kernel above nproc runs the shortest job waiting,
 so that the retreat is quick (a lower count stops new launches; no job is killed).  The current count is in shinshu.now.
 A file shugeki (Ten-Go's sortie) keeps the plan's order for every kernel, the pumps whole, so that an uchikiri ends soon.
+A file jikan (an epoch: the end of the time Ten-Go gave the run, its plan the longest pumps first) turns the run, past it, into a
+sortie: the pumps started are completed first, then those not started run the cheapest first (from the end of the plan), whole, in
+that order for every kernel, so that an uchikiri ends soon.  A file kikan (an epoch) ends the run then without loss, as --uchikiri.
   python3 run_window.py              run the plan to the end (rerun to resume: files present are skipped, jobs in flight adopted)
   python3 run_window.py --progress   one line: ASCII bar of the kernel time done, files per order, kernels, memory, end estimate
   python3 run_window.py --kill       stop now: the driver, its front-ends and their kernels (a file STOP only stops new launches)
@@ -48,6 +51,8 @@ def tree(pid):   # pid and all its descendants
 
 
 def order(pre): return pre.split("_nt")[-1]
+def epoch(f): return int(open(f).read().split()[0]) if os.path.exists(f) else None   # the files jikan and kikan
+def clock(t): return time.strftime("%a %H:%M", time.localtime(t))
 def hm(x): m = round(x / 60); return f"{m} min" if m < 60 else f"{m // 60} h" + (f" {m % 60:02d}" if m % 60 else "")   # 3 min, 2 h 20, 6 h
 
 
@@ -112,6 +117,8 @@ if "--progress" in sys.argv:
     print(f"{time.strftime('%H:%M')} [{'#' * b}{'.' * (40 - b)}] {pct:.0f} % of the kernel time; {', '.join(parts)}; "
           f"running {len(ours())}/{open('nproc').read().strip()}"
           + (f" (uchikiri since {time.strftime('%H:%M', time.localtime(os.path.getmtime('UCHIKIRI')))})" if os.path.exists("UCHIKIRI") else "")
+          + (f" (past its time, {time.strftime('%H:%M', time.localtime(epoch('jikan')))}: the cheapest first)" if epoch("jikan") and time.time() >= epoch("jikan") else "")
+          + (f" (kikan at {time.strftime('%H:%M', time.localtime(epoch('kikan')))})" if epoch("kikan") and not os.path.exists("UCHIKIRI") else "")
           + (f" (shinshu: {open('shinshu.now').read().strip()} now, up to {open('shinshu').read().strip() or 'max'})" if os.path.exists("shinshu") and os.path.exists("shinshu.now") else "")
           + f"; {mem:.0f} GB free; end about {eta}")
     sys.exit()
@@ -229,7 +236,7 @@ def shinshu(limit, base, cap, free, hist):
 
 
 def pick(extra):   # the next job: in the plan's order, or for a kernel above nproc the shortest waiting
-    if not extra or os.path.exists("shugeki"): return 0   # a sortie: whole pumps, in the plan's order
+    if not extra or os.path.exists("shugeki") or late: return 0   # a sortie, or past its time: whole pumps, in the plan's order
     t = tcost
     m = {o: sum(v) / len(v) for o, v in took.items() if len(v) >= 3}   # this run's own times (3 jobs at least), and its speed against T
     f = sum(m[o] / t(o) for o in m) / len(m) if m else 1
@@ -242,10 +249,22 @@ if not os.path.exists("launch-epoch"):   # the launch time and the kernel time o
     seed = sum(tcost(order(f[0])) for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat"))
     open("launch-epoch", "w").write(f"{int(time.time())} {seed:.0f}")
 print(f"{time.strftime('%H:%M:%S')} {len(jobs)} jobs to run ({len(foreign)} adopted in flight), GA={GA} GS={GS} PREC={PREC}"
-      + (f", shinshu up to {ceiling()} kernels" if ceiling() else ""), flush=True)
-running = []; t0 = time.time(); done = 0; lastmem = 0; took = {}; limit = nproc(); hist = []; prev = {}; look = 0; uchi = False
+      + (f", shinshu up to {ceiling()} kernels" if ceiling() else "") + (f", its time until {clock(epoch('jikan'))}" if epoch("jikan") else "")
+      + (f", ending without loss at {clock(epoch('kikan'))} (kikan)" if epoch("kikan") else ""), flush=True)
+running = []; t0 = time.time(); done = 0; lastmem = 0; took = {}; limit = nproc(); hist = []; prev = {}; look = 0; uchi = False; late = False
 while jobs or running or foreign:
     now = time.time(); base, cap = nproc(), ceiling()
+    if epoch("kikan") and now >= epoch("kikan") and not os.path.exists("UCHIKIRI"):   # Ten-Go's kikan: at its time, an uchikiri of its own
+        open("UCHIKIRI", "w").write(f"{int(now)}\n"); print(f"{time.strftime('%H:%M:%S')} KIKAN: its time is up, it ends without loss", flush=True)
+    if not late and epoch("jikan") and now >= epoch("jikan"):   # past its time: the pumps started first, then the others the cheapest first, whole
+        late = True; begun = {j for *_, j in running} | {j for _, j in foreign.values()} | {f[3] for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat")}
+        rest = {}
+        for x in jobs:
+            if x[3] not in begun: rest.setdefault(x[3], []).append(x)
+        if not os.path.exists("shugeki"): jobs = [x for x in jobs if x[3] in begun] + [x for j in reversed(list(rest)) for x in rest[j]]   # the plan: the longest first
+        n = len(jobs) - sum(map(len, rest.values()))
+        if jobs and not os.path.exists("UCHIKIRI"): print(f"{time.strftime('%H:%M:%S')} past its time: {n} job{'s' * (n != 1)} to complete the pumps started, then {len(rest)} pump{'s' * (len(rest) != 1)} "
+              "not started, the cheapest first, whole", flush=True)
     if os.path.exists("UCHIKIRI") and not uchi:   # end without loss: only the jobs of the pumps started (a job done or in flight)
         uchi = True; kept = {j for *_, j in running} | {j for _, j in foreign.values()} | {f[3] for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat")}
         if os.path.exists("uchikiri.kept"): kept = set(open("uchikiri.kept").read().split())   # a driver restarted after it

@@ -3,7 +3,7 @@
 The pool of jobs shared by my machines (azag, yzao) for a long-running task [e.g., computing the one-atom-laser skeleton, cf. 0JOalb].
 
 A machine asks for a **budget**, not for tasks: `ten-go --honkai --jikan 10` takes, in one go, the free task of the ongoing "campaign" in its
-global (van der Corput) order until their cost on that machine fills the ten hours, the longest job kept back. The claim is a commit;
+global (van der Corput) order as long as their jobs, run on that machine the longest first, end within the ten hours. The claim is a commit;
 a push refused because another machine pushed first is redone from the new state, so that no pump is ever in two allocations. An
 allocation has a deadline (start + 1.5 budget + 2 h, the budget at least its longest job), after which its tasks not done are free
 again.
@@ -14,7 +14,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
 
     ten-go --kido MACHINE --repo CLONE --work DIR # once per machine: ~/.config/tengo.json
     ten-go --senkyo                               # what is done, held (by whom, until when) and free
-    ten-go --honkai --jikan 10 [--ki N] [--go] [--shinshu [N]] [--shugeki]   # claim an allocation (and launch it)
+    ten-go --honkai --jikan 10 [--ki N] [--go] [--shinshu [N]] [--shugeki] [--kikan]   # claim an allocation (and launch it)
     ten-go --honkai --until TAG [--ki N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
     ten-go --honkai --jikan 10 --until TAG ...    # only prints the same command, its --jikan set to the hours until TAG
     ten-go --tassei                               # push the pumps finished (results/*.tgz) and the job times
@@ -25,12 +25,22 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
     ten-go watch [--until TAG] [--jikan 10]       # unattended (without --until: until the campaign is complete): claim, launch, push every 30 min, restart
                                                   # (a new version pushed to the pool takes the watch over at its next sync)
+    ten-go watch --until TAG --kikan              # ends at TAG (without --kikan, it goes on past TAG with sorties)
     ten-go --shushu DIR                           # unpack every result into DIR
     ten-go --kaiso SPEC.json [--dry]              # refit a part: new orders for its pumps not held or done (e.g. 300e -> 300e80)
     ten-go --kaizu [PORT]                         # the sea chart: the campaign as pieces, and its priorities (http://127.0.0.1:1945/)
     ten-go kh [TASK]                              # kernel-hours (kh) spent, per task and machine (ledger.tsv)
     ten-go kh import DIR [TASK] [--note TEXT]     # book (or bring up to date) any run of run_window.py, in Ten-Go or not
     ten-go kh add TASK KH [--note TEXT]           # book by hand a run without a log
+
+The time given (`--jikan`, `--until`) is a plan, not an end. An allocation runs its pumps the longest first (within a priority; each
+one's jobs the longest first too), so that its time is met with the smallest last, and a claim takes as many as end within the time
+in that order. Past its time the allocation goes on, but as a sortie, in prevision of an imminent uchikiri: the pumps started are
+completed first, then those not started run the cheapest first, whole. A watch past its `--until` goes on likewise with sorties
+(claims as `--shugeki`: the cheapest pumps first), from half an hour before, until the campaign is complete or an uchikiri by hand.
+`--kikan` (帰還, the return to base) ends at the time instead: `--honkai --kikan` makes an allocation that its driver ends without
+loss at its time (its own uchikiri), and `watch --until TAG --kikan` claims nothing in the last half hour, its allocations ending
+without loss at TAG. Outside Ten-Go, files `jikan` and `kikan` (an epoch) in a run's directory do the same.
 
 `--shinshu [N]` lets an allocation take the threads that stay idle, from its kernels up to N (no N: every thread), and give them
 back when other work wants them: the driver looks every minute, adds a kernel after 10 minutes of free threads, comes back toward
