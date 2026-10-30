@@ -56,12 +56,6 @@
    "by": "azag"
   },
   {
-   "level": "low",
-   "part": "hpTb",
-   "t": 1793254160,
-   "by": "azag"
-  },
-  {
    "level": "high",
    "pumps": [
     100000015,
@@ -310,6 +304,12 @@
     "9.714"
    ],
    "t": 1793338501,
+   "by": "azag"
+  },
+  {
+   "level": "normal",
+   "part": "hpTb",
+   "t": 1793338524,
    "by": "azag"
   }
  ],
