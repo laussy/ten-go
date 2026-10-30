@@ -46,6 +46,8 @@ button, select, input { font: inherit; color: inherit; background: var(--bg); bo
 button { cursor: pointer; }
 button:hover { border-color: var(--muted); }
 button:disabled { opacity: .5; cursor: default; }
+#tassei.ready { border-color: var(--ok); color: var(--ok); font-weight: 600; }
+.btns { display: inline-flex; gap: 6px; white-space: nowrap; }   /* fetch and tassei wrap together */
 input[type=number] { width: 64px; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .seg button { border: 0; border-radius: 0; background: transparent; }
@@ -104,7 +106,8 @@ tr.part.on td { background: var(--sel); }
     <select id="camp" title="campaign"></select>
     <span id="pool" class="muted num"></span>
     <span id="fetch" class="muted"></span>
-    <button id="sync" title="fetch the pool now">⟳ fetch</button>
+    <span class="btns"><button id="sync" title="fetch the pool now">⟳ fetch</button>
+    <button id="tassei" title="tassei (達成): push to the pool now the pumps this machine has done (their files, the job times, the kernel-hours), as its watch does every 30 min (ten-go --tassei): they turn from held, 'done here, not pushed yet', to done, for the other machines too">⇪ tassei</button></span>
   </div>
 </header>
 <main>
@@ -189,11 +192,11 @@ async function load() {
 
 async function post(path, body) {
   if (busy) return; busy = true; document.body.style.cursor = "progress";
-  toast(path === "/prio" ? "pushing to the pool…" : "fetching…");
+  toast(path === "/prio" || path === "/tassei" ? "pushing to the pool…" : "fetching…");
   try {
     const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json", "X-Kaizu": TOKEN}, body: JSON.stringify(Object.assign({c: P.c}, body))});
     const j = await r.json();
-    if (j.error) toast(j.error, true); else toast(j.said ? `pushed: ${j.said}` : j.lost ? `could not fetch: ${j.lost}` : "fetched");
+    if (j.error) toast(j.error, true); else toast(j.said ? (path === "/tassei" ? `tassei: ${j.said}` : `pushed: ${j.said}`) : j.lost ? `could not fetch: ${j.lost}` : "fetched");
   } catch (e) { toast(e.message, true); }
   busy = false; document.body.style.cursor = ""; await load();
 }
@@ -226,6 +229,8 @@ function header() {
   $("#pool").innerHTML = h ? `pool <b>${esc(h)}</b> <span title="${esc(sj)}">${esc(cut)}</span> · ${ago(+t)}` : "";
   $("#fetch").innerHTML = (S.lost ? `<span class="warn">could not fetch: ${esc(S.lost)}</span> · ` : "") + `fetched ${S.fetched ? ago(S.fetched) : "never"} · ${esc(S.machine)} · ten-go ${esc(S.version)}`;
   document.title = `${S.campaign} · Ten-Go kaizu`;
+  const ready = S.pumps.filter(p => p[F.st] === "h" && p[F.m] === S.machine && p[F.prog] >= 1).length;   // done here, not pushed yet
+  $("#tassei").textContent = ready ? `⇪ tassei (${ready})` : "⇪ tassei"; $("#tassei").classList.toggle("ready", ready > 0);
 }
 
 function summary() {
@@ -512,6 +517,7 @@ $("#nextm").onchange = e => { P.nextm = e.target.value; save(); build(); };
 $("#h").onchange = e => { const v = +e.target.value; if (v > 0) { P.h = v; save(); load(); } };
 $("#camp").onchange = e => { P.c = e.target.value; P.part = ""; selPids = null; save(); load(); };
 $("#sync").onclick = () => post("/sync", {});
+$("#tassei").onclick = () => post("/tassei", {});
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => S && draw(), 120); });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => S && build());
 load(); setInterval(() => { if (!drag && !busy) load(); }, 30000);

@@ -7,10 +7,11 @@ now, high, normal, low or skip (never claimed): a rule of prio/<c>.json in the p
 like a claim; the pieces picked can be named, a sub-campaign of the campaign, listed with the parts, its priority raised or lowered
 there (the watches claim now and high at once: see press in tengo.py); the next claim of each machine is drawn as the claim would take
 it (an adaptive part's new pumps aside: the rule makes them only at the claim).  A kaizu
-already on the port is stopped first, and its pages reload into the new one.  The dates have their Anno Fabri tags (~/bin/AF; none
+already on the port is stopped first, and its pages reload into the new one.  Its button tassei pushes at once the pumps this machine
+has done (ten-go --tassei), which a watch does every 30 min.  The dates have their Anno Fabri tags (~/bin/AF; none
 where it is not), the page Ten-Go's logo (lw [[Ten-Go]], File:Ten-go-logo-0PQTC.png, small, at 200 px under the pointer).  The clone is
 fetched every minute; a watch of the machine fetches it too, and the two share the clone's lock."""
-import errno, functools, http.server, json, os, re, secrets, shutil, signal, subprocess, threading, time, urllib.parse
+import contextlib, errno, functools, http.server, io, json, os, re, secrets, shutil, signal, subprocess, threading, time, urllib.parse
 from fractions import Fraction
 
 LOCK = threading.Lock()   # one thread at a time in tengo: its lock of the clone is re-entrant within a process, not between threads
@@ -228,6 +229,15 @@ def serve(T, port, c=None):
             try: body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
             except ValueError: return self.send(400, {"error": "not JSON"})
             if self.path == "/sync": fetch(); return self.send(200, {"ok": True, "lost": LAST["lost"]})
+            if self.path == "/tassei":   # ten-go --tassei here: the pumps this machine has done pushed to the pool now, not at the watch's next push
+                with LOCK:
+                    try:
+                        out = io.StringIO()
+                        with contextlib.redirect_stdout(out): T.cmd_done()
+                        LAST.update(fetched=time.time(), lost=None)
+                        return self.send(200, {"ok": True, "said": out.getvalue().strip().removeprefix("ten-go: ") or "nothing new to push"})
+                    except SystemExit as e: return self.send(400, {"error": str(e)})
+                    except Exception as e: return self.send(500, {"error": f"{type(e).__name__}: {e}"})
             if self.path != "/prio": return self.send(404, {"error": "no such action"})
             cc = body.get("c", c)
             with LOCK:

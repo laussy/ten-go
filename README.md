@@ -85,8 +85,9 @@ complete, the others go back to the pool). The pumps of high then take the kerne
 at once, the jobs of the other allocations being paused (SIGSTOP: the kernel waits in memory where it stands, nothing is lost; as many
 as the memory holds) and resumed, the nearest to completion first, as the kernels come back, their paused time left out of the job
 times; their deadlines are pushed back by the span of the claim of now. An uchikiri or a chushi by hand resumes the paused jobs first.
-A kaizu already on the port is stopped first (it ends the push it may be in), and the pages open on it reload into the new one. Any
-machine with a clone can run its own.
+A kaizu already on the port is stopped first (it ends the push it may be in), and the pages open on it reload into the new one. Its
+button **tassei** pushes at once the pumps this machine has done (`--tassei`), which a watch does every 30 min (until then they read
+"done here, not pushed yet"). Any machine with a clone can run its own.
 
 A campaign is declared once, by `ten-go --sensen SPEC.json`: a **grid** (lattices, orders by range of P, ranges left out, and the runs
 already computed, whose pumps are left out, read from each file's header) or an **adaptive** campaign (the rule of the adaptive
