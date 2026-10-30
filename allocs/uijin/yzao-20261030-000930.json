@@ -18,36 +18,41 @@
   120000237,
   120000029,
   120000157,
-  120000093
+  120000093,
+  120000221
  ],
  "times": {
   "150w80": [
    1919,
    1941,
    1054,
-   1493
+   1493,
+   1551
   ],
   "250e80": [
    2402,
    2460,
    1671,
-   2310
+   2310,
+   2312
   ],
   "300e80": [
    3489,
    3512,
    3334,
-   3516
+   3516,
+   3493
   ]
  },
  "results": [
   "results/uijin/yzao-20261030-000930-1.tgz",
-  "results/uijin/yzao-20261030-000930-2.tgz"
+  "results/uijin/yzao-20261030-000930-2.tgz",
+  "results/uijin/yzao-20261030-000930-3.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.32",
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
- "updated": 1793322679
+ "updated": 1793324480
 }
