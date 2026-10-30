@@ -18,37 +18,42 @@
   150000000,
   150000001,
   150000002,
-  150000003
+  150000003,
+  150000004
  ],
  "times": {
   "150w80": [
    1591,
    1649,
    1049,
-   1109
+   1109,
+   1096
   ],
   "250e80": [
    2056,
    2069,
    1506,
-   1500
+   1500,
+   1502
   ],
   "300e80": [
    3055,
    3093,
    2518,
-   2496
+   2496,
+   2518
   ]
  },
  "results": [
   "results/uijin/yzao-20261030-133546-1.tgz",
-  "results/uijin/yzao-20261030-133546-2.tgz"
+  "results/uijin/yzao-20261030-133546-2.tgz",
+  "results/uijin/yzao-20261030-133546-3.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.35",
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
  "kikan": 1793376060,
- "updated": 1793369267
+ "updated": 1793369397
 }
