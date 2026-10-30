@@ -62,6 +62,8 @@ The kernels that free before that end are not left idle (**hoju**, 補充, since
 not started that, whole, end before the pumps started even at a slow time (90 % of the job times measured on the machine), and the
 driver launches each as kernels free if it still ends in time then, else gives it back to the pool at once. `--nohoju` gives back
 every pump not started, as before; the uchikiri a watch makes for the kaizu's high or now has no hoju (those take the kernels).
+Since 1.36 hoju sees the machine: the allocations ending together (an uchikiri, or their kikan) count as one, the kernels of one
+going, as they free, to the small pumps of another, the kernels of the machine less those of the allocations going on.
 
 `--chushi` stops now, but a job within 10 minutes of completion is first offered to wait for: "One job is 3 min from completion;
 the next are 17 min, 2 h 20, 6 h away, so those are aborted. Abort this one too [n]ow, or [a]fter it completes?" `--now` or `--wait`

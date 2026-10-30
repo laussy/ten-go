@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.35 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.36 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order as long as their jobs, run on this machine the longest
 first, end within the ten hours (a single pump if the budget is very small).  The claim is a
@@ -47,6 +47,8 @@ results when it ends.  With --dry, it only says when.  The kernels that free bef
 allocation keeps those of its small pumps not started that, whole, end before the pumps started even at a slow time (90 % of the job
 times measured on the machine), and its driver launches each as kernels free, if it still ends in time then, else gives it back to
 the pool at once; --nohoju gives back all the pumps not started, as before 1.34 (and an uchikiri for the kaizu's high or now does).
+Hoju sees the machine (1.36): the allocations ending together (an uchikiri, or their kikan) count as one, their kernels as they free
+going to the small pumps of any of them, the kernels of the machine less those of the allocations going on.
 ten-go --chushi [MIN] stops them now (there is no other stop), but a job within MIN minutes of completion (10) is first offered to wait
 for: "One job is 3 min from completion; the next are 17 min, 2 h 20, 6 h away, so those are aborted. Abort this one too [n]ow, or
 [a]fter it completes?"  --now or --wait answers ahead (without a terminal, one of them is needed), --dry only asks.  The pumps not
@@ -97,7 +99,7 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
 import argparse, fcntl, glob, heapq, json, os, random, re, shlex, shutil, signal, subprocess, sys, tarfile, time
 from contextlib import contextmanager
 from fractions import Fraction
-VERSION = "1.35"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push)
+VERSION = "1.36"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push); 1.36: hoju sees the machine (the allocations ending together, their kernels as they free, the small pumps of any of them)
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -596,10 +598,17 @@ def cmd_uchikiri(aid=None, dry=False, fill=True):
     paused for the kaizu's pumps of level now resume first"""
     sync(); M = mine(aid)
     if not M: return print("ten-go: no open allocation of this machine")
-    if not dry: ending()
+    if not dry: ending(); kernels_now()
     for a in M:
         if not dry and os.path.isdir(workdir(a)) and (n := thaw(workdir(a))): print(f"ten-go: {a['id']}: {n} jobs paused resumed")
-        print(f"ten-go: {uchikiri(a, dry, fill)}")
+    for a in [] if dry else M:   # all at once, so that their drivers' hoju sees them ending together
+        W = workdir(a)
+        if not (os.path.isdir(W) and ours(W)[0] and knows(W, "--uchikiri")) or os.path.exists(os.path.join(W, "UCHIKIRI")): continue
+        for f in ("uchikiri.kept", "hoju.txt", "nohoju"):
+            if os.path.exists(os.path.join(W, f)): os.remove(os.path.join(W, f))
+        if not fill: open(os.path.join(W, "nohoju"), "w").write("no hoju: only the pumps started\n")
+        jobtimes_file(a, W); atend(a, W); open(os.path.join(W, "UCHIKIRI"), "w").write(f"{int(time.time())}\n")
+    for a in M: print(f"ten-go: {uchikiri(a, dry, fill)}")
 
 
 def cmd_chushi(aid=None, soon=10, how=None):
@@ -725,11 +734,15 @@ def gensoku():   # this machine's lowering of its kernels (--gensoku, --zensoku)
 
 def kernels_now(now=None):
     """the kernels this machine gives Ten-Go now, its allocations together: those of machines/<m>.json, fewer under a --gensoku, held
-    until its end (--zensoku, or its --jikan), then one more at a time until all are back at the end of its ramp"""
-    full = machine(C["machine"])["kernels"]; g = gensoku(); now = now or time.time()
-    if not g: return full
-    k = min(g["kernels"], full)
-    if g["until"] is not None and now >= g["until"]: k += int((full - k) * min(1.0, (now - g["until"]) / g["ramp"])) if g["ramp"] else full - k
+    until its end (--zensoku, or its --jikan), then one more at a time until all are back at the end of its ramp (now: also in the
+    file kernels of the work directory, for the drivers' hoju)"""
+    full = machine(C["machine"])["kernels"]; g = gensoku(); t = now or time.time(); k = full
+    if g:
+        k = min(g["kernels"], full)
+        if g["until"] is not None and t >= g["until"]: k += int((full - k) * min(1.0, (t - g["until"]) / g["ramp"])) if g["ramp"] else full - k
+    if now is None:
+        try: open(os.path.join(C["work"], "kernels"), "w").write(f"{k}\n")
+        except OSError: pass
     return k
 
 
