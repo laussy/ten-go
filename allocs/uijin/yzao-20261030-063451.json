@@ -9,10 +9,7 @@
  "cost_kernel_h": 7.4,
  "pumps": [
   30001177,
-  30001173,
-  30001181,
-  30001171,
-  30001179
+  30001173
  ],
  "done": [],
  "times": {},
@@ -22,5 +19,6 @@
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
- "delayed": 18000
+ "delayed": 18000,
+ "uchikiri": 1793338757
 }
