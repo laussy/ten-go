@@ -10,12 +10,27 @@
  "pumps": [
   30001375
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  30001375
+ ],
+ "times": {
+  "150w80": [
+   1806
+  ],
+  "250e80": [
+   2467
+  ],
+  "300e80": [
+   4328
+  ]
+ },
+ "results": [
+  "results/uijin/azag-20261030-072954-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.32",
  "shinshu": null,
  "shugeki": false,
- "prio": "high"
+ "prio": "high",
+ "updated": 1793347011
 }
