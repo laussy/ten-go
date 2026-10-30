@@ -2089,6 +2089,51 @@
    ]
   ],
   [
+   150000000,
+   "11.468",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   150000001,
+   "11.548",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   150000002,
+   "11.572",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   150000003,
+   "11.768",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   150000004,
+   "11.852",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
    30000000,
    "0.154",
    [
@@ -22263,6 +22308,14 @@
    "base": 140000000,
    "about": "the condensation program, round 1: 11.4-11.9 g refined where code/meshfig.py REFINE=0.01 flags the 80-digit pumps (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g), at 80 digits",
    "pumps": 11,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpI",
+   "base": 150000000,
+   "about": "the condensation program, round 2: 11.4-11.9 g refined where code/meshfig.py REFINE=0.01 flags the 80-digit pumps (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g), at 80 digits",
+   "pumps": 5,
    "left_out": 0
   },
   {
