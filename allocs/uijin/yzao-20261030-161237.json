@@ -10,13 +10,28 @@
  "pumps": [
   30001657
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  30001657
+ ],
+ "times": {
+  "250e80": [
+   1382
+  ],
+  "150w80": [
+   816
+  ],
+  "300e80": [
+   2153
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261030-161237-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.35",
  "shinshu": null,
  "shugeki": false,
  "kikan": 1793376060,
- "uchikiri": 1793374103
+ "uchikiri": 1793374103,
+ "updated": 1793375379
 }
