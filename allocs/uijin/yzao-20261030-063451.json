@@ -11,14 +11,33 @@
   30001177,
   30001173
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  30001177,
+  30001173
+ ],
+ "times": {
+  "150w80": [
+   1168,
+   1173
+  ],
+  "250e80": [
+   1386,
+   1497
+  ],
+  "300e80": [
+   2305,
+   2373
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261030-063451-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.32",
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
  "delayed": 18000,
- "uchikiri": 1793338757
+ "uchikiri": 1793338757,
+ "updated": 1793344238
 }
