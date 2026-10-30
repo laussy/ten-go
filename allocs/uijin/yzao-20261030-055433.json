@@ -11,9 +11,7 @@
   30001673,
   30000393,
   30001417,
-  30000905,
-  30000073,
-  30001097
+  30000905
  ],
  "done": [],
  "times": {},
@@ -21,5 +19,6 @@
  "status": "open",
  "tengo": "1.32",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "uchikiri": 1793338497
 }
