@@ -8,9 +8,7 @@
  "deadline": 1793384716,
  "cost_kernel_h": 3.4,
  "pumps": [
-  30001657,
-  30000377,
-  30001401
+  30001657
  ],
  "done": [],
  "times": {},
@@ -19,5 +17,6 @@
  "tengo": "1.35",
  "shinshu": null,
  "shugeki": false,
- "kikan": 1793376060
+ "kikan": 1793376060,
+ "uchikiri": 1793374103
 }
