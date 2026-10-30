@@ -13,27 +13,36 @@
   160000002
  ],
  "done": [
-  160000000
+  160000000,
+  160000001,
+  160000002
  ],
  "times": {
   "250e": [
-   1155
+   1155,
+   1690,
+   1887
   ],
   "150w": [
-   850
+   850,
+   1164,
+   1351
   ],
   "300e": [
-   2083
+   2083,
+   2716,
+   2718
   ]
  },
  "results": [
-  "results/uijin/yzao-20261030-144607-1.tgz"
+  "results/uijin/yzao-20261030-144607-1.tgz",
+  "results/uijin/yzao-20261030-144607-2.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.35",
  "shinshu": null,
  "shugeki": false,
  "kikan": 1793376060,
  "uchikiri": 1793369775,
- "updated": 1793371108
+ "updated": 1793372216
 }
