@@ -18,7 +18,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go --honkai --until TAG [--ki N] [--go]   # the hours from now until the AF tag TAG (or 'YYYY-MM-DD HH:MM')
     ten-go --honkai --jikan 10 --until TAG ...    # only prints the same command, its --jikan set to the hours until TAG
     ten-go --tassei                               # push the pumps finished (results/*.tgz) and the job times
-    ten-go --uchikiri [--dry]                     # end as soon as possible WITHOUT LOSS; says when
+    ten-go --uchikiri [--dry] [--nohoju]          # end as soon as possible WITHOUT LOSS (the kernels freed filled meanwhile); says when
     ten-go --gensoku N [--jikan H]                # this machine down to N kernels, until --zensoku (or for H hours)
     ten-go --zensoku [H]                          # all its kernels back, one at a time over H hours (1; 0: at once)
     ten-go --chushi [MIN] [--now|--wait|--dry]    # stop NOW (the only stop), but first offer to wait for jobs within MIN (10) min
@@ -58,6 +58,10 @@ deadline. The watch otherwise keeps every kernel of `machines/<m>.json` busy: an
 done or in flight), and says when it will end and what a STOP or a kill would waste instead; the pumps not started go back to the
 pool at once, a watch claims nothing more, and the driver pushes the last results when it ends. `--dry` only says when. Outside
 Ten-Go: `python3 run_window.py --uchikiri [--dry]` in the run's directory.
+The kernels that free before that end are not left idle (**hoju**, 補充, since 1.34): the allocation keeps those of its small pumps
+not started that, whole, end before the pumps started even at a slow time (90 % of the job times measured on the machine), and the
+driver launches each as kernels free if it still ends in time then, else gives it back to the pool at once. `--nohoju` gives back
+every pump not started, as before; the uchikiri a watch makes for the kaizu's high or now has no hoju (those take the kernels).
 
 `--chushi` stops now, but a job within 10 minutes of completion is first offered to wait for: "One job is 3 min from completion;
 the next are 17 min, 2 h 20, 6 h away, so those are aborted. Abort this one too [n]ow, or [a]fter it completes?" `--now` or `--wait`

@@ -16,12 +16,15 @@ that order for every kernel, so that an uchikiri ends soon.  A file kikan (an ep
   python3 run_window.py --progress   one line: ASCII bar of the kernel time done, files per order, kernels, memory, end estimate
   python3 run_window.py --kill       stop now: the driver, its front-ends and their kernels (a file STOP only stops new launches)
   python3 run_window.py --uchikiri   end as soon as possible without loss: no new pump, only the jobs that complete the pumps started
-                                     (one with a job done or in flight), and say when the run will end; --dry only says it
+                                     (one with a job done or in flight), and say when the run will end; --dry only says it.  The
+                                     kernels that free before that end take the run's small pumps not started (hoju), whole, while
+                                     even a slow run of them (90 % of the measured times) ends by then; --nohoju: none
   python3 run_window.py --chushi     stop now, but a job within 10 minutes of completion (--soon MIN) is first offered to wait for:
                                      abort it too [n]ow, or [a]fter it completes; --now or --wait answers ahead, --dry only says it
   python3 run_window.py ... --dir D  the run of directory D rather than this file's own (for --progress and the --dry runs)
-A file atend holds a command run at the end of the run (Ten-Go's uchikiri: push the last results)."""
-import heapq, os, re, shlex, signal, subprocess, sys, time
+A file atend holds a command run at the end of the run (Ten-Go's uchikiri: push the last results).  A file jobtimes.json (Ten-Go's:
+{order: seconds of the jobs measured on this machine}) gives the times hoju goes by, with this run's own."""
+import heapq, json, os, re, shlex, signal, subprocess, sys, time
 WORK = os.path.realpath(sys.argv[sys.argv.index("--dir") + 1]) if "--dir" in sys.argv else os.path.dirname(os.path.realpath(__file__)); os.chdir(WORK)
 if "--dir" in sys.argv and not {"--progress", "--dry"} & set(sys.argv): sys.exit("--dir only reads: with --progress or --dry")   # never stop another run by mistake
 P = dict(l.split("=", 1) for l in open("params.txt").read().split() if "=" in l)
@@ -66,19 +69,61 @@ def driving():   # is the driver of this directory running
 
 
 def inflight():
-    """the jobs running here, [(pid, prefix, j, seconds since they started, seconds still expected)], the expected from this run's own
-    job times per order (its log), else T; and that cost per order"""
-    took = {}
-    for l in (open("run.log") if os.path.exists("run.log") else []):
-        m = re.search(r" done (\S+) j=\S+ P=\S+ in (\d+) s", l)
-        if m and "NO FILE" not in l: took.setdefault(order(m[1]), []).append(int(m[2]))
+    """the jobs running here, [(pid, prefix, j, seconds since they started, seconds still expected)], the expected from the job times
+    measured per order (this run's own and Ten-Go's jobtimes.json), else T; and that cost per order"""
+    took = took_all()
     per = lambda o: sum(took[o]) / len(took[o]) if took.get(o) else tcost(o)
     hz = os.sysconf("SC_CLK_TCK"); boot = next(int(l.split()[1]) for l in open("/proc/stat") if l.startswith("btime")); now = time.time(); out = []
     for pid, (pre, j) in ours().items():
         try: el = now - boot - int(open(f"/proc/{pid}/stat").read().rsplit(")", 1)[1].split()[19]) / hz   # since the job started
         except OSError: continue
-        out.append((pid, pre, j, el, max(per(order(pre)) - el, 60)))
+        out.append((pid, pre, j, el, left(order(pre), el, .5, took)))
     return out, per
+
+
+def took_all():   # the measured seconds per order: Ten-Go's jobtimes.json (this machine's jobs), and this run's own log
+    took = {}
+    try: took = {o: list(v) for o, v in json.load(open("jobtimes.json")).items()}
+    except (OSError, ValueError): pass
+    for l in (open("run.log") if os.path.exists("run.log") else []):
+        m = re.search(r" done (\S+) j=\S+ P=\S+ in (\d+) s", l)
+        if m and "NO FILE" not in l: took.setdefault(order(m[1]), []).append(int(m[2]))
+    return took
+
+
+def left(o, el, p, took):
+    """seconds still to run of a job of order o that has run el seconds: the quantile p of its measured times beyond el (a job past
+    them all: a tenth of its time more, a minute at least); without 3 such times, the mean (else T) stretched by 1.6 for a slow run"""
+    t = sorted(x - el for x in took.get(o, []) if x > el)
+    if len(t) >= 3: return t[min(len(t) - 1, int(p * len(t)))]
+    if took.get(o) and max(took[o]) <= el: return max(0.1 * el, 60)
+    base = sum(took[o]) / len(took[o]) if took.get(o) else tcost(o)
+    return max(base * (1.6 if p > 0.5 else 1) - el, 0.1 * el, 60)
+
+
+def kernels():   # the kernels of the run now (shinshu's count, else nproc)
+    try: return int(open("shinshu.now").read()) if os.path.exists("shinshu") and os.path.exists("shinshu.now") else int(open("nproc").read())
+    except (OSError, ValueError): return 1
+
+
+def hoju(core, waiting, cand, k, more=()):
+    """the end of the pumps started (core) in seconds from now, their jobs in flight and waiting (orders) at their median times, on
+    k kernels; and of cand ({pump: its orders}, the cheapest first) the pumps that fill the kernels as these free, each whole and
+    only if all its jobs, at a slow time (90 %), launched as kernels free, end by then (more: the jobs waiting of pumps already
+    filling, at a slow time, before them)"""
+    took = took_all(); fly = inflight()[0]
+    mine = [left(order(pre), el, .5, took) for _, pre, j, el, _ in fly if j in core]   # the pumps started: their median
+    rest = [left(order(pre), el, .9, took) for _, pre, j, el, _ in fly if j not in core]   # pumps already filling: a slow time
+    busy = mine + rest; free = sorted(busy)[max(0, len(busy) - k):] + [0.0] * max(0, k - len(busy)); heapq.heapify(free)   # the first to end above k free nothing
+    end = max(mine + [0.0])
+    for o in waiting: t = free[0] + left(o, 0, .5, took); heapq.heapreplace(free, t); end = max(end, t)
+    for o in more: heapq.heapreplace(free, free[0] + left(o, 0, .9, took))
+    take = []
+    for j, os_ in sorted(cand.items(), key=lambda x: sum(left(o, 0, .5, took) for o in x[1])):
+        t = list(free); last = 0.0
+        for o in sorted(os_, key=lambda o: -left(o, 0, .9, took)): x = t[0] + left(o, 0, .9, took); heapq.heapreplace(t, x); last = max(last, x)
+        if last <= end: free = t; take.append(j)
+    return end, take
 
 
 def kill(pids):   # these front-ends and all their descendants (wolframscript ignores SIGTERM and leaves its kernel behind)
@@ -127,6 +172,8 @@ if "--uchikiri" in sys.argv:
     alive = driving(); dry = "--dry" in sys.argv or not alive
     if not dry and not os.path.exists("UCHIKIRI"):
         if os.path.exists("uchikiri.kept"): os.remove("uchikiri.kept")
+        if os.path.exists("hoju.txt"): os.remove("hoju.txt")
+        if "--nohoju" in sys.argv: open("nohoju", "w").write("no hoju: only the pumps started\n")
         open("UCHIKIRI", "w").write(f"{int(time.time())}\n")
     for k in range(0 if dry else 90):   # the driver answers within one turn of its loop (1 s per launch in it)
         if os.path.exists("uchikiri.kept"): break
@@ -135,18 +182,25 @@ if "--uchikiri" in sys.argv:
         if not dry: sys.exit("uchikiri: the driver did not answer (an older run_window.py?); the file UCHIKIRI stays for it")
     fly, per = inflight(); fl = {(pre, j) for _, pre, j, _, _ in fly}; have = lambda f: os.path.exists(f"{f[0]}_{f[3]}.dat")
     kept = set(open("uchikiri.kept").read().split()) if os.path.exists("uchikiri.kept") else {j for _, j in fl} | {f[3] for f in plan if have(f)}
-    todo = [f for f in plan if f[3] in kept and not have(f) and (f[0], f[3]) not in fl]
-    k = int(open("shinshu.now").read()) if os.path.exists("shinshu") and os.path.exists("shinshu.now") else int(open("nproc").read())
+    fill = set(open("hoju.txt").read().split()[1:]) & kept if os.path.exists("hoju.txt") else set()
+    if dry and not os.path.exists("UCHIKIRI") and "--nohoju" not in sys.argv:   # what hoju would take
+        cand = {}
+        for f in plan:
+            if f[3] not in kept and not have(f): cand.setdefault(f[3], []).append(order(f[0]))
+        fill = set(hoju(kept, [order(f[0]) for f in plan if f[3] in kept and not have(f) and (f[0], f[3]) not in fl], cand, kernels())[1])
+    todo = [f for f in plan if f[3] in kept and f[3] not in fill and not have(f) and (f[0], f[3]) not in fl]
+    k = kernels()
     free = [x[4] for x in fly] + [0.0] * max(0, k - len(fly)); heapq.heapify(free)
     for f in todo: heapq.heappush(free, heapq.heappop(free) + per(order(f[0])))   # launched in the plan's order as kernels free
     end = max(free, default=0)
-    under = {f[3] for f in plan if f[3] in kept and not have(f)}; drop = {f[3] for f in plan if not have(f)} - kept
+    under = {f[3] for f in plan if f[3] in kept and f[3] not in fill and not have(f)}; drop = {f[3] for f in plan if not have(f)} - kept - fill
     cut = {f[3] for f in todo}   # the pumps a STOP would leave incomplete: their jobs done, and those in flight, for nothing
     stop = sum(per(order(f[0])) for f in plan if f[3] in cut and have(f)) + sum(per(order(pre)) for pre, j in fl if j in cut)
     lose = sum(x[3] for x in fly) + sum(per(order(f[0])) for f in plan if f[3] in under and have(f))   # in flight, and every pump under way
     print(f"uchikiri{' (dry run: nothing changed)' if dry else ''}{'' if alive else ', no driver running'}: {len(drop)} pumps not started "
           f"{'would be ' if dry else ''}given up; {len(fly)} jobs in flight and {len(todo)} to launch complete the {len(under)} pumps under way, "
-          f"on {k} kernels; the run ends about {time.strftime('%a %H:%M', time.localtime(time.time() + end))} (in {hm(end)}) without loss. "
+          f"on {k} kernels; the run ends about {time.strftime('%a %H:%M', time.localtime(time.time() + end))} (in {hm(end)}) without loss"
+          + (f", and {len(fill)} small pumps not started {'would ' if dry else ''}fill the kernels as they free (hoju), each only while it ends before it. " if fill else ". ") +
           f"Instead, a STOP now would waste {stop / 3600:.1f} kh ({len(cut)} pumps left incomplete), --kill {lose / 3600:.1f} kh")
     sys.exit()
 if "--chushi" in sys.argv:
@@ -251,7 +305,7 @@ if not os.path.exists("launch-epoch"):   # the launch time and the kernel time o
 print(f"{time.strftime('%H:%M:%S')} {len(jobs)} jobs to run ({len(foreign)} adopted in flight), GA={GA} GS={GS} PREC={PREC}"
       + (f", shinshu up to {ceiling()} kernels" if ceiling() else "") + (f", its time until {clock(epoch('jikan'))}" if epoch("jikan") else "")
       + (f", ending without loss at {clock(epoch('kikan'))} (kikan)" if epoch("kikan") else ""), flush=True)
-running = []; t0 = time.time(); done = 0; lastmem = 0; took = {}; limit = nproc(); hist = []; prev = {}; look = 0; uchi = False; late = False
+running = []; t0 = time.time(); done = 0; lastmem = 0; took = {}; limit = nproc(); hist = []; prev = {}; look = 0; uchi = False; late = False; fill = set(); core = set(); begun = set()
 while jobs or running or foreign:
     now = time.time(); base, cap = nproc(), ceiling()
     if epoch("kikan") and now >= epoch("kikan") and not os.path.exists("UCHIKIRI"):   # Ten-Go's kikan: at its time, an uchikiri of its own
@@ -268,9 +322,20 @@ while jobs or running or foreign:
     if os.path.exists("UCHIKIRI") and not uchi:   # end without loss: only the jobs of the pumps started (a job done or in flight)
         uchi = True; kept = {j for *_, j in running} | {j for _, j in foreign.values()} | {f[3] for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat")}
         if os.path.exists("uchikiri.kept"): kept = set(open("uchikiri.kept").read().split())   # a driver restarted after it
-        else: open("uchikiri.tmp", "w").write(" ".join(sorted(kept)) + "\n"); os.replace("uchikiri.tmp", "uchikiri.kept")
-        n = len(jobs); jobs = [x for x in jobs if x[3] in kept]
-        print(f"{time.strftime('%H:%M:%S')} UCHIKIRI: {n - len(jobs)} jobs dropped, {len(jobs)} kept to complete the pumps started", flush=True)
+        else:
+            if not (os.path.exists("nohoju") or os.path.exists("STOP")):   # hoju: the small pumps not started that end, whole, before the pumps started do
+                cand = {}
+                for x in jobs:
+                    if x[3] not in kept: cand.setdefault(x[3], []).append(order(x[0]))
+                end, fill = hoju(kept, [order(x[0]) for x in jobs if x[3] in kept], cand, limit)
+                open("hoju.txt", "w").write(f"{int(time.time() + end)} {' '.join(sorted(fill))}\n"); kept |= set(fill)
+            open("uchikiri.tmp", "w").write(" ".join(sorted(kept)) + "\n"); os.replace("uchikiri.tmp", "uchikiri.kept")
+        fill = set(open("hoju.txt").read().split()[1:]) & kept if os.path.exists("hoju.txt") else set(); core = kept - fill
+        cost = lambda j: sum(tcost(order(y[0])) for y in jobs if y[3] == j)   # the fill: the cheapest pump first, its jobs the longest first
+        n = len(jobs); jobs = [x for x in jobs if x[3] in core] + sorted((x for x in jobs if x[3] in fill), key=lambda x: (cost(x[3]), x[3], -tcost(order(x[0]))))
+        begun = {j for *_, j in running} | {j for _, j in foreign.values()} | {f[3] for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat")}
+        print(f"{time.strftime('%H:%M:%S')} UCHIKIRI: {n - len(jobs)} jobs dropped, {sum(x[3] in core for x in jobs)} kept to complete the pumps started"
+              + (f", {len(fill)} small pumps not started fill the kernels as they free (hoju), each only while it ends before them" if fill else ""), flush=True)
     if not cap: hist.clear(); prev.clear(); limit = base
     elif now - look >= EVERY:
         look = now; o = others([p.pid for p, *_ in running] + list(foreign), prev)
@@ -285,7 +350,18 @@ while jobs or running or foreign:
         if memavail() < MEMMIN:
             if now - lastmem > 300: print(f"{time.strftime('%H:%M:%S')} memory low ({memavail():.1f} GB available), holding launches", flush=True); lastmem = now
             break
-        pre, nt, w, j, prec = jobs.pop(pick(len(running) + len(foreign) >= base))
+        i = pick(len(running) + len(foreign) >= base)
+        if uchi and jobs[i][3] in fill and jobs[i][3] not in begun:   # hoju: a pump not started still has to end before those started
+            j = jobs[i][3]; end, ok = hoju(core, [order(x[0]) for x in jobs if x[3] in core], {j: [order(x[0]) for x in jobs if x[3] == j]}, limit,
+                                           [order(x[0]) for x in jobs if x[3] in fill and x[3] in begun])
+            if not ok:
+                jobs = [x for x in jobs if x[3] != j]; fill.discard(j); kept.discard(j)
+                open("uchikiri.tmp", "w").write(" ".join(sorted(kept)) + "\n"); os.replace("uchikiri.tmp", "uchikiri.kept")
+                print(f"{time.strftime('%H:%M:%S')} hoju: pump {j} (P={pumps[j]}) would end past the pumps started (about {clock(time.time() + end)}): given up", flush=True)
+                if os.path.exists("atend"): subprocess.Popen(shlex.split(open("atend").read().strip()), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)   # Ten-Go: back to the pool now
+                continue
+            begun.add(j); print(f"{time.strftime('%H:%M:%S')} hoju: pump {j} (P={pumps[j]}) on a kernel freed, the pumps started ending about {clock(time.time() + end)}", flush=True)
+        pre, nt, w, j, prec = jobs.pop(i)
         log = open(f"{pre}.log", "a")
         p = subprocess.Popen(["nice", "-n", "10", "wolframscript", "-file", "hp3.wls", str(nt), GA, GS, prec, pre, str(w), f"{j}:{pumps[j]}", "Ps", "manifold"],
                              stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
