@@ -1,0 +1,25 @@
+{
+ "id": "yzao-20261030-022448",
+ "campaign": "uijin",
+ "machine": "yzao",
+ "kernels": 6,
+ "hours": 2.0,
+ "created": 1793323488,
+ "deadline": 1793341488,
+ "cost_kernel_h": 7.4,
+ "pumps": [
+  120000007,
+  120000135,
+  120000071,
+  120000199,
+  120000039
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.32",
+ "shinshu": null,
+ "shugeki": false,
+ "prio": "high"
+}
