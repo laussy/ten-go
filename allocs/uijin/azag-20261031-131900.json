@@ -17,13 +17,32 @@
   310000007,
   310000008
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  310000001,
+  310000002
+ ],
+ "times": {
+  "150w80": [
+   1587,
+   1629
+  ],
+  "250e80": [
+   2218,
+   2210
+  ],
+  "300e80": [
+   4044,
+   4026
+  ]
+ },
+ "results": [
+  "results/uijin/azag-20261031-131900-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
  "prio": "now",
- "delayed": 18000
+ "delayed": 18000,
+ "updated": 1793453248
 }
