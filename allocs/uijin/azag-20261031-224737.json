@@ -45,11 +45,30 @@
   30000491,
   30001515
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  30001611,
+  30001355
+ ],
+ "times": {
+  "150w80": [
+   1554,
+   1557
+  ],
+  "250e80": [
+   2175,
+   2129
+  ],
+  "300e80": [
+   3720,
+   3914
+  ]
+ },
+ "results": [
+  "results/uijin/azag-20261031-224737-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1793487193
 }
