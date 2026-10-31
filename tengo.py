@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Operation Ten-Go v1.37 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
+"""Operation Ten-Go v1.38 (lw page [[Ten-Go]]): several machines share one pool of pump jobs through a GitHub repository (public,
 github.com/laussy/ten-go), and no pump is ever computed twice.  A machine asks for a BUDGET, not for pumps: `ten-go --honkai --jikan 10` takes, in one
 go, the free pumps of the campaign in its global (van der Corput) order as long as their jobs, run on this machine the longest
 first, end within the ten hours (a single pump if the budget is very small).  The claim is a
@@ -85,8 +85,9 @@ of now take them at once, the jobs of the other allocations being paused (SIGSTO
 stands: nothing is lost, as many as the memory holds) and resumed, the nearest to completion first, as the kernels come back, their
 paused time left out of the job times (paused.tsv); their deadlines are pushed back by the span of the claim of now.  An uchikiri or a
 chushi by hand resumes the jobs paused first.  A kaizu already on the port is stopped first (it ends the push it may be in), and its
-pages reload into the new one.  Its button tassei pushes at once the pumps this machine has done (--tassei), which a watch does every
-30 min: on the sea chart they read 'done here, not pushed yet' until then.
+pages reload into the new one.  Its button tassei pushes at once the pumps this machine has done (--tassei), which a watch does within
+the minute a pump completes (1.38; the kernel-hours of the jobs done alone, every 30 min): on the sea chart they read 'done here, not
+pushed yet' until then.
 
 A kh is one kernel for one hour: the jobs' own times summed, a failed job's included (an adopted job's time, unknown, is not).  The
 ledger keeps what each task cost: `ten-go kh` shows the totals per task and machine, `ten-go kh TASK` the lines of a task.
@@ -99,7 +100,7 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
 import argparse, fcntl, glob, heapq, json, os, random, re, shlex, shutil, signal, subprocess, sys, tarfile, time
 from contextlib import contextmanager
 from fractions import Fraction
-VERSION = "1.37"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push); 1.36: hoju sees the machine (the allocations ending together, their kernels as they free, the small pumps of any of them); 1.37: a claim of high made by a watch launches on the kernels free, as any claim, not on all of them (its jobs started beside those of the allocations ending: 60 jobs on 32 kernels for two hours, 31 Oct)
+VERSION = "1.38"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push); 1.36: hoju sees the machine (the allocations ending together, their kernels as they free, the small pumps of any of them); 1.37: a claim of high made by a watch launches on the kernels free, as any claim, not on all of them (its jobs started beside those of the allocations ending: 60 jobs on 32 kernels for two hours, 31 Oct); 1.38: a watch pushes a pump within the minute it completes (it looked every 30 min: the kernel-hours of the jobs done, alone, still then)
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -892,6 +893,13 @@ def press(c, op, kern, hours, shugeki=False, kikan=None):
     return "; ".join(said) or None
 
 
+def newdone():   # a pump of this machine complete here and not pushed yet: its files alone, no git
+    for c in campaigns():
+        A = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open" and os.path.isdir(workdir(a))]
+        if A and (cm := campaign(c)) and any(set(complete(a, cm)) - set(a["done"]) for a in A): return True
+    return False
+
+
 def ours_open(): return [a for c in campaigns() for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
 
 
@@ -929,7 +937,8 @@ LAST = 1800   # the last half hour of a watch's time: no claim then (kikan), or 
 def cmd_watch(until, hours, c, shinshu=None, shugeki=False, kikan=False):
     """the unattended loop: claim and launch an allocation while time remains before `until`, then go on with sorties (the cheapest
     pumps first, whole), until the campaign is complete (nothing free and no allocation open anywhere) or an uchikiri or a chushi by
-    hand (kikan: end at `until`, what runs then ending without loss; no `until`: until the campaign is complete), push the pumps done every 30 min,
+    hand (kikan: end at `until`, what runs then ending without loss; no `until`: until the campaign is complete), push the pumps done within
+    the minute they complete (the kernel-hours of the jobs done alone, every 30 min),
     restart a dead driver (3 times per allocation at most), and claim the next allocation as soon as the current one has launched all
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail); a new
     version pushed to the pool takes the watch over at its next sync; a git that fails (the network gone) is tried again every minute"""
@@ -947,7 +956,8 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False, kikan=False):
                 late = True; print(f"{time.strftime('%H:%M:%S')} {'its time is up' if now >= end else f'its time is up at {stamp(end)}'}: on with sorties, "
                                    "the cheapest pumps first, whole (an uchikiri ends within a job or two)", flush=True)
             open_claims = end - now > LAST or late and not halt; sortie = shugeki or late; hrs = hours if late else min(hours, (end - now) / 3600)
-            if now - last > 1800: cmd_done(); last = now
+            if now - last > 1800: cmd_done(); last = now   # the kernel-hours spent, and the pumps done
+            elif newdone(): cmd_done()   # a pump complete here: pushed within the minute, not at the next half hour (a push per job done would be ~60 an hour)
             sync(); op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
             if newer(): os.environ["TENGO_WATCH_T0"] = str(t0); os.execv(sys.executable, [sys.executable, os.path.realpath(__file__)] + sys.argv[1:])
             for a in op:

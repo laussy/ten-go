@@ -8,7 +8,7 @@ like a claim; the pieces picked can be named, a sub-campaign of the campaign, li
 there (the watches claim now and high at once: see press in tengo.py); the next claim of each machine is drawn as the claim would take
 it (an adaptive part's new pumps aside: the rule makes them only at the claim).  A kaizu
 already on the port is stopped first, and its pages reload into the new one.  Its button tassei pushes at once the pumps this machine
-has done (ten-go --tassei), which a watch does every 30 min.  The dates have their Anno Fabri tags (~/bin/AF; none
+has done (ten-go --tassei), which a watch does within the minute a pump completes (1.38).  The dates have their Anno Fabri tags (~/bin/AF; none
 where it is not), the page Ten-Go's logo (lw [[Ten-Go]], File:Ten-go-logo-0PQTC.png, small, at 200 px under the pointer).  The clone is
 fetched every minute; a watch of the machine fetches it too, and the two share the clone's lock."""
 import contextlib, errno, functools, http.server, io, json, os, re, secrets, shutil, signal, subprocess, threading, time, urllib.parse

@@ -23,7 +23,7 @@ The command is `ten-go`, a link to the clone's `tengo.py` on the PATH: `ln -s CL
     ten-go --zensoku [H]                          # all its kernels back, one at a time over H hours (1; 0: at once)
     ten-go --chushi [MIN] [--now|--wait|--dry]    # stop NOW (the only stop), but first offer to wait for jobs within MIN (10) min
     ten-go launch [--shinshu [N]]                 # (re)start the driver of this machine's open allocation
-    ten-go watch [--until TAG] [--jikan 10]       # unattended (without --until: until the campaign is complete): claim, launch, push every 30 min, restart
+    ten-go watch [--until TAG] [--jikan 10]       # unattended (without --until: until the campaign is complete): claim, launch, push each pump done within the minute, restart
                                                   # (a new version pushed to the pool takes the watch over at its next sync)
     ten-go watch --until TAG --kikan              # ends at TAG (without --kikan, it goes on past TAG with sorties)
     ten-go --shushu DIR                           # unpack every result into DIR
@@ -89,8 +89,8 @@ at once, the jobs of the other allocations being paused (SIGSTOP: the kernel wai
 as the memory holds) and resumed, the nearest to completion first, as the kernels come back, their paused time left out of the job
 times; their deadlines are pushed back by the span of the claim of now. An uchikiri or a chushi by hand resumes the paused jobs first.
 A kaizu already on the port is stopped first (it ends the push it may be in), and the pages open on it reload into the new one. Its
-button **tassei** pushes at once the pumps this machine has done (`--tassei`), which a watch does every 30 min (until then they read
-"done here, not pushed yet"). Any machine with a clone can run its own.
+button **tassei** pushes at once the pumps this machine has done (`--tassei`), which a watch does within the minute a pump completes
+(since 1.38; before, every 30 min, as it still books the kernel-hours of the jobs done; until then they read "done here, not pushed yet"). Any machine with a clone can run its own.
 
 A campaign is declared once, by `ten-go --sensen SPEC.json`: a **grid** (lattices, orders by range of P, ranges left out, and the runs
 already computed, whose pumps are left out, read from each file's header) or an **adaptive** campaign (the rule of the adaptive
