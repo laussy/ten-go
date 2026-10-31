@@ -22808,6 +22808,42 @@
    ]
   ],
   [
+   440000000,
+   "11.765",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   440000001,
+   "11.763",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   440000002,
+   "11.521",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   440000003,
+   "11.761",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
    120000000,
    "19.002",
    [
@@ -25401,6 +25437,14 @@
    "base": 430000000,
    "about": "the bubbles of 11-12 g smoothed, batch 1: midpoints where a join of Fig. 0R7Ta misses its curve by > 0.0004 g, at 80 digits; order 400 at 80 digits at four pumps of the family at gamma ~ 7 g (does 300/400 certify it?)",
    "pumps": 31,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpSb",
+   "base": 440000000,
+   "about": "the bubbles of 11-12 g smoothed, batch 5: midpoints where a join of Fig. 0R7Ta misses its curve by > 0.0004 g, at 80 digits",
+   "pumps": 4,
    "left_out": 0
   },
   {
