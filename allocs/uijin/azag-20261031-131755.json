@@ -10,14 +10,29 @@
  "pumps": [
   200000058
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  200000058
+ ],
+ "times": {
+  "150w80": [
+   1761
+  ],
+  "250e80": [
+   2342
+  ],
+  "300e80": [
+   4199
+  ]
+ },
+ "results": [
+  "results/uijin/azag-20261031-131755-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
  "delayed": 54000,
- "uchikiri": 1793449150
+ "uchikiri": 1793449150,
+ "updated": 1793457122
 }
