@@ -499,6 +499,16 @@
    ],
    "t": 1793425380,
    "by": "azag"
+  },
+  {
+   "level": "high",
+   "name": "bubbles",
+   "pumps": [
+    100000007,
+    100000057
+   ],
+   "t": 1793429314,
+   "by": "azag"
   }
  ],
  "about": "the priorities set by ten-go --kaizu: the last rule that matches a pump decides (none: normal)"
