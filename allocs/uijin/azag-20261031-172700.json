@@ -31,34 +31,39 @@
  "done": [
   430000000,
   430000001,
-  430000002
+  430000002,
+  430000003
  ],
  "times": {
   "150w80": [
    1789,
    1739,
-   1679
+   1679,
+   1681
   ],
   "250e80": [
    2368,
    2337,
-   2291
+   2291,
+   2266
   ],
   "300e80": [
    4038,
    4117,
-   3981
+   3981,
+   3953
   ]
  },
  "results": [
   "results/uijin/azag-20261031-172700-1.tgz",
   "results/uijin/azag-20261031-172700-2.tgz",
-  "results/uijin/azag-20261031-172700-3.tgz"
+  "results/uijin/azag-20261031-172700-3.tgz",
+  "results/uijin/azag-20261031-172700-4.tgz"
  ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
- "updated": 1793468471
+ "updated": 1793468782
 }
