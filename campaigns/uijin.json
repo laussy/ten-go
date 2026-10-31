@@ -22123,6 +22123,42 @@
    ]
   ],
   [
+   330000000,
+   "11.175",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   330000001,
+   "11.177",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   330000002,
+   "11.312",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   330000003,
+   "11.431",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
    120000000,
    "19.002",
    [
@@ -24627,6 +24663,14 @@
    "prefix": "hpMm",
    "base": 320000000,
    "about": "the bubbles of 11-12 g nursed, batch 19: where code/meshfig.py REFINE=0.01 flags the 80-digit pumps within |omega| <= 0.3 g (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g, 0.0005 g at a flag not tiny), at 80 digits",
+   "pumps": 4,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpMn",
+   "base": 330000000,
+   "about": "the bubbles of 11-12 g nursed, batch 20: where code/meshfig.py REFINE=0.01 flags the 80-digit pumps within |omega| <= 0.3 g (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g, 0.0005 g at a flag not tiny), at 80 digits",
    "pumps": 4,
    "left_out": 0
   },
