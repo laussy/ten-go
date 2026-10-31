@@ -21,38 +21,43 @@
   200000051,
   200000052,
   200000053,
-  200000054
+  200000054,
+  200000055
  ],
  "times": {
   "150w80": [
    1069,
    1125,
    1204,
-   1184
+   1184,
+   1079
   ],
   "250e80": [
    1691,
    1682,
    1541,
-   1531
+   1531,
+   1622
   ],
   "300e80": [
    3018,
    2831,
    2646,
-   2730
+   2730,
+   2802
   ]
  },
  "results": [
   "results/uijin/yzao-20261031-134130-1.tgz",
   "results/uijin/yzao-20261031-134130-2.tgz",
   "results/uijin/yzao-20261031-134130-3.tgz",
-  "results/uijin/yzao-20261031-134130-4.tgz"
+  "results/uijin/yzao-20261031-134130-4.tgz",
+  "results/uijin/yzao-20261031-134130-5.tgz"
  ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
- "updated": 1793456288
+ "updated": 1793457536
 }
