@@ -11,12 +11,31 @@
   100000007,
   100000057
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  100000007,
+  100000057
+ ],
+ "times": {
+  "150w80": [
+   1771,
+   1799
+  ],
+  "250e80": [
+   2380,
+   2407
+  ],
+  "300e80": [
+   4927,
+   5325
+  ]
+ },
+ "results": [
+  "results/uijin/azag-20261031-064347-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.36",
  "shinshu": null,
  "shugeki": false,
- "prio": "high"
+ "prio": "high",
+ "updated": 1793430766
 }
