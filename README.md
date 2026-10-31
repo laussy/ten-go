@@ -83,7 +83,8 @@ make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces,
 first, then high, normal, low, each in the order of the campaign (`--shugeki`: the cheapest first). The watches take normal, low and
 skip up at their next claim, and what is claimed already runs on; **now** and **high** they take at once: a watch claims the pumps of
 that level alone, and its allocations still launching pumps of a lower level end without loss (an uchikiri: the pumps started
-complete, the others go back to the pool). The pumps of high then take the kernels as that uchikiri frees them; those of now take them
+complete, the others go back to the pool). The pumps of high then take the kernels as that uchikiri frees them (from their launch on,
+since 1.37: before, their driver started on all the kernels of the machine beside the jobs still running); those of now take them
 at once, the jobs of the other allocations being paused (SIGSTOP: the kernel waits in memory where it stands, nothing is lost; as many
 as the memory holds) and resumed, the nearest to completion first, as the kernels come back, their paused time left out of the job
 times; their deadlines are pushed back by the span of the claim of now. An uchikiri or a chushi by hand resumes the paused jobs first.
