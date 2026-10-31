@@ -13,12 +13,30 @@
   30000691,
   30000435
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  30000179,
+  30000691,
+  30000435
+ ],
+ "times": {
+  "200e80": [
+   762,
+   775,
+   536
+  ],
+  "150w80": [
+   1187,
+   1065,
+   977
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261031-072314-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.36",
  "shinshu": null,
  "shugeki": false,
- "uchikiri": 1793428231
+ "uchikiri": 1793428231,
+ "updated": 1793429900
 }
