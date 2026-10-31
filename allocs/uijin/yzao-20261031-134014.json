@@ -10,12 +10,27 @@
  "pumps": [
   320000003
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  320000003
+ ],
+ "times": {
+  "150w80": [
+   1181
+  ],
+  "250e80": [
+   1677
+  ],
+  "300e80": [
+   3063
+  ]
+ },
+ "results": [
+  "results/uijin/yzao-20261031-134014-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
- "prio": "now"
+ "prio": "now",
+ "updated": 1793453547
 }
