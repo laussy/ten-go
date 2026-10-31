@@ -29,26 +29,31 @@
   260000004
  ],
  "done": [
-  230000001
+  230000001,
+  230000002
  ],
  "times": {
   "150w80": [
-   1790
+   1790,
+   1779
   ],
   "250e80": [
-   2472
+   2472,
+   2512
   ],
   "300e80": [
-   4368
+   4368,
+   4417
   ]
  },
  "results": [
-  "results/uijin/azag-20261031-150324-1.tgz"
+  "results/uijin/azag-20261031-150324-1.tgz",
+  "results/uijin/azag-20261031-150324-2.tgz"
  ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
  "prio": "high",
- "updated": 1793459809
+ "updated": 1793460916
 }
