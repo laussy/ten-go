@@ -21493,6 +21493,69 @@
    ]
   ],
   [
+   220000000,
+   "11.104",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   220000001,
+   "11.144",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   220000002,
+   "11.164",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   220000003,
+   "11.184",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   220000004,
+   "11.264",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   220000005,
+   "11.344",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   220000006,
+   "11.384",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
    120000000,
    "19.002",
    [
@@ -23910,6 +23973,14 @@
    "base": 210000000,
    "about": "the bubbles of 11-12 g nursed, batch 3: where code/meshfig.py REFINE=0.01 flags the 80-digit pumps within |omega| <= 0.3 g (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g, 0.0005 g at a flag not tiny), at 80 digits",
    "pumps": 2,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpMc",
+   "base": 220000000,
+   "about": "the bubbles of 11-12 g nursed, batch 7: where code/meshfig.py REFINE=0.01 flags the 80-digit pumps within |omega| <= 0.3 g (the filler's lattice moved up front, not redone; midpoints off it, to 0.001 g, 0.0005 g at a flag not tiny), at 80 digits",
+   "pumps": 7,
    "left_out": 0
   },
   {
