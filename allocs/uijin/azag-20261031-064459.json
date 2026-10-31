@@ -22,12 +22,27 @@
   30001363,
   30000851
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  30000995
+ ],
+ "times": {
+  "150w80": [
+   1624
+  ],
+  "250e80": [
+   2217
+  ],
+  "300e80": [
+   4390
+  ]
+ },
+ "results": [
+  "results/uijin/azag-20261031-064459-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.36",
  "shinshu": null,
  "shugeki": false,
- "uchikiri": 1793429376
+ "uchikiri": 1793429376,
+ "updated": 1793431282
 }
