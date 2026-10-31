@@ -22844,6 +22844,15 @@
    ]
   ],
   [
+   450000000,
+   "11.7655",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
    120000000,
    "19.002",
    [
@@ -25445,6 +25454,14 @@
    "base": 440000000,
    "about": "the bubbles of 11-12 g smoothed, batch 5: midpoints where a join of Fig. 0R7Ta misses its curve by > 0.0004 g, at 80 digits",
    "pumps": 4,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpSc",
+   "base": 450000000,
+   "about": "the bubbles of 11-12 g smoothed, batch 10: midpoints where a join of Fig. 0R7Ta misses its curve by > 0.0004 g, at 80 digits",
+   "pumps": 1,
    "left_out": 0
   },
   {
