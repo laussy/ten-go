@@ -15,25 +15,30 @@
   420000007
  ],
  "done": [
-  420000003
+  420000003,
+  420000004
  ],
  "times": {
   "150w80": [
-   1157
+   1157,
+   1319
   ],
   "250e80": [
-   1677
+   1677,
+   1547
   ],
   "300e80": [
-   2968
+   2968,
+   2931
   ]
  },
  "results": [
-  "results/uijin/yzao-20261101-142336-1.tgz"
+  "results/uijin/yzao-20261101-142336-1.tgz",
+  "results/uijin/yzao-20261101-142336-2.tgz"
  ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793542394
+ "updated": 1793542771
 }
