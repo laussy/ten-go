@@ -96,6 +96,13 @@ tr.part.on td { background: var(--sel); }
 .rule { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
 .rule .x { margin-left: auto; padding: 0 7px; }
 .warn { color: var(--err); }
+.camp { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; padding: 6px 6px; border-top: 1px solid var(--line); border-radius: 6px; cursor: pointer; }
+.camp:first-child { border-top: 0; }
+.camp:hover { background: var(--bg); }
+.camp .tw { width: 1em; color: var(--muted); }
+.camp .about { flex: 1 1 220px; }
+.camp .ok { color: var(--ok); font-weight: 600; }
+.cols.folded { grid-template-columns: minmax(0, 1fr); }
 </style>
 </head>
 <body>
@@ -103,7 +110,6 @@ tr.part.on td { background: var(--sel); }
   <span id="logo"><img src="/logo.png" alt="Ten-Go, 天號作戰" onerror="this.parentNode.remove()"><img class="big" src="/logo.png" alt=""></span>
   <div class="htext">
     <h1>Ten-Go<span class="jp">海図 kaizu</span></h1>
-    <select id="camp" title="campaign"></select>
     <span id="pool" class="muted num"></span>
     <span id="fetch" class="muted"></span>
     <span class="btns"><button id="sync" title="fetch the pool now">⟳ fetch</button>
@@ -111,7 +117,11 @@ tr.part.on td { background: var(--sel); }
   </div>
 </header>
 <main>
-  <section class="card">
+  <section class="card" id="campcard">
+    <h2>Campaigns <span class="muted" style="font-weight:400">· the one shown is drawn below, the others folded; a click on one shows it, on the one shown folds it</span></h2>
+    <div id="camps"></div>
+  </section>
+  <section class="card" id="chart">
     <div id="sum" class="num"></div>
     <div id="bar"></div>
     <div class="row" style="margin-top:8px">
@@ -125,13 +135,13 @@ tr.part.on td { background: var(--sel); }
     <div id="selbar"></div>
     <div id="legend"></div>
   </section>
-  <div class="cols">
-    <section class="card">
+  <div class="cols" id="cols">
+    <section class="card" id="partscard">
       <h2>Parts</h2>
       <div class="tscroll"><table id="parts"></table></div>
     </section>
     <div style="display:grid;gap:14px">
-      <section class="card">
+      <section class="card" id="rulescard">
         <h2>Priorities <span class="muted" style="font-weight:400">· the last rule that matches a pump decides; none: normal</span></h2>
         <div id="rules"></div>
       </section>
@@ -152,7 +162,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", 
 const PALETTE = ["#1f5fa8", "#1b9e77", "#8a55c4", "#c2571a", "#a07d00", "#c2185b"];
 const RH = 16, GAP = 9, TOP = 16, GUT = 62;                 // row height, gap, top margin, left gutter (px)
 const PREF = (() => { try { return JSON.parse(localStorage.getItem("kaizu") || "{}"); } catch (e) { return {}; } })();
-const P = Object.assign({order: "campaign", rowh: 0, part: "", nextm: "", h: 2, c: ""}, PREF);
+const P = Object.assign({order: "campaign", rowh: 0, part: "", nextm: "", h: 2, c: "", fold: false}, PREF);   // c: the campaign shown; fold: it too folded
 const save = () => { try { localStorage.setItem("kaizu", JSON.stringify(P)); } catch (e) {} };
 let S = null, view = [], segs = [], rows = 0, drag = null, selPids = null, spanSel = false, colour = {}, calc = {}, HA = .33, nextSet = new Set(), busy = false;
 let SUB = {};   // the sub-campaigns (the rules with a name): name -> the set of their pumps
@@ -211,6 +221,9 @@ async function tags() {   // the AF tags of the dates on the page that are not k
 function build() {
   colour = {}; S.machines.forEach((m, i) => colour[m.name] = PALETTE[i % PALETTE.length]);
   calc = {}; S.machines.forEach(m => calc[m.name] = css(`--calc-${m.name}`) || colour[m.name]); HA = parseFloat(css("--held")) || .33;
+  for (const id of ["#chart", "#partscard", "#rulescard"]) $(id).style.display = P.fold ? "none" : "";
+  $("#cols").classList.toggle("folded", !!P.fold);
+  if (P.fold) { header(); camps(); machines(); tags(); return; }   // every campaign folded: the list and the machines alone
   const pre = S.parts.map(q => q.prefix);
   SUB = {}; for (const r of S.rules) if (r.name) SUB[r.name] = new Set(r.pumps);
   if (P.part[0] === "@" && !SUB[P.part.slice(1)]) P.part = "";
@@ -219,18 +232,33 @@ function build() {
   if (P.order === "g") view = view.map((p, i) => [p, i]).sort((a, b) => a[0][F.x] - b[0][F.x] || a[1] - b[1]).map(a => a[0]);
   const nm = S.machines.find(m => m.name === P.nextm);
   nextSet = new Set(nm ? nm.next.pumps : []);
-  header(); summary(); controls(); draw(); selbar(); legend(); parts(); rules(); machines(); tags();
+  header(); camps(); summary(); controls(); draw(); selbar(); legend(); parts(); rules(); machines(); tags();
 }
 
 function header() {
-  $("#camp").innerHTML = S.campaigns.map(c => `<option${c === S.campaign ? " selected" : ""}>${esc(c)}</option>`).join("");
   const [h, t, subj] = S.head;
   const sj = subj || "", cut = sj.length > 70 ? sj.slice(0, 68) + "…" : sj;
   $("#pool").innerHTML = h ? `pool <b>${esc(h)}</b> <span title="${esc(sj)}">${esc(cut)}</span> · ${ago(+t)}` : "";
   $("#fetch").innerHTML = (S.lost ? `<span class="warn">could not fetch: ${esc(S.lost)}</span> · ` : "") + `fetched ${S.fetched ? ago(S.fetched) : "never"} · ${esc(S.machine)} · ten-go ${esc(S.version)}`;
-  document.title = `${S.campaign} · Ten-Go kaizu`;
+  document.title = P.fold ? "Ten-Go kaizu" : `${S.campaign} · Ten-Go kaizu`;
   const ready = S.pumps.filter(p => p[F.st] === "h" && p[F.m] === S.machine && p[F.prog] >= 1).length;   // done here, not pushed yet
   $("#tassei").textContent = ready ? `⇪ tassei (${ready})` : "⇪ tassei"; $("#tassei").classList.toggle("ready", ready > 0);
+}
+
+function camps() {   // the campaigns, each in a line: the one shown unfolded (drawn below), the others folded; a click shows one, or folds the one shown
+  $("#camps").innerHTML = S.camps.map(b => {
+    const on = b.name === S.campaign && !P.fold, tot = b.total || 1, col = m => colour[m] || css("--skip");
+    const bar = Object.entries(b.by).map(([m, [d]]) => `<div style="width:${100 * d / tot}%;background:${col(m)}"></div>`).join("")
+      + Object.entries(b.by).map(([m, [, h]]) => `<div style="width:${100 * h / tot}%;background:${col(m)};opacity:${HA}"></div>`).join("");
+    const st = b.complete ? `<span class="ok">complete</span>` : `${khs(b.left)} kh left` + (b.open.length ? ` · on ${b.open.map(esc).join(", ")}` : " · no allocation open");
+    return `<div class="camp${on ? " on" : ""}" data-c="${esc(b.name)}" title="${on ? "fold it" : "show it below"}"><span class="tw">${on ? "▾" : "▸"}</span><b>${esc(b.name)}</b>`
+      + `<div class="pbar">${bar}</div><span class="num">${b.done} / ${b.n} done${b.held ? ` · ${b.held} held` : ""}${b.free ? ` · ${b.free} free` : ""}${b.skip ? ` · ${b.skip} skipped` : ""}`
+      + ` · ${st} · ${Number(b.spent).toFixed(0)} kh spent</span><span class="about" title="${esc(b.about)}">${esc(b.about)}</span></div>`;
+  }).join("");
+  for (const d of document.querySelectorAll("#camps .camp")) d.onclick = () => {
+    if (d.dataset.c === S.campaign) { P.fold = !P.fold; save(); build(); return; }
+    P.c = d.dataset.c; P.fold = false; P.part = ""; selPids = null; save(); load();
+  };
 }
 
 function summary() {
@@ -488,11 +516,13 @@ function machines() {
         + (a.updated ? ` <span class="muted">· pushed ${ago(a.updated)}</span>` : "") + `</div>`;
     }).join("");
     const w = m.watch ? (m.watch.length ? ` · watch running (pid ${m.watch.join(", ")})` : ` · <span class="warn">no watch running</span>`) : "";
-    const nx = m.next.pumps.length ? `next claim in ${m.next.hours} h: ${m.next.pumps.length} pumps, ${kh(m.next.cost)} kh` : "nothing free to claim";
+    const of = S.camps.length > 1 ? ` of ${esc(S.campaign)}` : "";
+    const nx = m.next.pumps.length ? `next claim${of} in ${m.next.hours} h: ${m.next.pumps.length} pumps, ${kh(m.next.cost)} kh` : `nothing free to claim${of ? ` in ${esc(S.campaign)}` : ""}`;
+    const el = (m.elsewhere || []).map(a => `<div class="alloc muted num">in ${esc(a.campaign)}: ${esc(a.id)} · ${a.done}/${a.n} · deadline ${day(a.deadline)}</div>`).join("");
     return `<div class="mach"><div><span class="sw" style="background:${colour[m.name]}"></span><b>${esc(m.name)}</b>${m.here ? " (this machine)" : ""}`
       + ` <span class="muted num">· ${m.kernels} kernels${m.gensoku ? ` (${esc(m.gensoku)})` : ""} · ${m.done} pumps done, ${m.kh.toFixed(1)} kh${w}</span></div>`
-      + (m.open.length ? al + (m.end ? `<div class="alloc muted num">holds ${kh(m.rest)} kh, ends about ${day(m.end)}</div>` : "") : `<div class="alloc muted">holds nothing</div>`)
-      + `<div class="alloc muted num">${nx}</div></div>`;
+      + (m.open.length ? al + (m.end ? `<div class="alloc muted num">holds ${kh(m.rest)} kh, ends about ${day(m.end)}</div>` : "") : `<div class="alloc muted">holds nothing${of ? ` in ${esc(S.campaign)}` : ""}</div>`)
+      + el + `<div class="alloc muted num">${nx}</div></div>`;
   }).join("");
 }
 
@@ -515,7 +545,6 @@ $("#rowh").onchange = e => { P.rowh = +e.target.value; save(); build(); };
 $("#part").onchange = e => { P.part = e.target.value; selPids = null; save(); build(); };
 $("#nextm").onchange = e => { P.nextm = e.target.value; save(); build(); };
 $("#h").onchange = e => { const v = +e.target.value; if (v > 0) { P.h = v; save(); load(); } };
-$("#camp").onchange = e => { P.c = e.target.value; P.part = ""; selPids = null; save(); load(); };
 $("#sync").onclick = () => post("/sync", {});
 $("#tassei").onclick = () => post("/tassei", {});
 let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => S && draw(), 120); });

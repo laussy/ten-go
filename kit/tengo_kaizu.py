@@ -1,5 +1,6 @@
 """Ten-Go's sea chart (海図, kaizu): `ten-go --kaizu [PORT]` serves on this machine alone (http://127.0.0.1:1945/) the page kaizu.html,
-which draws a campaign as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on the reference machine,
+which lists the campaigns of the pool, each in a line (its bar, its counts, the kh left; a complete one so said), and draws the one
+shown (a click on another shows it instead; on the one shown, folds it: the list and the machines alone) as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on the reference machine,
 done (in the colour of the machine), held by an allocation (paler; what this machine is computing in a sharp shade of its colour, as
 far as it has gone), free, or past the deadline of its allocation; in the order of the campaign (its parts in their order, each in the
 global order) or in the order of g.  A drag over the map, the pieces picked by a click, or a part of the list, is given a priority,
@@ -10,7 +11,8 @@ it (an adaptive part's new pumps aside: the rule makes them only at the claim). 
 already on the port is stopped first, and its pages reload into the new one.  Its button tassei pushes at once the pumps this machine
 has done (ten-go --tassei), which a watch does within the minute a pump completes (1.38).  The dates have their Anno Fabri tags (~/bin/AF; none
 where it is not), the page Ten-Go's logo (lw [[Ten-Go]], File:Ten-go-logo-0PQTC.png, small, at 200 px under the pointer).  The clone is
-fetched every minute; a watch of the machine fetches it too, and the two share the clone's lock."""
+fetched every minute; a watch of the machine fetches it too, and the two share the clone's lock.  The allocations of a machine in the
+campaigns not shown are said under it (1.39)."""
 import contextlib, errno, functools, http.server, io, json, os, re, secrets, shutil, signal, subprocess, threading, time, urllib.parse
 from fractions import Fraction
 
@@ -44,12 +46,13 @@ def running(W, T=None):
     return out
 
 
-def watches():   # the pids of the watches running on this machine
+def watches():   # the watches running on this machine, each "pid on campaign" (the campaign of its --sakusen)
     out = []
     for d in os.listdir("/proc"):
         try: cmd = open(f"/proc/{d}/cmdline").read().split("\0") if d.isdigit() else []
         except OSError: continue
-        if any(x.endswith(("tengo.py", "ten-go")) for x in cmd[1:2]) and "watch" in cmd[2:]: out.append(int(d))
+        if any(x.endswith(("tengo.py", "ten-go")) for x in cmd[1:2]) and "watch" in cmd[2:]:
+            out.append(d + (f" on {cmd[cmd.index('--sakusen') + 1]}" if "--sakusen" in cmd[:-1] else ""))
     return out
 
 
@@ -93,10 +96,30 @@ def bind(T, port, H):
     T.die(f"--kaizu: port {port} still taken after the kaizu on it stopped")
 
 
+def brief(T, c, now, ref, A):
+    """the campaign c in a line, for the list of the campaigns: its counts, its cost done and held by machine and left (seconds on the
+    reference machine), the machines holding an allocation in it, and whether it is complete (nothing left but pumps skipped)"""
+    cm = T.campaign(c); _, K = T.cost(cm, A, ref); lv = T.level(c, cm); out = T.held(A, now)
+    done = {p: a["machine"] for a in A for p in a["done"]}
+    hold = {p: a["machine"] for a in A if a["status"] == "open" and now < a["deadline"] for p in a["pumps"] if p not in done}
+    by = {}
+    for p, m in done.items(): by.setdefault(m, [0, 0])[0] += K.get(p, 0)
+    for p, m in hold.items(): by.setdefault(m, [0, 0])[1] += K.get(p, 0)
+    n = len(cm["pumps"]); skip = sum(1 for p in cm["pumps"] if p[0] not in out and lv(p)[0] == "skip"); op = sorted({a["machine"] for a in A if a["status"] == "open"})
+    return dict(name=c, about=cm.get("about", ""), n=n, done=len(done), held=len(hold), free=n - len(done) - len(hold) - skip, skip=skip,
+                total=round(sum(K.values())), left=round(sum(K[p[0]] for p in cm["pumps"] if p[0] not in done and lv(p)[0] != "skip")),
+                by={m: [round(x), round(y)] for m, (x, y) in by.items()}, spent=round(sum(float(e["kh"]) for e in T.ledger() if e["task"] == c), 1),
+                open=op, complete=not op and len(done) + skip >= n)
+
+
 def state(T, c, hours):
-    """what the page draws: the campaign c as pieces, its parts, the priorities, the machines and the next claim of each in `hours`"""
-    now = time.time(); cm = T.campaign(c); A = T.allocs(c); me = T.C["machine"]; ms = sorted(os.path.basename(f)[:-5] for f in os.listdir(T.R("machines")) if f.endswith(".json"))
+    """what the page draws: the campaigns, each in a line, and the campaign c (None: the first not complete) as pieces, its parts, the
+    priorities, the machines (their allocations in the other campaigns said too) and the next claim of each in `hours`"""
+    now = time.time(); me = T.C["machine"]; ms = sorted(os.path.basename(f)[:-5] for f in os.listdir(T.R("machines")) if f.endswith(".json"))
     ref = "azag" if "azag" in ms else me   # the widths: the costs on the reference machine, as --senkyo
+    AL = {x: T.allocs(x) for x in T.campaigns()}; camps = [brief(T, x, now, ref, AL[x]) for x in AL]
+    if c not in AL: c = next((b["name"] for b in camps if not b["complete"]), camps[0]["name"])
+    cm = T.campaign(c); A = AL[c]
     _, K = T.cost(cm, A, ref); lv = T.level(c, cm); Q = T.parts(cm); busy = T.held(A, now); rules = T.prio(c)
     done, hold, late = {}, {}, {}
     for a in A:
@@ -140,10 +163,12 @@ def state(T, c, hours):
                                         delayed=a.get("delayed"), paused=nfz.get(a["id"], 0),
                                         rest=sum(Km[p] for p in a["pumps"] if p not in done)) for a in op],
                              rest=rest, end=now + rest / kern if op else None, watch=watches() if m == me else None,
+                             elsewhere=[dict(campaign=x, id=a["id"], n=len(a["pumps"]), done=len(a["done"]), deadline=a["deadline"])
+                                        for x in AL if x != c for a in AL[x] if a["machine"] == m and a["status"] == "open"],
                              next=dict(pumps=take, cost=tot, hours=hours, kernels=kern)))
     head = T.git("log", "-1", "--format=%h%x09%ct%x09%s", check=False).stdout.strip().split("\t")
     count = [sum(1 for p in pumps if p[10] == k) for k in range(len(rules))]
-    return dict(version=T.VERSION, machine=me, now=now, campaigns=T.campaigns(), campaign=c, about=cm.get("about", ""), ref=ref,
+    return dict(version=T.VERSION, machine=me, now=now, campaigns=list(AL), camps=camps, campaign=c, about=cm.get("about", ""), ref=ref,
                 ref_kernels=T.machine(ref)["kernels"], head=head, fetched=LAST["fetched"], lost=LAST["lost"],
                 parts=[dict(prefix=q["prefix"], kind=q.get("kind", "grid"), base=q["base"], about=q.get("about", "")) for q in Q],
                 pumps=pumps, rules=[dict(r, decides=count[k]) for k, r in enumerate(rules)], levels=list(T.LEVELS), machines=machines)
@@ -200,7 +225,7 @@ def serve(T, port, c=None):
         with LOCK:
             try: T.sync(); LAST.update(fetched=time.time(), lost=None)
             except SystemExit as e: LAST["lost"] = str(e)   # the network gone: the clone as it is, said on the page
-    fetch(); c = c or (T.campaigns() or T.die("--kaizu: no campaign in the pool"))[0]
+    fetch(); T.campaigns() or T.die("--kaizu: no campaign in the pool")   # c: the campaign named (--sakusen), shown when the page names none
     def loop():
         while True: time.sleep(60); fetch()
     threading.Thread(target=loop, daemon=True).start()
@@ -220,7 +245,7 @@ def serve(T, port, c=None):
                 return self.send(200, {t: af(int(t)) for t in q.get("t", [""])[0].split(",")[:200] if t.isdigit()})
             if u.path == "/state":
                 with LOCK:
-                    try: cc = q.get("c", [c])[0]; return self.send(200, dict(state(T, cc if cc in T.campaigns() else c, float(q.get("h", ["2"])[0])), boot=boot))
+                    try: cc = q.get("c", [""])[0]; return self.send(200, dict(state(T, cc if cc in T.campaigns() else c, float(q.get("h", ["2"])[0])), boot=boot))
                     except (SystemExit, Exception) as e: return self.send(500, {"error": str(e)})
             self.send(404, {"error": "no such page"})
         def do_POST(self):   # the token of the page served here: another page of the browser cannot read it, nor send its header
@@ -239,7 +264,7 @@ def serve(T, port, c=None):
                     except SystemExit as e: return self.send(400, {"error": str(e)})
                     except Exception as e: return self.send(500, {"error": f"{type(e).__name__}: {e}"})
             if self.path != "/prio": return self.send(404, {"error": "no such action"})
-            cc = body.get("c", c)
+            cc = body.get("c") or c
             with LOCK:
                 try:
                     if cc not in T.campaigns(): return self.send(400, {"error": f"no campaign {cc}"})
@@ -253,7 +278,7 @@ def serve(T, port, c=None):
     def end(*a):   # SIGTERM (a new kaizu on the port, or a kill): the call into tengo going on, a push maybe, ends first
         with LOCK: print(f"ten-go --kaizu: stopped (pid {os.getpid()}; a new kaizu on the port, or a kill)", flush=True); os._exit(0)
     signal.signal(signal.SIGTERM, end)
-    print(f"ten-go --kaizu: the sea chart of {c} at http://127.0.0.1:{port}/ ({T.C['machine']}; Ctrl-C ends it)"
+    print(f"ten-go --kaizu: the sea chart of {c or 'the campaigns'} at http://127.0.0.1:{port}/ ({T.C['machine']}; Ctrl-C ends it)"
           + (f"\n  the clone could not be fetched: {LAST['lost']}" if LAST["lost"] else ""), flush=True)
     try: srv.serve_forever()
     except KeyboardInterrupt: print()

@@ -1,0 +1,103 @@
+{
+ "name": "nijin",
+ "about": "the grid of nijin, added once the pilot (hpnP, code/nijin_pilot.py) has set its orders",
+ "parts": [
+  {
+   "kind": "grid",
+   "prefix": "hpnG",
+   "about": "the grid 0.15-12.510 g at 0.004 g in van der Corput order (coarse to fine: 0.02 g after a fifth of it), at 80 digits, the 16 pumps of the pilot left out; the orders by range of P as the pilot set them for the lines narrower than 6 g (code/nijin_pilot.py --gmax 6): B (150w, 200) on 0-2.004, D (150w, 250, 300) on 2.004-; 3075 pumps, 5898 kh",
+   "grid": [
+    [
+     "0.150",
+     "12.510",
+     "0.004"
+    ]
+   ],
+   "orders": [
+    [
+     "0.000",
+     "2.004",
+     [
+      "200e80",
+      "150w80"
+     ]
+    ],
+    [
+     "2.004",
+     "inf",
+     [
+      "300e80",
+      "250e80",
+      "150w80"
+     ]
+    ]
+   ],
+   "except": [
+    [
+     "0.502",
+     "0.502"
+    ],
+    [
+     "1.002",
+     "1.002"
+    ],
+    [
+     "2.002",
+     "2.002"
+    ],
+    [
+     "2.502",
+     "2.502"
+    ],
+    [
+     "3.002",
+     "3.002"
+    ],
+    [
+     "3.502",
+     "3.502"
+    ],
+    [
+     "4.002",
+     "4.002"
+    ],
+    [
+     "4.502",
+     "4.502"
+    ],
+    [
+     "5.002",
+     "5.002"
+    ],
+    [
+     "5.502",
+     "5.502"
+    ],
+    [
+     "6.002",
+     "6.002"
+    ],
+    [
+     "7.002",
+     "7.002"
+    ],
+    [
+     "8.002",
+     "8.002"
+    ],
+    [
+     "9.502",
+     "9.502"
+    ],
+    [
+     "11.002",
+     "11.002"
+    ],
+    [
+     "12.002",
+     "12.002"
+    ]
+   ]
+  }
+ ]
+}

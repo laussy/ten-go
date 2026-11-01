@@ -72,8 +72,10 @@ answers ahead (needed without a terminal), `--dry` only asks. Outside Ten-Go: `p
 `--shugeki` (with `--honkai` or `watch`) is a sortie, for a machine that may be stopped any moment: the cheapest pumps first, run
 whole one after the other, so that an uchikiri ends within a job or two and a chushi wastes little.
 
-`--kaizu` (海図, the sea chart) serves on this machine alone (http://127.0.0.1:1945/, or `--kaizu PORT`) a page that draws the campaign
-as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on azag, done (in its machine's colour), held
+`--kaizu` (海図, the sea chart) serves on this machine alone (http://127.0.0.1:1945/, or `--kaizu PORT`) a page that lists the
+campaigns of the pool, each folded to a line (its bar, its counts, the kh left, or complete) but the one shown, and draws that one
+as a BitTorrent client draws a file (a click on another campaign shows it instead; on the one shown, folds it, leaving the list and the
+machines, whose allocations in the campaigns not shown are said under each, since 1.39): each pump a piece as wide as its estimated time on azag, done (in its machine's colour), held
 (paler; what this machine is computing in a sharp shade of its colour, as far as it has gone), free, or past its allocation's
 deadline; in the order of the campaign or of g, with the parts, the machines (allocations, end, watch) and the next claim each would
 make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces, the pieces picked by a click (hpT #1951, #1949,
@@ -102,7 +104,10 @@ first, `uijin` (`specs/uijin.json`): the 4 pumps of the adaptive run left half d
 5.2085 g below the lattice step (and once at 80 digits), a study of the working precision (`hpR`, `hpS`: 40 to 320 digits), then the boiling window at 0.08 g, and the close grid at
 0.004 g as a filler, added later by `ten-go --zoen SPEC.json`, and refitted to 80 digits by `ten-go --kaiso SPEC.json` once the
 study showed 40 digits wrong for some lines with gamma >= 6.5 g (its pumps done at 40 digits redone at 80 at the end). Parts may
-also be explicit lists. `watch` without `--until`
+also be explicit lists. The second, `nijin` (二陣, the second wave; `specs/nijin.json`), is the same skeleton at gamma_sigma = 0.339
+gamma_a: a pilot of 16 pumps at orders 150 to 400 first, whose verdict sets the orders of the grid 0.15-12.51 g at 0.004 g, added
+after it by `--zoen` (`specs/nijin-grid.json`: 150/200 below 2 g, 250/300 above, every line narrower than 6 g kept). Several campaigns live in the pool together: a command that claims or runs names its own with `--sakusen`, and
+`--senkyo` without it shows them all, a complete one folded to a line. `watch` without `--until`
 runs until the campaign is complete.
 
 The clone belongs to Ten-Go: every command resets it to `origin/main` first.
