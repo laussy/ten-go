@@ -26,36 +26,41 @@
   100000034,
   100000036,
   100000037,
-  100000038
+  100000038,
+  100000040
  ],
  "times": {
   "150w80": [
    1190,
    1154,
    1165,
-   1101
+   1101,
+   1079
   ],
   "250e80": [
    1587,
    1436,
    1475,
-   1521
+   1521,
+   1502
   ],
   "300e80": [
    2556,
    2544,
-   2555
+   2555,
+   2546
   ]
  },
  "results": [
   "results/uijin/yzao-20261101-102853-1.tgz",
   "results/uijin/yzao-20261101-102853-2.tgz",
   "results/uijin/yzao-20261101-102853-3.tgz",
-  "results/uijin/yzao-20261101-102853-4.tgz"
+  "results/uijin/yzao-20261101-102853-4.tgz",
+  "results/uijin/yzao-20261101-102853-5.tgz"
  ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793529758
+ "updated": 1793530811
 }
