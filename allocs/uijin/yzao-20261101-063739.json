@@ -28,7 +28,8 @@
   30000815,
   30001839,
   30001199,
-  30001455
+  30001455,
+  30000303
  ],
  "times": {
   "150w80": [
@@ -54,6 +55,9 @@
    2741,
    2480,
    2601
+  ],
+  "200e80": [
+   688
   ]
  },
  "results": [
@@ -62,11 +66,12 @@
   "results/uijin/yzao-20261101-063739-3.tgz",
   "results/uijin/yzao-20261101-063739-4.tgz",
   "results/uijin/yzao-20261101-063739-5.tgz",
-  "results/uijin/yzao-20261101-063739-6.tgz"
+  "results/uijin/yzao-20261101-063739-6.tgz",
+  "results/uijin/yzao-20261101-063739-7.tgz"
  ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793517383
+ "updated": 1793518005
 }
