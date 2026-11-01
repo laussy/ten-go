@@ -57,7 +57,8 @@
   30001551,
   30000783,
   30001423,
-  30000911
+  30000911,
+  30000375
  ],
  "times": {
   "150w80": [
@@ -71,7 +72,8 @@
    1619,
    1508,
    1531,
-   1538
+   1538,
+   1448
   ],
   "250e80": [
    2088,
@@ -98,6 +100,9 @@
    3610,
    3790,
    3668
+  ],
+  "200e80": [
+   1027
   ]
  },
  "results": [
@@ -110,11 +115,12 @@
   "results/uijin/azag-20261101-051929-7.tgz",
   "results/uijin/azag-20261101-051929-8.tgz",
   "results/uijin/azag-20261101-051929-9.tgz",
-  "results/uijin/azag-20261101-051929-10.tgz"
+  "results/uijin/azag-20261101-051929-10.tgz",
+  "results/uijin/azag-20261101-051929-11.tgz"
  ],
  "status": "open",
  "tengo": "1.38",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793511835
+ "updated": 1793512265
 }
