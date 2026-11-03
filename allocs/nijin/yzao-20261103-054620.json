@@ -21,25 +21,30 @@
   10001090
  ],
  "done": [
-  10002690
+  10002690,
+  10001666
  ],
  "times": {
   "150w80": [
-   1090
+   1090,
+   1075
   ],
   "250e80": [
-   1613
+   1613,
+   1487
   ],
   "300e80": [
-   3069
+   3069,
+   2788
   ]
  },
  "results": [
-  "results/nijin/yzao-20261103-054620-1.tgz"
+  "results/nijin/yzao-20261103-054620-1.tgz",
+  "results/nijin/yzao-20261103-054620-2.tgz"
  ],
  "status": "open",
  "tengo": "1.40",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793684293
+ "updated": 1793684606
 }
