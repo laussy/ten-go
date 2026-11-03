@@ -100,7 +100,7 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
 import argparse, fcntl, glob, heapq, json, os, random, re, shlex, shutil, signal, subprocess, sys, tarfile, time
 from contextlib import contextmanager
 from fractions import Fraction
-VERSION = "1.40"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push); 1.36: hoju sees the machine (the allocations ending together, their kernels as they free, the small pumps of any of them); 1.37: a claim of high made by a watch launches on the kernels free, as any claim, not on all of them (its jobs started beside those of the allocations ending: 60 jobs on 32 kernels for two hours, 31 Oct); 1.38: a watch pushes a pump within the minute it completes (it looked every 30 min: the kernel-hours of the jobs done, alone, still then); 1.39: several campaigns at once: the kaizu lists them, each folded to a line but the one shown (a click shows one, or folds it), a machine's allocations in the others said under it, and --senkyo folds a complete campaign to a line; 1.40: an allocation alone again gets back the kernels its tail held, up to its claim's (the last jobs of the tail kept theirs: 31 of 32 on azag, 7 of 8 on yzao), and the watch's log a line at a time (in a new version too)
+VERSION = "1.41"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push); 1.36: hoju sees the machine (the allocations ending together, their kernels as they free, the small pumps of any of them); 1.37: a claim of high made by a watch launches on the kernels free, as any claim, not on all of them (its jobs started beside those of the allocations ending: 60 jobs on 32 kernels for two hours, 31 Oct); 1.38: a watch pushes a pump within the minute it completes (it looked every 30 min: the kernel-hours of the jobs done, alone, still then); 1.39: several campaigns at once: the kaizu lists them, each folded to a line but the one shown (a click shows one, or folds it), a machine's allocations in the others said under it, and --senkyo folds a complete campaign to a line; 1.40: an allocation alone again gets back the kernels its tail held, up to its claim's (the last jobs of the tail kept theirs: 31 of 32 on azag, 7 of 8 on yzao), and the watch's log a line at a time (in a new version too); 1.41: tsuchi, a desktop notification when the machine's work ends (an uchikiri, a chushi, the kikan, a campaign complete, or the last allocation without a watch): one can move on
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -354,6 +354,25 @@ def setup(a):
                 nt, w, prec = parse(o); f.write(f"{pre(cm, pid)}_nt{o} {nt} {w} {pid}" + (f" {prec}" if prec else "") + "\n")
     save(os.path.join(W, "alloc.json"), a)
     return W
+
+
+def tsuchi(title, body):
+    """a desktop notification (通知): the machine's work has ended, one can move on; it stays until dismissed. Silent without a
+    desktop session (ssh, a server)"""
+    env = dict(os.environ); bus = f"/run/user/{os.getuid()}/bus"
+    if "DBUS_SESSION_BUS_ADDRESS" not in env and os.path.exists(bus): env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path={bus}"
+    if not shutil.which("notify-send") or "DBUS_SESSION_BUS_ADDRESS" not in env: return
+    try: subprocess.run(["notify-send", "-a", "Ten-Go", "-u", "critical", "-i", "dialog-information", title, body], env=env, capture_output=True, timeout=10)
+    except Exception: pass
+
+
+def watching():
+    """a watch alive on this machine (other than this process)"""
+    for d in glob.glob("/proc/[0-9]*"):
+        try: cmd = open(d + "/cmdline").read().split("\0")
+        except OSError: continue
+        if int(d[6:]) != os.getpid() and any(x.endswith("tengo.py") or x.endswith("ten-go") for x in cmd) and "watch" in cmd: return True
+    return False
 
 
 def ours(W):
@@ -953,7 +972,7 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False, kikan=False):
     its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail, all of them once the tail has ended); a new
     version pushed to the pool takes the watch over at its next sync; a git that fails (the network gone) is tried again every minute"""
     end = moment(until) if until else float("inf"); restarts = {}; last = 0; c = pick(c); flag = os.path.join(C["work"], "ENDING"); said = 0; lost = None; kprev = None
-    halt = kikan; late = False   # halt: no claim past `end` (kikan, or an uchikiri by hand); late: past it, going on with sorties
+    halt = kikan; late = False; why = "kikan"   # halt: no claim past `end` (kikan, or an uchikiri by hand); late: past it, going on with sorties
     t0 = float(os.environ.get("TENGO_WATCH_T0", time.time()))   # the start of the first watch: an uchikiri before a new version still counts
     sys.stdout.reconfigure(line_buffering=True); sys.stderr.reconfigure(line_buffering=True)   # its log a line at a time (in a new version, exec'd without -u, yzao's lagged 13 h, 2 Nov)
     print(f"ten-go watch until {stamp(end) if until else 'the campaign is complete'} ({C['machine']}, {c})"
@@ -962,7 +981,7 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False, kikan=False):
         try:
             now = time.time()
             if not (halt and end <= now) and os.path.exists(flag) and os.path.getmtime(flag) > t0:
-                end, halt = min(end, now), True; print(f"{time.strftime('%H:%M:%S')} uchikiri or chushi: no more claims, the watch ends with its drivers", flush=True)
+                end, halt, why = min(end, now), True, "uchikiri"; print(f"{time.strftime('%H:%M:%S')} uchikiri or chushi: no more claims, the watch ends with its drivers", flush=True)
             if end - now <= LAST and not halt and not late:   # its time near or past: the next claims are sorties, so that an uchikiri ends soon
                 late = True; print(f"{time.strftime('%H:%M:%S')} {'its time is up' if now >= end else f'its time is up at {stamp(end)}'}: on with sorties, "
                                    "the cheapest pumps first, whole (an uchikiri ends within a job or two)", flush=True)
@@ -997,14 +1016,16 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False, kikan=False):
                     held_by = sorted({x["machine"] for x in allocs(c) if x["status"] == "open"})
                     if not held_by:
                         cm = campaign(c); lv = level(c, cm); out = held(allocs(c), now); sk = sum(lv(p)[0] == "skip" for p in cm["pumps"] if p[0] not in out)
-                        cmd_done(); print(f"{time.strftime('%H:%M:%S')} {c} is complete: nothing free" + (f" but the {sk} pumps skipped (--kaizu)" if sk else "") + ", no allocation open; watch ends", flush=True); return
+                        cmd_done(); print(f"{time.strftime('%H:%M:%S')} {c} is complete: nothing free" + (f" but the {sk} pumps skipped (--kaizu)" if sk else "") + ", no allocation open; watch ends", flush=True)
+                        tsuchi(f"Ten-Go: {c} complete", f"{time.strftime('%H:%M')}: nothing left to claim, {C['machine']} is idle; one can move on"); return
                     if now - said > 1800: said = now; print(f"{time.strftime('%H:%M:%S')} nothing free in {c} for now, waiting on {', '.join(held_by)}", flush=True)
             if settle(op, pause=not (halt and end <= now)): print(f"{time.strftime('%H:%M:%S')} zensoku: all the {kernels_now()} kernels of {C['machine']} are Ten-Go's again", flush=True)
             if (k := kernels_now()) != kprev and gensoku(): print(f"{time.strftime('%H:%M:%S')} {said_gensoku()}", flush=True)
             kprev = k                                               # above: the newest allocation takes the kernels the tails free
             if halt and now > end and not any(run for _, _, run in tails):
                 for a in op: os.path.isdir(workdir(a)) and thaw(workdir(a))   # none should be left paused
-                cmd_done(); print(f"{time.strftime('%H:%M:%S')} watch ends", flush=True); return
+                cmd_done(); print(f"{time.strftime('%H:%M:%S')} watch ends", flush=True)
+                tsuchi(f"Ten-Go: {why} complete on {C['machine']}", f"{time.strftime('%H:%M')}: all its jobs have ended and the pumps done are pushed ({c}); one can move on"); return
             if lost: print(f"{time.strftime('%H:%M:%S')} the watch works again", flush=True); lost = None
         except (SystemExit, Exception) as e:   # a git that fails (the network gone), or a file half written: said once, tried again in a minute
             what = str(e) if isinstance(e, SystemExit) else f"{type(e).__name__}: {e}"
@@ -1296,7 +1317,12 @@ def main():
         if a.until: a.hours, t = hours_until(a.until); print(f"ten-go: until {a.until}, {stamp(t)}: {a.hours:g} h from now")
         if not a.hours: die("--honkai --jikan H, or --until TAG")
         cmd_claim(a.campaign, a.hours, a.ki, a.go, a.shinshu, a.shugeki, kikan=a.kikan)
-    elif a.tassei: cmd_done(a.alloc)
+    elif a.tassei:
+        cmd_done(a.alloc)
+        if a.alloc and not watching() and not any(ours(workdir(x))[0] for x in ours_open() if x["id"] != a.alloc):   # the last of the machine, no watch: said here
+            W = next((workdir(x) for c in campaigns() for x in allocs(c) if x["id"] == a.alloc), None)
+            tsuchi(f"Ten-Go: {'uchikiri' if W and os.path.exists(os.path.join(W, 'UCHIKIRI')) else 'allocation'} complete on {C['machine']}",
+                   f"{time.strftime('%H:%M')}: {a.alloc} has ended and its pumps done are pushed; one can move on")
     elif a.cmd == "launch":
         sync(); op = [x for c in campaigns() for x in allocs(c) if x["machine"] == C["machine"] and x["status"] == "open" and (not a.alloc or x["id"] == a.alloc)]
         for x in op: launch(x, shinshu=a.shinshu)
