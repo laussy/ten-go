@@ -18,11 +18,30 @@
   10000670,
   10002718
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10001310,
+  10000798
+ ],
+ "times": {
+  "150w80": [
+   1041,
+   1119
+  ],
+  "250e80": [
+   1489,
+   1542
+  ],
+  "300e80": [
+   2820,
+   2848
+  ]
+ },
+ "results": [
+  "results/nijin/yzao-20261104-125458-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.41",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1793796164
 }
