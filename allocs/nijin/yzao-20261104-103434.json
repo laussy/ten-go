@@ -19,7 +19,8 @@
  "done": [
   10001582,
   10001326,
-  10002350
+  10002350,
+  10000174
  ],
  "times": {
   "300e80": [
@@ -30,23 +31,28 @@
   "150w80": [
    1067,
    1108,
-   1135
+   1135,
+   944
   ],
   "250e80": [
    1546,
    1617,
    1579
+  ],
+  "200e80": [
+   806
   ]
  },
  "results": [
   "results/nijin/yzao-20261104-103434-1.tgz",
   "results/nijin/yzao-20261104-103434-2.tgz",
-  "results/nijin/yzao-20261104-103434-3.tgz"
+  "results/nijin/yzao-20261104-103434-3.tgz",
+  "results/nijin/yzao-20261104-103434-4.tgz"
  ],
  "status": "open",
  "tengo": "1.41",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793789523,
+ "updated": 1793790068,
  "uchikiri": 1793788516
 }
