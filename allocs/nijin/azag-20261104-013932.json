@@ -33,25 +33,30 @@
   10000678
  ],
  "done": [
-  10001734
+  10001734,
+  10002502
  ],
  "times": {
   "150w80": [
-   1547
+   1547,
+   1607
   ],
   "250e80": [
-   2185
+   2185,
+   2225
   ],
   "300e80": [
-   3952
+   3952,
+   3925
   ]
  },
  "results": [
-  "results/nijin/azag-20261104-013932-1.tgz"
+  "results/nijin/azag-20261104-013932-1.tgz",
+  "results/nijin/azag-20261104-013932-2.tgz"
  ],
  "status": "open",
  "tengo": "1.41",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793756782
+ "updated": 1793756907
 }
