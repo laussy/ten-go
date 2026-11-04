@@ -77,7 +77,7 @@ whole one after the other, so that an uchikiri ends within a job or two and a ch
 `--kaizu` (海図, the sea chart) serves on this machine alone (http://127.0.0.1:1945/, or `--kaizu PORT`) a page that lists the
 campaigns of the pool, each folded to a line (its bar, its counts, the kh left, or complete) but the one shown, and draws that one
 as a BitTorrent client draws a file (a click on another campaign shows it instead; on the one shown, folds it, leaving the list and the
-machines, whose allocations in the campaigns not shown are said under each, since 1.39): each pump a piece as wide as its estimated time on azag, done (in its machine's colour), held
+machines, whose allocations in the campaigns not shown are said under each, since 1.39): each pump a piece as wide as its estimated time on azag, done (in its machine's colour; the bar above says in each machine's piece the share of the campaign it has computed, since 1.42), held
 (paler; what this machine is computing in a sharp shade of its colour, as far as it has gone), free, or past its allocation's
 deadline; in the order of the campaign or of g, with the parts, the machines (allocations, end, watch) and the next claim each would
 make, the dates with their Anno Fabri tags (`~/bin/AF`). A drag over the pieces, the pieces picked by a click (hpT #1951, #1949,

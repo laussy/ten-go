@@ -52,8 +52,8 @@ input[type=number] { width: 64px; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .seg button { border: 0; border-radius: 0; background: transparent; }
 .seg button.on { background: var(--fg); color: var(--bg); }
-#bar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--free); margin: 8px 0 6px; }
-#bar div { height: 100%; }
+#bar { display: flex; height: 16px; border-radius: 4px; overflow: hidden; background: var(--free); margin: 8px 0 6px; }
+#bar div { height: 100%; overflow: hidden; white-space: nowrap; text-align: center; color: #fff; font-size: 11px; font-weight: 600; line-height: 16px; }   /* a machine's done: its share of the campaign, written in it */
 #mapbox { position: relative; margin-top: 10px; user-select: none; }
 canvas { display: block; touch-action: none; cursor: crosshair; }
 #tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
@@ -275,12 +275,17 @@ function summary() {
     + (end ? ` · end about <b>${end}</b> at the present pace (${on.join(" + ")} kernels)` : " · no machine holds an allocation")
     + `<div class="muted about" style="max-width:none" title="${esc(S.about)}">${esc(S.about)}</div>`;
   const tot = sum(() => true) || 1, segsB = [];
-  for (const m of S.machines) segsB.push([sum(p => p[F.st] === "d" && p[F.m] === m.name), colour[m.name], 1, `done by ${m.name}`]);
+  for (const m of S.machines) segsB.push([sum(p => p[F.st] === "d" && p[F.m] === m.name), colour[m.name], 1, `done by ${m.name}`, m.name]);
   for (const m of S.machines) segsB.push([sum(p => p[F.st] === "h" && p[F.m] === m.name), colour[m.name], HA, `held by ${m.name}`]);
   segsB.push([sum(p => p[F.st] === "l"), css("--late"), .8, "past the deadline of its allocation"]);
   segsB.push([sum(p => (p[F.st] === "f") && p[F.lv] !== "skip"), css("--free"), 1, "free"]);
   segsB.push([sum(p => p[F.st] !== "d" && p[F.st] !== "h" && p[F.lv] === "skip"), css("--skip"), .45, "skipped"]);
-  $("#bar").innerHTML = segsB.filter(s => s[0] > 0).map(([s, c, a, t]) => `<div title="${t}: ${khs(s)} kh" style="width:${100 * s / tot}%;background:${c};opacity:${a}"></div>`).join("");
+  const W = $("#bar").clientWidth;   // the share of the total a machine has computed, in its piece: with its name where it fits, alone where not
+  $("#bar").innerHTML = segsB.filter(s => s[0] > 0).map(([s, c, a, t, nm]) => {
+    const pc = 100 * s / tot, f = `${pc.toFixed(1)} %`, px = W * pc / 100;
+    const lab = nm ? (px > 9 + 7 * (nm.length + f.length) ? `${nm} ${f}` : px > 6 + 7 * f.length ? f : "") : "";
+    return `<div title="${t}: ${khs(s)} kh, ${f} of the total" style="width:${pc}%;background:${c};opacity:${a}">${esc(lab)}</div>`;
+  }).join("");
 }
 
 function controls() {
@@ -547,7 +552,7 @@ $("#nextm").onchange = e => { P.nextm = e.target.value; save(); build(); };
 $("#h").onchange = e => { const v = +e.target.value; if (v > 0) { P.h = v; save(); load(); } };
 $("#sync").onclick = () => post("/sync", {});
 $("#tassei").onclick = () => post("/tassei", {});
-let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => S && draw(), 120); });
+let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (S && !P.fold) { summary(); draw(); } }, 120); });
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => S && build());
 load(); setInterval(() => { if (!drag && !busy) load(); }, 30000);
 </script>
