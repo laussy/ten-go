@@ -33,33 +33,38 @@
  "done": [
   10002289,
   10001265,
-  10000753
+  10000753,
+  10001777
  ],
  "times": {
   "150w80": [
    1530,
    1458,
-   1397
+   1397,
+   1530
   ],
   "250e80": [
    2176,
    2056,
-   2076
+   2076,
+   2095
   ],
   "300e80": [
    3811,
    3725,
-   3721
+   3721,
+   3718
   ]
  },
  "results": [
   "results/nijin/azag-20261105-020446-1.tgz",
   "results/nijin/azag-20261105-020446-2.tgz",
-  "results/nijin/azag-20261105-020446-3.tgz"
+  "results/nijin/azag-20261105-020446-3.tgz",
+  "results/nijin/azag-20261105-020446-4.tgz"
  ],
  "status": "open",
  "tengo": "1.42",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793844976
+ "updated": 1793845218
 }
