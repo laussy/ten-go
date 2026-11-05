@@ -22,33 +22,38 @@
  "done": [
   10002041,
   10002053,
-  10001029
+  10001029,
+  10000517
  ],
  "times": {
   "150w80": [
    1175,
    1230,
-   1090
+   1090,
+   1119
   ],
   "250e80": [
    1677,
    1717,
-   1592
+   1592,
+   1682
   ],
   "300e80": [
    3012,
    2897,
-   2897
+   2897,
+   2983
   ]
  },
  "results": [
   "results/nijin/yzao-20261105-112151-1.tgz",
   "results/nijin/yzao-20261105-112151-2.tgz",
-  "results/nijin/yzao-20261105-112151-3.tgz"
+  "results/nijin/yzao-20261105-112151-3.tgz",
+  "results/nijin/yzao-20261105-112151-4.tgz"
  ],
  "status": "open",
  "tengo": "1.44",
  "shinshu": null,
  "shugeki": false,
- "updated": 1793878473
+ "updated": 1793879321
 }
