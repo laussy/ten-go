@@ -62,6 +62,8 @@ The kernels that free before that end are not left idle (**hoju**, 補充, since
 not started that, whole, end before the pumps started even at a slow time (90 % of the job times measured on the machine), and the
 driver launches each as kernels free if it still ends in time then, else gives it back to the pool at once. `--nohoju` gives back
 every pump not started, as before; the uchikiri a watch makes for the kaizu's high or now has no hoju (those take the kernels).
+Since 1.44 hoju takes from the pool too: an uchikiri by hand claims the cheapest free pumps of the campaign as an allocation
+already ending, with no kernel of its own; its driver keeps those that end before the pumps started and gives the rest back at once.
 When the machine's work has ended (an uchikiri, a chushi or the kikan, a campaign complete, or the last allocation of a machine
 without a watch), a desktop notification says so and stays until dismissed (**tsuchi**, 通知, since 1.41): one can move on.
 Since 1.36 hoju sees the machine: the allocations ending together (an uchikiri, or their kikan) count as one, the kernels of one

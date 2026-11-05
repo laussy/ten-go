@@ -422,7 +422,11 @@ while jobs or running or foreign:
         if memavail() < MEMMIN:
             if now - lastmem > 300: print(f"{time.strftime('%H:%M:%S')} memory low ({memavail():.1f} GB available), holding launches", flush=True); lastmem = now
             break
+        over = len(running) + len(foreign) >= limit; lk = None
         i = pick(len(running) + len(foreign) >= base)
+        if over or uchi:   # ending: each launch under the machine's lock, a fill job (hoju) only on a kernel of the machine free (two drivers ending together both took the one freed: 9 jobs on 8 kernels, 5 Nov)
+            lk = open(os.path.join(ROOT or WORK, "hoju.lock"), "w"); fcntl.flock(lk, fcntl.LOCK_EX)
+            if (over or jobs[i][3] in fill) and not room(): lk.close(); break
         if uchi and jobs[i][3] in fill and jobs[i][3] not in begun:   # hoju: a pump not started still has to end before those started
             j = jobs[i][3]; end, ok = hoju({j: [order(x[0]) for x in jobs if x[3] == j]})
             if not ok:
@@ -430,13 +434,13 @@ while jobs or running or foreign:
                 open("uchikiri.tmp", "w").write(" ".join(sorted(kept)) + "\n"); os.replace("uchikiri.tmp", "uchikiri.kept")
                 print(f"{time.strftime('%H:%M:%S')} hoju: pump {j} (P={pumps[j]}) would end past the pumps started (about {clock(time.time() + end)}): given up", flush=True)
                 if os.path.exists("atend"): subprocess.Popen(shlex.split(open("atend").read().strip()), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)   # Ten-Go: back to the pool now
-                continue
+                lk and lk.close(); continue
             begun.add(j); print(f"{time.strftime('%H:%M:%S')} hoju: pump {j} (P={pumps[j]}) on a kernel freed, the pumps started ending about {clock(time.time() + end)}", flush=True)
         pre, nt, w, j, prec = jobs.pop(i)
         log = open(f"{pre}.log", "a")
         p = subprocess.Popen(["nice", "-n", "10", "wolframscript", "-file", "hp3.wls", str(nt), GA, GS, prec, pre, str(w), f"{j}:{pumps[j]}", "Ps", "manifold"],
                              stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
-        running.append((p, time.time(), pre, j)); time.sleep(1)
+        running.append((p, time.time(), pre, j)); lk and lk.close(); time.sleep(1)
     time.sleep(5)
     still = []
     for p, ts, pre, j in running:
