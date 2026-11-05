@@ -10,13 +10,25 @@
  "pumps": [
   10000121
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  10000121
+ ],
+ "times": {
+  "200e80": [
+   873
+  ],
+  "150w80": [
+   996
+  ]
+ },
+ "results": [
+  "results/nijin/yzao-20261105-093134-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.44",
  "shinshu": null,
  "shugeki": true,
  "hoju": 1793867495,
- "uchikiri": 1793868444
+ "uchikiri": 1793868444,
+ "updated": 1793869409
 }
