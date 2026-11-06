@@ -8,12 +8,7 @@
  "deadline": 1793992916,
  "cost_kernel_h": 3.2,
  "pumps": [
-  10000107,
-  10000363,
-  10000235,
-  10000027,
-  10000283,
-  10000155
+  10000107
  ],
  "done": [],
  "times": {},
@@ -21,5 +16,6 @@
  "status": "open",
  "tengo": "1.44",
  "shinshu": null,
- "shugeki": true
+ "shugeki": true,
+ "hoju": 1793982693
 }
