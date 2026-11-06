@@ -12,23 +12,27 @@
   10000275
  ],
  "done": [
-  10000019
+  10000019,
+  10000275
  ],
  "times": {
   "200e80": [
-   728
+   728,
+   679
   ],
   "150w80": [
-   956
+   956,
+   841
   ]
  },
  "results": [
-  "results/nijin/yzao-20261106-084928-1.tgz"
+  "results/nijin/yzao-20261106-084928-1.tgz",
+  "results/nijin/yzao-20261106-084928-2.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.44",
  "shinshu": null,
  "shugeki": true,
  "hoju": 1793951371,
- "updated": 1793953029
+ "updated": 1793953331
 }
