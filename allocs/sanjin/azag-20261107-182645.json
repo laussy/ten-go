@@ -33,25 +33,30 @@
   10000896
  ],
  "done": [
-  10002048
+  10002048,
+  10001024
  ],
  "times": {
   "300e80": [
-   3702
+   3702,
+   3645
   ],
   "150w80": [
-   1524
+   1524,
+   1424
   ],
   "250e80": [
-   2089
+   2089,
+   2030
   ]
  },
  "results": [
-  "results/sanjin/azag-20261107-182645-1.tgz"
+  "results/sanjin/azag-20261107-182645-1.tgz",
+  "results/sanjin/azag-20261107-182645-2.tgz"
  ],
  "status": "open",
  "tengo": "1.46",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794077461
+ "updated": 1794079215
 }
