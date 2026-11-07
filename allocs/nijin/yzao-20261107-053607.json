@@ -22,36 +22,41 @@
   10001367,
   10000855,
   10002903,
-  10001879
+  10001879,
+  10002263
  ],
  "times": {
   "150w80": [
    1131,
    1008,
    1186,
-   1130
+   1130,
+   1190
   ],
   "250e80": [
    1669,
    1481,
    1559,
-   1536
+   1536,
+   1682
   ],
   "300e80": [
    2577,
    2641,
-   2690
+   2690,
+   2968
   ]
  },
  "results": [
   "results/nijin/yzao-20261107-053607-1.tgz",
   "results/nijin/yzao-20261107-053607-2.tgz",
   "results/nijin/yzao-20261107-053607-3.tgz",
-  "results/nijin/yzao-20261107-053607-4.tgz"
+  "results/nijin/yzao-20261107-053607-4.tgz",
+  "results/nijin/yzao-20261107-053607-5.tgz"
  ],
  "status": "open",
  "tengo": "1.44",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794031016
+ "updated": 1794032408
 }
