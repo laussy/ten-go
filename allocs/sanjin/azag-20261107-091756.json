@@ -1,0 +1,27 @@
+{
+ "id": "azag-20261107-091756",
+ "campaign": "sanjin",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.8275,
+ "created": 1794039476,
+ "deadline": 1794061945,
+ "cost_kernel_h": 38.1,
+ "pumps": [
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.46",
+ "shinshu": null,
+ "shugeki": false,
+ "prio": "high"
+}
