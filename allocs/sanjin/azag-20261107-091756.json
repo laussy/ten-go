@@ -16,12 +16,36 @@
   8,
   9
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  9
+ ],
+ "times": {
+  "200e80": [
+   1109
+  ],
+  "150w80": [
+   1573
+  ],
+  "250e80": [
+   2256
+  ],
+  "300e80": [
+   3934
+  ],
+  "300e160": [
+   5721
+  ],
+  "400e80": [
+   10157
+  ]
+ },
+ "results": [
+  "results/sanjin/azag-20261107-091756-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.46",
  "shinshu": null,
  "shugeki": false,
- "prio": "high"
+ "prio": "high",
+ "updated": 1794049881
 }
