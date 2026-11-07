@@ -46,7 +46,8 @@
   10000160,
   10000416,
   10000928,
-  10000096
+  10000096,
+  10000352
  ],
  "times": {
   "150w80": [
@@ -63,7 +64,8 @@
    1543,
    1521,
    1434,
-   1584
+   1584,
+   1532
   ],
   "250e80": [
    1994,
@@ -93,7 +95,8 @@
   "200e80": [
    1107,
    1110,
-   1148
+   1148,
+   1101
   ]
  },
  "results": [
@@ -110,11 +113,12 @@
   "results/sanjin/azag-20261107-215100-11.tgz",
   "results/sanjin/azag-20261107-215100-12.tgz",
   "results/sanjin/azag-20261107-215100-13.tgz",
-  "results/sanjin/azag-20261107-215100-14.tgz"
+  "results/sanjin/azag-20261107-215100-14.tgz",
+  "results/sanjin/azag-20261107-215100-15.tgz"
  ],
  "status": "open",
  "tengo": "1.46",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794090644
+ "updated": 1794090765
 }
