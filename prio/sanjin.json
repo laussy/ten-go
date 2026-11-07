@@ -1,0 +1,12 @@
+{
+ "campaign": "sanjin",
+ "rules": [
+  {
+   "level": "high",
+   "part": "hpsP",
+   "t": 1794038056,
+   "by": "azag"
+  }
+ ],
+ "about": "the priorities set by ten-go --kaizu: the last rule that matches a pump decides (none: normal)"
+}
