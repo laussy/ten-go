@@ -1,0 +1,20 @@
+{
+ "id": "yzao-20261108-150745",
+ "campaign": "teisatsu4",
+ "machine": "yzao",
+ "kernels": 8,
+ "hours": 2.0,
+ "created": 1794146865,
+ "deadline": 1794169333,
+ "cost_kernel_h": 5.2,
+ "pumps": [
+  8
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.47",
+ "shinshu": null,
+ "shugeki": false
+}
