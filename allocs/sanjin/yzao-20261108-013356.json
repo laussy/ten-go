@@ -21,25 +21,30 @@
   10000816
  ],
  "done": [
-  10002000
+  10002000,
+  10002096
  ],
  "times": {
   "150w80": [
-   1251
+   1251,
+   1169
   ],
   "250e80": [
-   1469
+   1469,
+   1432
   ],
   "300e80": [
-   2798
+   2798,
+   2888
   ]
  },
  "results": [
-  "results/sanjin/yzao-20261108-013356-1.tgz"
+  "results/sanjin/yzao-20261108-013356-1.tgz",
+  "results/sanjin/yzao-20261108-013356-2.tgz"
  ],
  "status": "open",
  "tengo": "1.46",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794100881
+ "updated": 1794101365
 }
