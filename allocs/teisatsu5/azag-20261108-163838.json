@@ -10,11 +10,32 @@
  "pumps": [
   4
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  4
+ ],
+ "times": {
+  "200e80": [
+   1081
+  ],
+  "150w80": [
+   1537
+  ],
+  "250e80": [
+   2183
+  ],
+  "300e80": [
+   3974
+  ],
+  "400e80": [
+   10051
+  ]
+ },
+ "results": [
+  "results/teisatsu5/azag-20261108-163838-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.47",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794162386
 }
