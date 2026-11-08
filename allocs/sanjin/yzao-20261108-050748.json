@@ -1,0 +1,30 @@
+{
+ "id": "yzao-20261108-050748",
+ "campaign": "sanjin",
+ "machine": "yzao",
+ "kernels": 8,
+ "hours": 2.0,
+ "created": 1794110868,
+ "deadline": 1794128868,
+ "cost_kernel_h": 15.0,
+ "pumps": [
+  10002760,
+  10001736,
+  10000456,
+  10002504,
+  10001480,
+  10000968,
+  10003016,
+  10001992,
+  10000040,
+  10002088,
+  10001064
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.46",
+ "shinshu": null,
+ "shugeki": false
+}
