@@ -53,7 +53,7 @@ input[type=number] { width: 64px; }
 .seg button { border: 0; border-radius: 0; background: transparent; }
 .seg button.on { background: var(--fg); color: var(--bg); }
 #bar { display: flex; height: 16px; border-radius: 4px; overflow: hidden; background: var(--free); margin: 8px 0 6px; }
-#bar div { height: 100%; overflow: hidden; white-space: nowrap; text-align: center; color: #fff; font-size: 11px; font-weight: 600; line-height: 16px; }   /* a machine's done: its share of the campaign, written in it */
+#bar div { height: 100%; overflow: hidden; white-space: nowrap; text-align: center; color: #fff; font-size: 11px; font-weight: 600; line-height: 16px; box-sizing: border-box; }   /* a machine's done: its share of the campaign, written in it */
 #mapbox { position: relative; margin-top: 10px; user-select: none; }
 canvas { display: block; touch-action: none; cursor: crosshair; }
 #tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px;
@@ -285,11 +285,12 @@ function summary() {
   segsB.push([sum(p => p[F.st] === "l"), css("--late"), .8, "past the deadline of its allocation"]);
   segsB.push([sum(p => (p[F.st] === "f") && p[F.lv] !== "skip"), css("--free"), 1, "free"]);
   segsB.push([sum(p => p[F.st] !== "d" && p[F.st] !== "h" && p[F.lv] === "skip"), css("--skip"), .45, "skipped"]);
-  const W = $("#bar").clientWidth;   // the share of the total a machine has computed, in its piece: with its name where it fits, alone where not
+  const W = $("#bar").clientWidth, lp = `${(100 * left / tot).toFixed(1)} %`;   // the share of the total a machine has computed, in its piece, always: with its name where it fits, alone where not (the piece then as wide as its figure); in the grey, what is left to compute (the kh left of the line above)
   $("#bar").innerHTML = segsB.filter(s => s[0] > 0).map(([s, c, a, t, nm]) => {
     const pc = 100 * s / tot, f = `${pc.toFixed(1)} %`, px = W * pc / 100;
-    const lab = nm ? (px > 9 + 7 * (nm.length + f.length) ? `${nm} ${f}` : px > 6 + 7 * f.length ? f : "") : "";
-    return `<div title="${t}: ${khs(s)} kh, ${f} of the total" style="width:${pc}%;background:${c};opacity:${a}">${esc(lab)}</div>`;
+    const grey = t === "free", [brief, full] = nm ? [f, `${nm} ${f}`] : grey ? [lp, `${lp} left`] : [];
+    const lab = brief ? (px > 9 + 7 * full.length ? full : brief) : "";
+    return `<div title="${t}: ${khs(s)} kh, ${f} of the total${grey ? `; ${lp} left to compute, what is held included` : ""}" style="width:${pc}%;background:${c};opacity:${a}${brief ? ";min-width:max-content;padding:0 3px" : ""}${grey ? ";color:var(--fg)" : ""}">${esc(lab)}</div>`;
   }).join("");
 }
 
