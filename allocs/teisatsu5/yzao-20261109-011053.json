@@ -10,11 +10,32 @@
  "pumps": [
   15
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  15
+ ],
+ "times": {
+  "400e80": [
+   6001
+  ],
+  "200e80": [
+   726
+  ],
+  "150w80": [
+   1192
+  ],
+  "250e80": [
+   1473
+  ],
+  "300e80": [
+   2459
+  ]
+ },
+ "results": [
+  "results/teisatsu5/yzao-20261109-011053-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.47",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794192771
 }
