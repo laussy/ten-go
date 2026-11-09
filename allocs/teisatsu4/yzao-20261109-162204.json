@@ -7,14 +7,13 @@
  "created": 1794237724,
  "deadline": 1794250784,
  "cost_kernel_h": 2.0,
- "pumps": [
-  10000124
- ],
+ "pumps": [],
  "done": [],
  "times": {},
  "results": [],
  "status": "open",
  "tengo": "1.47",
  "shinshu": null,
- "shugeki": true
+ "shugeki": true,
+ "hoju": 1794237727
 }
