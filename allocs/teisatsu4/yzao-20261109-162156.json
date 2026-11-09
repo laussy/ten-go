@@ -13,9 +13,10 @@
  "done": [],
  "times": {},
  "results": [],
- "status": "open",
+ "status": "released",
  "tengo": "1.47",
  "shinshu": null,
  "shugeki": true,
- "uchikiri": 1794237723
+ "uchikiri": 1794237723,
+ "updated": 1794237801
 }
