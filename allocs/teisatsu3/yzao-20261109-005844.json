@@ -19,11 +19,30 @@
   10000302,
   10000174
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000246,
+  10000270
+ ],
+ "times": {
+  "150w80": [
+   1194,
+   1170
+  ],
+  "250e80": [
+   1762,
+   1630
+  ],
+  "300e80": [
+   3253,
+   3201
+  ]
+ },
+ "results": [
+  "results/teisatsu3/yzao-20261109-005844-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.47",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794187058
 }
