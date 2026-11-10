@@ -27,7 +27,8 @@
   10000294,
   10000166,
   10000022,
-  10000038
+  10000038,
+  10000070
  ],
  "times": {
   "250e80": [
@@ -44,7 +45,8 @@
    906,
    746,
    805,
-   818
+   818,
+   790
   ],
   "300e80": [
    2085,
@@ -54,7 +56,8 @@
    1915
   ],
   "200e80": [
-   602
+   602,
+   569
   ]
  },
  "results": [
@@ -63,11 +66,12 @@
   "results/teisatsu5/yzao-20261110-134001-3.tgz",
   "results/teisatsu5/yzao-20261110-134001-4.tgz",
   "results/teisatsu5/yzao-20261110-134001-5.tgz",
-  "results/teisatsu5/yzao-20261110-134001-6.tgz"
+  "results/teisatsu5/yzao-20261110-134001-6.tgz",
+  "results/teisatsu5/yzao-20261110-134001-7.tgz"
  ],
  "status": "open",
  "tengo": "1.47",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794322927
+ "updated": 1794323169
 }
