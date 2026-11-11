@@ -11,12 +11,33 @@
   7,
   8
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  7
+ ],
+ "times": {
+  "250e80": [
+   1447
+  ],
+  "200e80": [
+   872
+  ],
+  "150w80": [
+   1184
+  ],
+  "300e80": [
+   2718
+  ],
+  "400e80": [
+   8016
+  ]
+ },
+ "results": [
+  "results/teisatsu9/yzao-20261111-221058-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.48",
  "shinshu": null,
  "shugeki": false,
- "prio": "high"
+ "prio": "high",
+ "updated": 1794440130
 }
