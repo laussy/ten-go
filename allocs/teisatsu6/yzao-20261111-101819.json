@@ -9,7 +9,6 @@
  "cost_kernel_h": 3.3,
  "pumps": [
   10000021,
-  10000053,
   10000013
  ],
  "done": [],
@@ -19,5 +18,6 @@
  "tengo": "1.47",
  "shinshu": null,
  "shugeki": true,
- "hoju": 1794388702
+ "hoju": 1794388702,
+ "uchikiri": 1794389623
 }
