@@ -16,12 +16,33 @@
   5,
   6
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  0
+ ],
+ "times": {
+  "200e80": [
+   1194
+  ],
+  "150w80": [
+   1669
+  ],
+  "250e80": [
+   2344
+  ],
+  "300e80": [
+   4010
+  ],
+  "400e80": [
+   10146
+  ]
+ },
+ "results": [
+  "results/teisatsu9/azag-20261111-221035-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.48",
  "shinshu": null,
  "shugeki": false,
- "prio": "high"
+ "prio": "high",
+ "updated": 1794441585
 }
