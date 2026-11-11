@@ -11,13 +11,25 @@
   10000021,
   10000013
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000013
+ ],
+ "times": {
+  "200e80": [
+   586
+  ],
+  "150w80": [
+   820
+  ]
+ },
+ "results": [
+  "results/teisatsu6/yzao-20261111-101819-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.47",
  "shinshu": null,
  "shugeki": true,
  "hoju": 1794388702,
- "uchikiri": 1794389623
+ "uchikiri": 1794389623,
+ "updated": 1794389623
 }
