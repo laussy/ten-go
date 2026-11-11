@@ -31,25 +31,29 @@
   10000269
  ],
  "done": [
-  10000073
+  10000073,
+  10000201
  ],
  "times": {
   "150w80": [
-   1490
+   1490,
+   1473
   ],
   "250e80": [
-   2191
+   2191,
+   2097
   ],
   "300e80": [
    3841
   ]
  },
  "results": [
-  "results/teisatsu6/azag-20261111-110957-1.tgz"
+  "results/teisatsu6/azag-20261111-110957-1.tgz",
+  "results/teisatsu6/azag-20261111-110957-2.tgz"
  ],
  "status": "open",
  "tengo": "1.47",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794395672
+ "updated": 1794395974
 }
