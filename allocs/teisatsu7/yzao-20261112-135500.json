@@ -14,11 +14,26 @@
   10000003,
   10000259
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000125
+ ],
+ "times": {
+  "150w80": [
+   767
+  ],
+  "250e80": [
+   1094
+  ],
+  "300e80": [
+   1981
+  ]
+ },
+ "results": [
+  "results/teisatsu7/yzao-20261112-135500-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.48",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794490341
 }
