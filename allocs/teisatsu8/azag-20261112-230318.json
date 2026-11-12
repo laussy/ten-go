@@ -36,32 +36,37 @@
  "done": [
   10000372,
   10000244,
-  10000268
+  10000268,
+  10000140
  ],
  "times": {
   "150w80": [
    1662,
    1595,
-   1579
+   1579,
+   1497
   ],
   "250e80": [
    2193,
    2284,
-   2264
+   2264,
+   2213
   ],
   "300e80": [
    3881,
    4076,
-   3892
+   3892,
+   3897
   ]
  },
  "results": [
   "results/teisatsu8/azag-20261112-230318-1.tgz",
-  "results/teisatsu8/azag-20261112-230318-2.tgz"
+  "results/teisatsu8/azag-20261112-230318-2.tgz",
+  "results/teisatsu8/azag-20261112-230318-3.tgz"
  ],
  "status": "open",
  "tengo": "1.48",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794525231
+ "updated": 1794525473
 }
