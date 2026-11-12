@@ -18,12 +18,24 @@
   10000040,
   10000296
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000040
+ ],
+ "times": {
+  "150w80": [
+   939
+  ],
+  "200e80": [
+   869
+  ]
+ },
+ "results": [
+  "results/teisatsu7/yzao-20261111-224704-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.48",
  "shinshu": null,
  "shugeki": false,
- "delayed": 23392
+ "delayed": 23392,
+ "updated": 1794443434
 }
