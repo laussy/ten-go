@@ -19,25 +19,30 @@
   10000116
  ],
  "done": [
-  10000276
+  10000276,
+  10000148
  ],
  "times": {
   "150w80": [
-   1230
+   1230,
+   1164
   ],
   "250e80": [
-   1739
+   1739,
+   1666
   ],
   "300e80": [
-   2692
+   2692,
+   2656
   ]
  },
  "results": [
-  "results/teisatsu8/yzao-20261112-221321-1.tgz"
+  "results/teisatsu8/yzao-20261112-221321-1.tgz",
+  "results/teisatsu8/yzao-20261112-221321-2.tgz"
  ],
  "status": "open",
  "tengo": "1.48",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794524278
+ "updated": 1794524401
 }
