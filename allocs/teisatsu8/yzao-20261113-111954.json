@@ -12,13 +12,25 @@
   10000039,
   10000023
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000023
+ ],
+ "times": {
+  "200e80": [
+   807
+  ],
+  "150w80": [
+   1647
+  ]
+ },
+ "results": [
+  "results/teisatsu8/yzao-20261113-111954-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.48",
  "shinshu": null,
  "shugeki": true,
  "hoju": 1794565197,
- "uchikiri": 1794569861
+ "uchikiri": 1794569861,
+ "updated": 1794569862
 }
