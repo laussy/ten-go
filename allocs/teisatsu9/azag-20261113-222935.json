@@ -56,7 +56,9 @@
   10000225,
   10000017,
   10000081,
-  10000273
+  10000273,
+  10000049,
+  10000113
  ],
  "times": {
   "150w80": [
@@ -79,7 +81,8 @@
    1472,
    1473,
    1401,
-   1522
+   1522,
+   1419
   ],
   "250e80": [
    2111,
@@ -119,7 +122,9 @@
    1046,
    999,
    1067,
-   1025
+   1025,
+   1053,
+   1021
   ]
  },
  "results": [
@@ -139,11 +144,12 @@
   "results/teisatsu9/azag-20261113-222935-14.tgz",
   "results/teisatsu9/azag-20261113-222935-15.tgz",
   "results/teisatsu9/azag-20261113-222935-16.tgz",
-  "results/teisatsu9/azag-20261113-222935-17.tgz"
+  "results/teisatsu9/azag-20261113-222935-17.tgz",
+  "results/teisatsu9/azag-20261113-222935-18.tgz"
  ],
  "status": "open",
  "tengo": "1.49",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794611243
+ "updated": 1794611424
 }
