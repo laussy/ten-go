@@ -68,6 +68,9 @@ When the machine's work has ended (an uchikiri, a chushi or the kikan, a campaig
 without a watch), a desktop notification says so and stays until dismissed (**tsuchi**, 通知, since 1.41): one can move on.
 Since 1.36 hoju sees the machine: the allocations ending together (an uchikiri, or their kikan) count as one, the kernels of one
 going, as they free, to the small pumps of another, the kernels of the machine less those of the allocations going on.
+Since 1.49 the pumps started come first: the kernels freed go to the jobs still waiting of the pumps started of every allocation
+ending, the longest first, before any small pump of hoju, and the end an uchikiri says counts those kernels of the machine as they
+free (13 Nov: a hoju pump took the kernel freed while a pump started waited with four jobs on one kernel, its end said 20:17 for 18:25).
 
 `--chushi` stops now, but a job within 10 minutes of completion is first offered to wait for: "One job is 3 min from completion;
 the next are 17 min, 2 h 20, 6 h away, so those are aborted. Abort this one too [n]ow, or [a]fter it completes?" `--now` or `--wait`

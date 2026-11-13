@@ -20,7 +20,8 @@ that order for every kernel, so that an uchikiri ends soon.  A file kikan (an ep
                                      kernels that free before that end take the run's small pumps not started (hoju), whole, while
                                      even a slow run of them (90 % of the measured times) ends by then; --nohoju: none.  In Ten-Go
                                      (a file alloc.json) hoju sees the machine: the runs of its work directory ending too, their
-                                     kernels as they free, its kernels (the file kernels there) less those of the runs going on
+                                     kernels as they free, its kernels (the file kernels there) less those of the runs going on;
+                                     the jobs of the pumps started of every run ending take the kernels freed before any of hoju's
   python3 run_window.py --chushi     stop now, but a job within 10 minutes of completion (--soon MIN) is first offered to wait for:
                                      abort it too [n]ow, or [a]fter it completes; --now or --wait answers ahead, --dry only says it
   python3 run_window.py ... --dir D  the run of directory D rather than this file's own (for --progress and the --dry runs)
@@ -196,6 +197,39 @@ def room():   # hoju: a kernel of the machine free, the runs going on keeping th
     F = flights(); return sum(len(F.get(d, [])) if ending(d) else max(nproc_of(d), len(F.get(d, []))) for d in runs()) < machine_kernels()
 
 
+def corewait():
+    """hoju: the jobs waiting of the pumps started in the other runs ending that can take a kernel freed: they go before any fill job
+    (1.49: on yzao a hoju pump took the kernel freed at 17:20 while a pump started waited with four jobs on one kernel, 13 Nov)"""
+    F = flights(); n = 0
+    for d in runs():
+        if d == WORK or not ending(d) or os.path.exists(os.path.join(d, "STOP")): continue
+        fl = F.get(d, [])
+        if os.path.exists(os.path.join(d, "nohoju")) and len(fl) >= nproc_of(d): continue   # it launches within its own kernels only
+        try: n += len(runstate(d, fl)[1])
+        except OSError: pass
+    return n
+
+
+def own_end(kept=None):
+    """this run ending: the end of its pumps started, in seconds from now, its jobs waiting launched on the kernels of the machine as
+    they free (those of the pumps started of every run ending before any fill job, the kernels of the runs going on kept), not on its
+    own kernels alone (1.49: a pump with one job in flight and four waiting said 20:17, one after the other, for about 18:25, 13 Nov)"""
+    took = took_all(); F = flights(); k = machine_kernels(); busy, mine, wc = [], [], []
+    for d in runs():
+        fl = F.get(d, [])
+        if not ending(d): k -= max(nproc_of(d), len(fl)); continue
+        core, w1, _ = runstate(d, fl, kept if d == WORK else None)
+        for pre, j, el in fl:
+            t = left(order(pre), el, .5 if j in core else .9, took); busy.append(t)
+            if d == WORK and j in core: mine.append(t)
+        wc += [(o, d == WORK) for o in w1]
+    k = max(k, 1); free = sorted(busy)[max(0, len(busy) - k):] + [0.0] * max(0, k - len(busy)); heapq.heapify(free)   # as hoju(): the first to end above k free nothing
+    for o, own in sorted(wc, key=lambda x: -left(x[0], 0, .5, took)):   # the longest first, as each run's plan
+        t = free[0] + left(o, 0, .5, took); heapq.heapreplace(free, t)
+        if own: mine.append(t)
+    return max(mine, default=0.0)
+
+
 def kill(pids):   # these front-ends and all their descendants (wolframscript ignores SIGTERM and leaves its kernel behind)
     for q in [q for pid in pids for q in tree(pid)]:
         try: os.kill(q, signal.SIGKILL)
@@ -263,6 +297,7 @@ if "--uchikiri" in sys.argv:
     free = [x[4] for x in fly] + [0.0] * max(0, k - len(fly)); heapq.heapify(free)
     for f in todo: heapq.heappush(free, heapq.heappop(free) + per(order(f[0])))   # launched in the plan's order as kernels free
     end = max(free, default=0)
+    if ROOT: end = own_end(kept); k = "the machine's"   # in Ten-Go its jobs take the kernels of the machine as they free (1.49)
     under = {f[3] for f in plan if f[3] in kept and f[3] not in fill and not have(f)}; drop = {f[3] for f in plan if not have(f)} - kept - fill
     cut = {f[3] for f in todo}   # the pumps a STOP would leave incomplete: their jobs done, and those in flight, for nothing
     stop = sum(per(order(f[0])) for f in plan if f[3] in cut and have(f)) + sum(per(order(pre)) for pre, j in fl if j in cut)
@@ -360,7 +395,7 @@ def shinshu(limit, base, cap, free, hist):
 
 
 def pick(extra):   # the next job: in the plan's order, or for a kernel above nproc the shortest waiting
-    if not extra or os.path.exists("shugeki") or late: return 0   # a sortie, or past its time: whole pumps, in the plan's order
+    if not extra or os.path.exists("shugeki") or late or uchi: return 0   # a sortie, past its time, or ending (1.49: the jobs of the pumps started before hoju's, the longest first): whole pumps, in the plan's order
     t = tcost
     m = {o: sum(v) / len(v) for o, v in took.items() if len(v) >= 3}   # this run's own times (3 jobs at least), and its speed against T
     f = sum(m[o] / t(o) for o in m) / len(m) if m else 1
@@ -427,6 +462,7 @@ while jobs or running or foreign:
         if over or uchi:   # ending: each launch under the machine's lock, a fill job (hoju) only on a kernel of the machine free (two drivers ending together both took the one freed: 9 jobs on 8 kernels, 5 Nov)
             lk = open(os.path.join(ROOT or WORK, "hoju.lock"), "w"); fcntl.flock(lk, fcntl.LOCK_EX)
             if (over or jobs[i][3] in fill) and not room(): lk.close(); break
+            if uchi and jobs[i][3] in fill and corewait(): lk.close(); break   # 1.49: hoju after the jobs of the pumps started of the other runs ending
         if uchi and jobs[i][3] in fill and jobs[i][3] not in begun:   # hoju: a pump not started still has to end before those started
             j = jobs[i][3]; end, ok = hoju({j: [order(x[0]) for x in jobs if x[3] == j]})
             if not ok:
