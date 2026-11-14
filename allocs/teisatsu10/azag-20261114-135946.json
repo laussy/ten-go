@@ -1,0 +1,21 @@
+{
+ "id": "azag-20261114-135946",
+ "campaign": "teisatsu10",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.0,
+ "created": 1794661186,
+ "deadline": 1794679186,
+ "cost_kernel_h": 2.8,
+ "pumps": [
+  10000383,
+  10000255
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.50",
+ "shinshu": null,
+ "shugeki": false
+}
