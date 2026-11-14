@@ -1,0 +1,20 @@
+{
+ "id": "azag-20261114-153250",
+ "campaign": "hokan7",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.0,
+ "created": 1794666770,
+ "deadline": 1794689239,
+ "cost_kernel_h": 6.6,
+ "pumps": [
+  0
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.50",
+ "shinshu": null,
+ "shugeki": false
+}
