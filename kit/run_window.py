@@ -294,7 +294,7 @@ if "--uchikiri" in sys.argv:
         fill = set(hoju(cand, kept)[1])
     todo = [f for f in plan if f[3] in kept and f[3] not in fill and not have(f) and (f[0], f[3]) not in fl]
     k = kernels()
-    free = [x[4] for x in fly] + [0.0] * max(0, k - len(fly)); heapq.heapify(free)
+    free = [x[4] for x in fly] + [0.0] * max(0, max(k, 1) - len(fly)); heapq.heapify(free)   # one kernel at least: with none (nproc 0), jobs left and none in flight, it failed and the pumps not started stayed held (1.50)
     for f in todo: heapq.heappush(free, heapq.heappop(free) + per(order(f[0])))   # launched in the plan's order as kernels free
     end = max(free, default=0)
     if ROOT: end = own_end(kept); k = "the machine's"   # in Ten-Go its jobs take the kernels of the machine as they free (1.49)

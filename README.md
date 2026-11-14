@@ -96,7 +96,11 @@ complete, the others go back to the pool). The pumps of high then take the kerne
 since 1.37: before, their driver started on all the kernels of the machine beside the jobs still running); those of now take them
 at once, the jobs of the other allocations being paused (SIGSTOP: the kernel waits in memory where it stands, nothing is lost; as many
 as the memory holds) and resumed, the nearest to completion first, as the kernels come back, their paused time left out of the job
-times; their deadlines are pushed back by the span of the claim of now. An uchikiri or a chushi by hand resumes the paused jobs first.
+times; their deadlines are pushed back by the span of the claim of now. Since 1.50 a level set on pumps an allocation has started
+already reaches them too: that allocation takes the level (now: the others' jobs paused for it, their deadlines pushed back by the
+longest job it has left; high: the kernels as they free), and its pumps not started of a lower level go back to the pool, without loss
+(before, the rule waited for a claim that never came: the last pump of teisatsu9, set high and then now, sat with no kernel on azag).
+An uchikiri or a chushi by hand resumes the paused jobs first.
 A kaizu already on the port is stopped first (it ends the push it may be in), and the pages open on it reload into the new one. Its
 button **tassei** pushes at once the pumps this machine has done (`--tassei`), which a watch does within the minute a pump completes
 (since 1.38; before, every 30 min, as it still books the kernel-hours of the jobs done; until then they read "done here, not pushed yet"). Any machine with a clone can run its own.
