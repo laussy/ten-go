@@ -6,6 +6,14 @@
    "part": "hptjP",
    "t": 1794340369,
    "by": "yzao"
+  },
+  {
+   "level": "high",
+   "pumps": [
+    10000079
+   ],
+   "t": 1794637066,
+   "by": "yzao"
   }
  ],
  "about": "the priorities set by ten-go --kaizu: the last rule that matches a pump decides (none: normal)"
