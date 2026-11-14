@@ -16,5 +16,6 @@
  "status": "open",
  "tengo": "1.49",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "prio": "now"
 }
