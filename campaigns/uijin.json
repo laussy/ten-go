@@ -25101,6 +25101,38 @@
     "250e80",
     "150w80"
    ]
+  ],
+  [
+   460000000,
+   "0.022",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   460000002,
+   "0.086",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   460000001,
+   "0.054",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   460000003,
+   "0.118",
+   [
+    "200e80",
+    "150w80"
+   ]
   ]
  ],
  "parts": [
@@ -25470,6 +25502,14 @@
    "base": 120000000,
    "about": "the boiling window at 0.004 g on 19-20 g, 80 digits (the lattice 12.51 + 0.004 m of close-0.004 and of the 0.08 g grid, whose 13 pumps there are redone at 80)",
    "pumps": 250,
+   "left_out": 0
+  },
+  {
+   "kind": "grid",
+   "prefix": "hpUz",
+   "base": 460000000,
+   "about": "uijin below 0.15 g: P = 0.15 + 0.032 j g, j = -4..-1 (0.022-0.118 g), at 80 digits, B (150w, 200), the orders every hokan pilot found to hold at 0.022 g (k = 1..10; uijin not piloted there)",
+   "pumps": 4,
    "left_out": 0
   }
  ],
