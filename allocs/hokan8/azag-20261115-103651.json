@@ -12,13 +12,25 @@
   10000002,
   10000001
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000000
+ ],
+ "times": {
+  "200e80": [
+   900
+  ],
+  "150w80": [
+   1326
+  ]
+ },
+ "results": [
+  "results/hokan8/azag-20261115-103651-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
  "prio": "now",
- "delayed": 27294
+ "delayed": 27294,
+ "updated": 1794737679
 }
