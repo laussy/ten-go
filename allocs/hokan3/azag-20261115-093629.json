@@ -5,7 +5,7 @@
  "kernels": 32,
  "hours": 2.0,
  "created": 1794731789,
- "deadline": 1794749789,
+ "deadline": 1794771246,
  "cost_kernel_h": 2.0,
  "pumps": [
   10000029
@@ -16,5 +16,6 @@
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "delayed": 21457
 }
