@@ -12,25 +12,30 @@
   20000016
  ],
  "done": [
-  20000032
+  20000032,
+  20000016
  ],
  "times": {
   "150w80": [
-   1182
+   1182,
+   1236
   ],
   "250e80": [
-   1575
+   1575,
+   1707
   ],
   "300e80": [
-   2721
+   2721,
+   2823
   ]
  },
  "results": [
-  "results/hokan4/yzao-20261115-113731-1.tgz"
+  "results/hokan4/yzao-20261115-113731-1.tgz",
+  "results/hokan4/yzao-20261115-113731-2.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794742505
+ "updated": 1794743237
 }
