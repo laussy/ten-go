@@ -12,25 +12,30 @@
   20000018
  ],
  "done": [
-  20000034
+  20000034,
+  20000018
  ],
  "times": {
   "150w80": [
-   1534
+   1534,
+   1606
   ],
   "250e80": [
-   2130
+   2130,
+   2167
   ],
   "300e80": [
-   3816
+   3816,
+   3793
   ]
  },
  "results": [
-  "results/hokan4/azag-20261115-130944-1.tgz"
+  "results/hokan4/azag-20261115-130944-1.tgz",
+  "results/hokan4/azag-20261115-130944-2.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794748432
+ "updated": 1794748751
 }
