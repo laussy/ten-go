@@ -53,6 +53,30 @@
     "200e80",
     "150w80"
    ]
+  ],
+  [
+   10000000,
+   "0.054",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   10000002,
+   "0.118",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   10000001,
+   "0.086",
+   [
+    "200e80",
+    "150w80"
+   ]
   ]
  ],
  "parts": [
@@ -61,6 +85,14 @@
    "prefix": "hphfP",
    "base": 0,
    "about": "the pilot: 3 pumps of the lattice 0.15 + 0.032 j g, 0.022 g (the lowest) and 13.75 and 14.998 g (the middle and the top of 12.5-15 g), at orders 150 with weights, 200, 250, 300 and 400 at 80 digits and 300 at 160 digits: whether 150/200 (B), 250/300 (D) agree with 300/400 (E) there, and whether 80 digits hold; with the pumps 0.502 and 12.002 g of teisatsu5's pilot they set the orders of the grid (code/hokan_pilot.py --sakusen hokan5)",
+   "pumps": 3,
+   "left_out": 0
+  },
+  {
+   "kind": "grid",
+   "prefix": "hphfL",
+   "base": 10000000,
+   "about": "the grid of hokan5: P = 0.15 + 0.032 j g below 0.15 g (0.022-0.118) and on 12.534-14.998 g, in van der Corput order, at 80 digits, the 3 pumps of the pilot left out; the orders by range of P as the pilot set them (code/hokan_pilot.py --sakusen hokan5): B (150w, 200) on 0-0.15, D (150w, 250, 300) on 0.15-13.766, E (150w, 300, 400) on 13.766-; 79 pumps, 248 kh; this part: the pumps below 0.15 g alone, first, at the kaizu's high (Fabrice, 15 Nov 2026)",
    "pumps": 3,
    "left_out": 0
   }
