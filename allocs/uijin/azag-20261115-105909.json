@@ -13,13 +13,22 @@
   460000001,
   460000003
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  460000000
+ ],
+ "times": {
+  "200e80": [
+   847
+  ]
+ },
+ "results": [
+  "results/uijin/azag-20261115-105909-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
  "prio": "now",
- "delayed": 1542
+ "delayed": 1542,
+ "updated": 1794737990
 }
