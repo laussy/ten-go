@@ -2,9 +2,9 @@
  "campaign": "hokan7",
  "rules": [
   {
-   "level": "high",
+   "level": "now",
    "part": "hphhL",
-   "t": 1794735240,
+   "t": 1794735995,
    "by": "azag"
   }
  ],
