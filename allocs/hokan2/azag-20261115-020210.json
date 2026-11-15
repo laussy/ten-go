@@ -10,11 +10,26 @@
  "pumps": [
   10000006
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  10000006
+ ],
+ "times": {
+  "150w80": [
+   1466
+  ],
+  "250e80": [
+   2067
+  ],
+  "300e80": [
+   3613
+  ]
+ },
+ "results": [
+  "results/hokan2/azag-20261115-020210-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.50",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794708172
 }
