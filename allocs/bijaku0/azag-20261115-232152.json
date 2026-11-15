@@ -29,11 +29,20 @@
   10000019,
   10000021
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000001
+ ],
+ "times": {
+  "150w80": [
+   1347
+  ]
+ },
+ "results": [
+  "results/bijaku0/azag-20261115-232152-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794782923
 }
