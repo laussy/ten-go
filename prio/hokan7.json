@@ -1,0 +1,12 @@
+{
+ "campaign": "hokan7",
+ "rules": [
+  {
+   "level": "high",
+   "part": "hphhL",
+   "t": 1794735240,
+   "by": "azag"
+  }
+ ],
+ "about": "the priorities set by ten-go --kaizu: the last rule that matches a pump decides (none: normal)"
+}
