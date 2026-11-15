@@ -14,15 +14,18 @@
   460000003
  ],
  "done": [
-  460000000
+  460000000,
+  460000002
  ],
  "times": {
   "200e80": [
-   847
+   847,
+   855
   ]
  },
  "results": [
-  "results/uijin/azag-20261115-105909-1.tgz"
+  "results/uijin/azag-20261115-105909-1.tgz",
+  "results/uijin/azag-20261115-105909-2.tgz"
  ],
  "status": "open",
  "tengo": "1.50",
@@ -30,5 +33,5 @@
  "shugeki": false,
  "prio": "now",
  "delayed": 1542,
- "updated": 1794737990
+ "updated": 1794738106
 }
