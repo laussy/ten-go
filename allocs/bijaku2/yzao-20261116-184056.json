@@ -17,11 +17,20 @@
   40000006,
   40000007
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  40000000
+ ],
+ "times": {
+  "200e80": [
+   729
+  ]
+ },
+ "results": [
+  "results/bijaku2/yzao-20261116-184056-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794854107
 }
