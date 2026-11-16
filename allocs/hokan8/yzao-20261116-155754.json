@@ -10,12 +10,27 @@
  "pumps": [
   20000002
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  20000002
+ ],
+ "times": {
+  "250e80": [
+   1027
+  ],
+  "150w80": [
+   761
+  ],
+  "300e80": [
+   1808
+  ]
+ },
+ "results": [
+  "results/hokan8/yzao-20261116-155754-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "kikan": 1794843900
+ "kikan": 1794843900,
+ "updated": 1794844259
 }
