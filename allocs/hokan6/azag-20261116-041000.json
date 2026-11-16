@@ -28,11 +28,26 @@
   20000028,
   20000060
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  20000000
+ ],
+ "times": {
+  "150w80": [
+   1434
+  ],
+  "250e80": [
+   2041
+  ],
+  "300e80": [
+   3655
+  ]
+ },
+ "results": [
+  "results/hokan6/azag-20261116-041000-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794802267
 }
