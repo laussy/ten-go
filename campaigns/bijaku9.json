@@ -213,6 +213,134 @@
     "200e80",
     "150w80"
    ]
+  ],
+  [
+   20000000,
+   "0.017259",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000001,
+   "0.022361",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000002,
+   "0.02897",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000003,
+   "0.037532",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000004,
+   "0.048625",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000005,
+   "0.062996",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000006,
+   "0.081615",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000007,
+   "0.10574",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000008,
+   "0.13699",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000009,
+   "0.2",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000010,
+   "0.25",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000011,
+   "0.3",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000012,
+   "0.35",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000013,
+   "0.4",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000014,
+   "0.45",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   20000015,
+   "0.5",
+   [
+    "200e80",
+    "150w80"
+   ]
   ]
  ],
  "parts": [
@@ -230,6 +358,14 @@
    "base": 10000000,
    "about": "the series of bijaku9: the log series P_i = 0.001 x 500^(i/24) g, i = 0..24 (0.001-0.5 g, 25 pumps, 8.9 a decade, each to 3 significant digits), but the pilot's 0.001 g and the 1 points that pumps of the case done already stand for (0.5 by teisatsu9's 0.502 g): 23 pumps, numbered by their index i in the series, from the bottom up, at 80 digits; the orders as the pilot set them (code/bijaku_pilot.py --sakusen bijaku9): B (150w, 200) below 0.022 g, B (150w, 200) on 0.022-0.5 g; 23 pumps, 16.4 kh",
    "pumps": 23,
+   "left_out": 0
+  },
+  {
+   "kind": "list",
+   "prefix": "hpbjRa",
+   "base": 20000000,
+   "about": "the refinement of the series of bijaku9 (teisatsu9), van der Corput level 0: of the grid 0.001 x 500^(j/384) g (j = 176..316, 0.017259-0.16635 g) and n/320 g (n = 54..160, 0.16875-0.5 g, 64 per period of 0.2 g), the pumps whose index is a multiple of 16 (the old points 0.0173-0.137 g at their exact values, and the multiples of 0.05 g): 16 pumps, in increasing pump, at 80 digits, orders 150w and 200 (B, as the pilot set for 0.001-0.5 g); added by code/tengo_dispatch.py 1.6",
+   "pumps": 16,
    "left_out": 0
   }
  ]
