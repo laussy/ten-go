@@ -80,7 +80,8 @@
   50000037,
   50000036,
   50000035,
-  50000034
+  50000034,
+  50000033
  ],
  "times": {
   "200e80": [
@@ -109,7 +110,8 @@
    547,
    448,
    498,
-   538
+   538,
+   523
   ],
   "150w80": [
    852,
@@ -135,7 +137,8 @@
    746,
    588,
    679,
-   699
+   699,
+   674
   ]
  },
  "results": [
@@ -166,11 +169,12 @@
   "results/bijaku0/yzao-20261116-191446-25.tgz",
   "results/bijaku0/yzao-20261116-191446-26.tgz",
   "results/bijaku0/yzao-20261116-191446-27.tgz",
-  "results/bijaku0/yzao-20261116-191446-28.tgz"
+  "results/bijaku0/yzao-20261116-191446-28.tgz",
+  "results/bijaku0/yzao-20261116-191446-29.tgz"
  ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794864362
+ "updated": 1794864643
 }
