@@ -18,32 +18,36 @@
   40000000,
   40000001,
   40000002,
-  40000003
+  40000003,
+  40000004
  ],
  "times": {
   "200e80": [
    427,
    402,
    403,
-   393
+   393,
+   321
   ],
   "150w80": [
    609,
    554,
    568,
-   568
+   568,
+   512
   ]
  },
  "results": [
   "results/bijaku0/yzao-20261116-161916-1.tgz",
   "results/bijaku0/yzao-20261116-161916-2.tgz",
   "results/bijaku0/yzao-20261116-161916-3.tgz",
-  "results/bijaku0/yzao-20261116-161916-4.tgz"
+  "results/bijaku0/yzao-20261116-161916-4.tgz",
+  "results/bijaku0/yzao-20261116-161916-5.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
  "kikan": 1794847200,
- "updated": 1794845442
+ "updated": 1794845732
 }
