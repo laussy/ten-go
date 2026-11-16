@@ -1,0 +1,20 @@
+{
+ "id": "yzao-20261116-101013",
+ "campaign": "hokan7",
+ "machine": "yzao",
+ "kernels": 4,
+ "hours": 1.0077832618024614,
+ "created": 1794820213,
+ "deadline": 1794833274,
+ "cost_kernel_h": 2.1,
+ "pumps": [
+  20000066
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.50",
+ "shinshu": null,
+ "shugeki": true
+}
