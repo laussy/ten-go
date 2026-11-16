@@ -1,0 +1,25 @@
+{
+ "id": "azag-20261116-100737",
+ "campaign": "bijaku0",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.0,
+ "created": 1794820057,
+ "deadline": 1794838057,
+ "cost_kernel_h": 3.6,
+ "pumps": [
+  30000010,
+  30000011,
+  30000012,
+  30000013,
+  30000014,
+  30000015
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.50",
+ "shinshu": null,
+ "shugeki": false
+}
