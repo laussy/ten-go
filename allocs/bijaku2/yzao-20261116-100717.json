@@ -1,0 +1,29 @@
+{
+ "id": "yzao-20261116-100717",
+ "campaign": "bijaku2",
+ "machine": "yzao",
+ "kernels": 4,
+ "hours": 2.0,
+ "created": 1794820037,
+ "deadline": 1794838037,
+ "cost_kernel_h": 7.1,
+ "pumps": [
+  30000000,
+  30000001,
+  30000002,
+  30000003,
+  30000004,
+  30000005,
+  30000006,
+  30000007,
+  30000008,
+  30000009
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.50",
+ "shinshu": null,
+ "shugeki": false
+}
