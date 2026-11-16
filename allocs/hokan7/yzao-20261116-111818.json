@@ -12,11 +12,26 @@
   20000035,
   20000019
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  20000067
+ ],
+ "times": {
+  "150w80": [
+   893
+  ],
+  "250e80": [
+   1371
+  ],
+  "300e80": [
+   2359
+  ]
+ },
+ "results": [
+  "results/hokan7/yzao-20261116-111818-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794826662
 }
