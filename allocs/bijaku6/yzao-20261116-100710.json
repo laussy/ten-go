@@ -10,12 +10,24 @@
  "pumps": [
   30000000
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  30000000
+ ],
+ "times": {
+  "150w80": [
+   794
+  ],
+  "200e80": [
+   531
+  ]
+ },
+ "results": [
+  "results/bijaku6/yzao-20261116-100710-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "uchikiri": 1794820207
+ "uchikiri": 1794820207,
+ "updated": 1794820890
 }
