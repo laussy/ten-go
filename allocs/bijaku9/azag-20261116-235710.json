@@ -75,24 +75,28 @@
  ],
  "done": [
   40000001,
-  50000061
+  50000061,
+  50000059
  ],
  "times": {
   "150w80": [
-   1331
+   1331,
+   1520
   ],
   "200e80": [
    902,
-   1145
+   1145,
+   1098
   ]
  },
  "results": [
   "results/bijaku9/azag-20261116-235710-1.tgz",
-  "results/bijaku9/azag-20261116-235710-2.tgz"
+  "results/bijaku9/azag-20261116-235710-2.tgz",
+  "results/bijaku9/azag-20261116-235710-3.tgz"
  ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794909725
+ "updated": 1794909794
 }
