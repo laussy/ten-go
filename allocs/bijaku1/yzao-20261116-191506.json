@@ -25,22 +25,26 @@
   50000014
  ],
  "done": [
-  50000014
+  50000014,
+  50000013
  ],
  "times": {
   "150w80": [
-   551
+   551,
+   582
   ],
   "200e80": [
-   417
+   417,
+   357
   ]
  },
  "results": [
-  "results/bijaku1/yzao-20261116-191506-1.tgz"
+  "results/bijaku1/yzao-20261116-191506-1.tgz",
+  "results/bijaku1/yzao-20261116-191506-2.tgz"
  ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794881248
+ "updated": 1794881606
 }
