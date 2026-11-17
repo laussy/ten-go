@@ -13,12 +13,24 @@
   50000013,
   50000014
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  50000014
+ ],
+ "times": {
+  "200e80": [
+   625
+  ],
+  "150w80": [
+   873
+  ]
+ },
+ "results": [
+  "results/bijaku4/yzao-20261116-191525-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
- "uchikiri": 1794901913
+ "uchikiri": 1794901913,
+ "updated": 1794902074
 }
