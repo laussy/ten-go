@@ -10,11 +10,23 @@
  "pumps": [
   50000015
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  50000015
+ ],
+ "times": {
+  "150w80": [
+   1361
+  ],
+  "200e80": [
+   956
+  ]
+ },
+ "results": [
+  "results/bijaku8/azag-20261117-103336-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.51",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794933098
 }
