@@ -29,25 +29,30 @@
   20000035
  ],
  "done": [
-  20000017
+  20000017,
+  20000035
  ],
  "times": {
   "300e80": [
-   3856
+   3856,
+   3854
   ],
   "150w80": [
-   1566
+   1566,
+   1599
   ],
   "250e80": [
-   2192
+   2192,
+   2206
   ]
  },
  "results": [
-  "results/hokan8/azag-20261117-131631-1.tgz"
+  "results/hokan8/azag-20261117-131631-1.tgz",
+  "results/hokan8/azag-20261117-131631-2.tgz"
  ],
  "status": "open",
  "tengo": "1.51",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794935769
+ "updated": 1794937591
 }
