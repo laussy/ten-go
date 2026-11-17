@@ -19,11 +19,23 @@
   50000009,
   50000010
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  50000001
+ ],
+ "times": {
+  "150w80": [
+   1266
+  ],
+  "200e80": [
+   876
+  ]
+ },
+ "results": [
+  "results/bijaku4/azag-20261117-165611-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.51",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794938871
 }
