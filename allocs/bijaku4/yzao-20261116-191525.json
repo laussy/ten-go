@@ -16,29 +16,33 @@
  "done": [
   50000014,
   50000013,
-  50000012
+  50000012,
+  50000011
  ],
  "times": {
   "200e80": [
    625,
    636,
-   559
+   559,
+   481
   ],
   "150w80": [
    873,
    867,
-   820
+   820,
+   703
   ]
  },
  "results": [
   "results/bijaku4/yzao-20261116-191525-1.tgz",
   "results/bijaku4/yzao-20261116-191525-2.tgz",
-  "results/bijaku4/yzao-20261116-191525-3.tgz"
+  "results/bijaku4/yzao-20261116-191525-3.tgz",
+  "results/bijaku4/yzao-20261116-191525-4.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.50",
  "shinshu": null,
  "shugeki": false,
  "uchikiri": 1794901913,
- "updated": 1794902498
+ "updated": 1794902575
 }
