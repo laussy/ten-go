@@ -104,6 +104,10 @@ An uchikiri or a chushi by hand resumes the paused jobs first.
 A kaizu already on the port is stopped first (it ends the push it may be in), and the pages open on it reload into the new one. Its
 button **tassei** pushes at once the pumps this machine has done (`--tassei`), which a watch does within the minute a pump completes
 (since 1.38; before, every 30 min, as it still books the kernel-hours of the jobs done; until then they read "done here, not pushed yet"). Any machine with a clone can run its own.
+Since 1.51 the list folds the campaigns of one name and a number (teisatsu3 ... teisatsu10, bijaku0 ... bijaku9) under one line, their
+sums in it (a click opens it), and keeps the old campaigns in a **storage** folded at its end (`stored.json`): every complete campaign
+goes there by itself, any other can be stored by hand from its line (⇣ store, or ⇣ store all on a family's line), and one taken out of
+it (⇡ out) stays in the list, complete or not. The storage is in the pool, the same for every machine's kaizu.
 
 A campaign is declared once, by `ten-go --sensen SPEC.json`: a **grid** (lattices, orders by range of P, ranges left out, and the runs
 already computed, whose pumps are left out, read from each file's header) or an **adaptive** campaign (the rule of the adaptive
@@ -134,6 +138,8 @@ The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 - `results/<c>/<id>-<n>.tgz`: the `.dat` files of the pumps done, one archive per push
 - `prio/<c>.json`: the priorities set in `--kaizu`, rules (a part, a span of g, or pumps picked, these maybe named: a sub-campaign; a
   level), the last that matches deciding
+- `stored.json`: the storage of `--kaizu`, the campaigns stored by hand (the complete ones go there by themselves) and the complete
+  ones taken out of it, kept in the list
 - `kit/`: `hp3.wls` and `run_window.py`, copied into each allocation's work directory; `tengo_adaptive.py`, the rule of the adaptive
   campaigns (needs numpy and scipy); `tengo_kaizu.py` and `kaizu.html`, the sea chart, with
   `ten-go-logo-0PQTC-200px.png`, the logo (Ten-go-logo-0PQTC.png) at 200 px

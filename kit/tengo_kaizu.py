@@ -12,7 +12,9 @@ already on the port is stopped first, and its pages reload into the new one.  It
 has done (ten-go --tassei), which a watch does within the minute a pump completes (1.38).  The dates have their Anno Fabri tags (~/bin/AF; none
 where it is not), the page Ten-Go's logo (lw [[Ten-Go]], File:Ten-go-logo-0PQTC.png, small, at 200 px under the pointer).  The clone is
 fetched every minute; a watch of the machine fetches it too, and the two share the clone's lock.  The allocations of a machine in the
-campaigns not shown are said under it (1.39)."""
+campaigns not shown are said under it (1.39).  The campaigns of one name and a number (teisatsu3, teisatsu4...) fold under one line,
+their sums in it (a click opens it), and the old campaigns go to the storage (stored.json in the pool, 1.51), folded at the end of the
+list: every complete one by itself, and any stored by hand; one taken out of it stays in the list."""
 import contextlib, errno, functools, http.server, io, json, os, re, secrets, shutil, signal, subprocess, threading, time, urllib.parse
 from fractions import Fraction
 
@@ -96,6 +98,30 @@ def bind(T, port, H):
     T.die(f"--kaizu: port {port} still taken after the kaizu on it stopped")
 
 
+def nat(c):   # the order of the campaigns: by name, the number at its end as a number (teisatsu3 ... teisatsu10)
+    m = re.fullmatch(r"(.*\D)(\d+)", c); return (m[1], int(m[2])) if m else (c, -1)
+
+
+def spans(names):   # campaigns in words, those of one name with a number run together: teisatsu3-10, hokan1-7, hokan10, nijin
+    fam = {}
+    for c in sorted(names, key=nat): b, k = nat(c); fam.setdefault(b, []).append(k)
+    out = []
+    for b, ks in fam.items():
+        if ks == [-1]: out.append(b); continue
+        run = [[ks[0], ks[0]]]
+        for k in ks[1:]:
+            if k == run[-1][1] + 1: run[-1][1] = k
+            else: run.append([k, k])
+        out += [f"{b}{x}" + (f"-{y}" if y > x else "") for x, y in run]
+    return ", ".join(out)
+
+
+def shelf(T):   # stored.json: the campaigns stored by hand, and the complete ones kept in the list (taken out of the storage)
+    try: j = json.load(open(T.R("stored.json")))
+    except (OSError, ValueError): j = {}
+    return dict(stored=list(j.get("stored", [])), kept=list(j.get("kept", [])))
+
+
 def brief(T, c, now, ref, A):
     """the campaign c in a line, for the list of the campaigns: its counts, its cost done and held by machine and left (seconds on the
     reference machine), the machines holding an allocation in it, and whether it is complete (nothing left but pumps skipped)"""
@@ -117,8 +143,9 @@ def state(T, c, hours):
     priorities, the machines (their allocations in the other campaigns said too) and the next claim of each in `hours`"""
     now = time.time(); me = T.C["machine"]; ms = sorted(os.path.basename(f)[:-5] for f in os.listdir(T.R("machines")) if f.endswith(".json"))
     ref = "azag" if "azag" in ms else me   # the widths: the costs on the reference machine, as --senkyo
-    AL = {x: T.allocs(x) for x in T.campaigns()}; camps = [brief(T, x, now, ref, AL[x]) for x in AL]
-    if c not in AL: c = next((b["name"] for b in camps if not b["complete"]), camps[0]["name"])
+    AL = {x: T.allocs(x) for x in T.campaigns()}; camps = [brief(T, x, now, ref, AL[x]) for x in AL]; sh = shelf(T)
+    for b in camps: b.update(stored=b["name"] in sh["stored"] or b["complete"] and b["name"] not in sh["kept"], by_hand=b["name"] in sh["stored"], kept=b["name"] in sh["kept"])
+    if c not in AL: c = next((b["name"] for b in camps if not b["stored"]), next((b["name"] for b in camps if not b["complete"]), camps[0]["name"]))
     cm = T.campaign(c); A = AL[c]
     _, K = T.cost(cm, A, ref); lv = T.level(c, cm); Q = T.parts(cm); busy = T.held(A, now); rules = T.prio(c)
     done, hold, late = {}, {}, {}
@@ -216,6 +243,26 @@ def change_prio(T, c, op):
     return change
 
 
+def change_store(T, op):
+    """the change of stored.json for transact: campaigns put into the storage by hand (op store), or taken out of it (op out; a
+    complete one is then kept in the list, where it stays, as it would go back to the storage by itself)"""
+    def change():
+        names = list(dict.fromkeys(str(x) for x in op.get("names") or [])); cs = set(T.campaigns())
+        if not names: T.die("no campaign named")
+        if bad := [x for x in names if x not in cs]: T.die("no campaign " + ", ".join(bad))
+        s = shelf(T); st, kp = set(s["stored"]), set(s["kept"])
+        if op.get("op") == "store": st |= set(names); kp -= set(names); what = "stored"
+        elif op.get("op") == "out":
+            now = time.time(); ms = [os.path.basename(f)[:-5] for f in os.listdir(T.R("machines")) if f.endswith(".json")]; ref = "azag" if "azag" in ms else T.C["machine"]
+            st -= set(names); kp |= {x for x in names if brief(T, x, now, ref, T.allocs(x))["complete"]}; what = "taken out of the storage"
+        else: T.die(f"no operation {op.get('op')}")
+        if st == set(s["stored"]) and kp == set(s["kept"]): return None
+        T.save(T.R("stored.json"), dict(stored=sorted(st, key=nat), kept=sorted(kp, key=nat),
+                                         about="the storage of ten-go --kaizu: the campaigns stored by hand, out of its list (the complete ones go there by themselves), and the complete ones kept in the list"))
+        return f"{spans(names)} {what}"
+    return change
+
+
 def serve(T, port, c=None):
     here = os.path.dirname(os.path.abspath(__file__)); token = secrets.token_hex(16); boot = secrets.token_hex(4)   # boot: this run, in /state
     page = open(os.path.join(here, "kaizu.html")).read().replace("%%TOKEN%%", token).replace("%%BOOT%%", boot)
@@ -261,6 +308,14 @@ def serve(T, port, c=None):
                         with contextlib.redirect_stdout(out): T.cmd_done()
                         LAST.update(fetched=time.time(), lost=None)
                         return self.send(200, {"ok": True, "said": out.getvalue().strip().removeprefix("ten-go: ") or "nothing new to push"})
+                    except SystemExit as e: return self.send(400, {"error": str(e)})
+                    except Exception as e: return self.send(500, {"error": f"{type(e).__name__}: {e}"})
+            if self.path == "/store":   # campaigns into the storage, or out of it: stored.json, pushed like a rule
+                with LOCK:
+                    try:
+                        out = T.transact(change_store(T, body), lambda w: f"kaizu: {w} ({T.C['machine']})")
+                        LAST.update(fetched=time.time(), lost=None)
+                        return self.send(200, {"ok": True, "said": out or "nothing to change"})
                     except SystemExit as e: return self.send(400, {"error": str(e)})
                     except Exception as e: return self.send(500, {"error": f"{type(e).__name__}: {e}"})
             if self.path != "/prio": return self.send(404, {"error": "no such action"})

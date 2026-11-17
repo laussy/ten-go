@@ -103,6 +103,14 @@ tr.part.on td { background: var(--sel); }
 .camp .about { flex: 1 1 220px; }
 .camp .ok { color: var(--ok); font-weight: 600; }
 .cols.folded { grid-template-columns: minmax(0, 1fr); }
+.camp.mem { margin-left: 22px; }   /* a campaign of a family opened, under its line */
+.camp .fam { font-weight: 600; }
+.camp .fam .nums { font-weight: 400; color: var(--muted); margin-left: 3px; }
+.camp .flag { margin-left: 0; }
+.camp button.st { padding: 0 7px; font-size: 12px; color: var(--muted); margin-left: auto; }   /* at the end of the line, every one */
+.camp button.st:hover { color: var(--fg); }
+.camp.shelf { margin-top: 6px; border-top: 1px dashed var(--muted); border-radius: 0; color: var(--muted); }
+#shelfbox { border-left: 2px solid var(--line); margin-left: 6px; padding-left: 6px; }
 </style>
 </head>
 <body>
@@ -118,7 +126,7 @@ tr.part.on td { background: var(--sel); }
 </header>
 <main>
   <section class="card" id="campcard">
-    <h2>Campaigns <span class="muted" style="font-weight:400">· the one shown is drawn below, the others folded; a click on one shows it, on the one shown folds it</span></h2>
+    <h2>Campaigns <span class="muted" style="font-weight:400">· the one shown is drawn below, the others folded; a click on one shows it, on the one shown folds it; those of one name and a number (teisatsu3, teisatsu4…) under one line, opened by a click; the old ones in the storage at the end</span></h2>
     <div id="camps"></div>
   </section>
   <section class="card" id="chart">
@@ -162,7 +170,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", 
 const PALETTE = ["#1f5fa8", "#1b9e77", "#8a55c4", "#c2571a", "#a07d00", "#c2185b"];
 const RH = 16, GAP = 9, TOP = 16, GUT = 62;                 // row height, gap, top margin, left gutter (px)
 const PREF = (() => { try { return JSON.parse(localStorage.getItem("kaizu") || "{}"); } catch (e) { return {}; } })();
-const P = Object.assign({order: "campaign", rowh: 0, part: "", nextm: "", h: 2, c: "", fold: false}, PREF);   // c: the campaign shown; fold: it too folded
+const P = Object.assign({order: "campaign", rowh: 0, part: "", nextm: "", h: 2, c: "", fold: false, fam: {}, shelf: false}, PREF);   // c: the campaign shown; fold: it too folded; fam: the families opened ("a:teisatsu" in the list, "s:teisatsu" in the storage); shelf: the storage opened
 const save = () => { try { localStorage.setItem("kaizu", JSON.stringify(P)); } catch (e) {} };
 let S = null, view = [], segs = [], rows = 0, drag = null, selPids = null, spanSel = false, colour = {}, calc = {}, held = {}, HA = .5, nextSet = new Set(), busy = false;
 let SUB = {};   // the sub-campaigns (the rules with a name): name -> the set of their pumps
@@ -206,7 +214,7 @@ async function load() {
 
 async function post(path, body) {
   if (busy) return; busy = true; document.body.style.cursor = "progress";
-  toast(path === "/prio" || path === "/tassei" ? "pushing to the pool…" : "fetching…");
+  toast(path === "/sync" ? "fetching…" : "pushing to the pool…");
   try {
     const r = await fetch(path, {method: "POST", headers: {"Content-Type": "application/json", "X-Kaizu": TOKEN}, body: JSON.stringify(Object.assign({c: P.c}, body))});
     const j = await r.json();
@@ -250,20 +258,57 @@ function header() {
   $("#tassei").textContent = ready ? `⇪ tassei (${ready})` : "⇪ tassei"; $("#tassei").classList.toggle("ready", ready > 0);
 }
 
-function camps() {   // the campaigns, each in a line: the one shown unfolded (drawn below), the others folded; a click shows one, or folds the one shown
-  $("#camps").innerHTML = S.camps.map(b => {
-    const on = b.name === S.campaign && !P.fold, tot = b.total || 1, col = m => colour[m] || css("--skip");
-    const bar = Object.entries(b.by).map(([m, [d]]) => `<div style="width:${100 * d / tot}%;background:${col(m)}"></div>`).join("")
-      + Object.entries(b.by).map(([m, [, h]]) => `<div style="width:${100 * h / tot}%;background:${held[m] || tint(col(m), HA)}"></div>`).join("");
+const nat = n => { const m = /^(.*\D)(\d+)$/.exec(n); return m ? [m[1], +m[2]] : [n, -1]; };   // teisatsu10 -> [teisatsu, 10]; uijin -> [uijin, -1]
+const runs = ks => { const r = []; for (const k of ks) { const l = r[r.length - 1]; if (l && k === l[1] + 1) l[1] = k; else r.push([k, k]); } return r.map(([x, y]) => y > x ? `${x}–${y}` : `${x}`).join(", "); };   // 3–10 or 1–7, 10
+function camps() {   // the campaigns, each in a line: the one shown unfolded (drawn below), the others folded; a click shows one, or folds the one shown.
+  // Those of one name and a number (teisatsu3, teisatsu4...) under one line, their sums in it, opened by a click; the old ones (complete, or stored by hand) in the storage, folded at the end
+  const col = m => colour[m] || css("--skip");
+  const pbar = (by, tot) => `<div class="pbar">` + Object.entries(by).map(([m, [d]]) => `<div style="width:${100 * d / tot}%;background:${col(m)}"></div>`).join("")
+    + Object.entries(by).map(([m, [, h]]) => `<div style="width:${100 * h / tot}%;background:${held[m] || tint(col(m), HA)}"></div>`).join("") + `</div>`;
+  const counts = b => `${b.done} / ${b.n} done${b.held ? ` · ${b.held} held` : ""}${b.free ? ` · ${b.free} free` : ""}${b.skip ? ` · ${b.skip} skipped` : ""}`;
+  const store = (names, sh, all) => `<button class="st" data-names="${esc(names.join(","))}" data-op="${sh ? "out" : "store"}" title="${sh
+    ? `out of the storage, back in the list${all ? " (all of them)" : ""}; a complete one then stays there` : `into the storage, out of the list${all ? " (all of them)" : ""}, in the pool for every machine's kaizu`}">${sh ? "⇡ out" : "⇣ store"}${all ? " all" : ""}</button>`;
+  const line = (b, sh, mem) => {
+    const on = b.name === S.campaign && !P.fold;
     const st = b.complete ? `<span class="ok">complete</span>` : `${khs(b.left)} kh left` + (b.open.length ? ` · on ${b.open.map(esc).join(", ")}` : " · no allocation open");
-    return `<div class="camp${on ? " on" : ""}" data-c="${esc(b.name)}" title="${on ? "fold it" : "show it below"}"><span class="tw">${on ? "▾" : "▸"}</span><b>${esc(b.name)}</b>`
-      + `<div class="pbar">${bar}</div><span class="num">${b.done} / ${b.n} done${b.held ? ` · ${b.held} held` : ""}${b.free ? ` · ${b.free} free` : ""}${b.skip ? ` · ${b.skip} skipped` : ""}`
-      + ` · ${st} · ${Number(b.spent).toFixed(0)} kh spent</span><span class="about" title="${esc(b.about)}">${esc(b.about)}</span></div>`;
-  }).join("");
-  for (const d of document.querySelectorAll("#camps .camp")) d.onclick = () => {
+    const fl = sh && b.by_hand ? ` <span class="flag" title="stored by hand">stored</span>` : !sh && b.kept ? ` <span class="flag" title="complete, taken out of the storage: it stays in the list">kept</span>` : "";
+    return `<div class="camp${on ? " on" : ""}${mem ? " mem" : ""}" data-c="${esc(b.name)}" title="${on ? "fold it" : "show it below"}"><span class="tw">${on ? "▾" : "▸"}</span><b>${esc(b.name)}</b>${fl}`
+      + pbar(b.by, b.total || 1) + `<span class="num">${counts(b)} · ${st} · ${Number(b.spent).toFixed(0)} kh spent</span><span class="about" title="${esc(b.about)}">${esc(b.about)}</span>${store([b.name], sh)}</div>`;
+  };
+  const family = (base, M, sh) => {   // a family's line: its campaigns summed
+    const key = (sh ? "s:" : "a:") + base, open = !!(P.fam || {})[key], sum = k => M.reduce((a, b) => a + b[k], 0), by = {}, tot = sum("total") || 1;
+    for (const b of M) for (const [m, [d, h]] of Object.entries(b.by)) { const x = by[m] = by[m] || [0, 0]; x[0] += d; x[1] += h; }
+    const F_ = {n: sum("n"), done: sum("done"), held: sum("held"), free: sum("free"), skip: sum("skip")}, nc = M.filter(b => b.complete).length;
+    const on = [...new Set(M.flatMap(b => b.open))].sort(), shown = M.find(b => b.name === S.campaign && !P.fold);
+    const st = nc === M.length ? `<span class="ok">all complete</span>` : `${nc ? `${nc} of ${M.length} complete · ` : ""}${khs(sum("left"))} kh left` + (on.length ? ` · on ${on.map(esc).join(", ")}` : " · no allocation open");
+    let ab = M[0].about; for (const b of M) { let i = 0; while (i < ab.length && ab[i] === b.about[i]) i++; ab = ab.slice(0, i); }
+    ab = ab.length > base.length ? ab.replace(/[\s,:;(]+$/, "") : "";   // what they say in common: teisatsu (偵察, reconnaissance)
+    const head = `<div class="camp" data-fam="${esc(key)}" title="${open ? "fold" : "open"} the ${M.length} campaigns ${esc(base)}…"><span class="tw">${open ? "▾" : "▸"}</span>`
+      + `<span class="fam">${esc(base)}<span class="nums">${runs(M.map(b => nat(b.name)[1]))} · ${M.length} campaigns</span></span>`
+      + pbar(by, tot) + `<span class="num">${counts(F_)} · ${st} · ${sum("spent").toFixed(0)} kh spent</span>`
+      + (shown ? `<span class="muted">showing <b>${esc(shown.name)}</b></span>` : "") + `<span class="about" title="${esc(ab)}">${esc(ab)}</span>${store(M.map(b => b.name), sh, true)}</div>`;
+    return head + (open ? M.map(b => line(b, sh, true)).join("") : "");
+  };
+  const list = (B, sh) => {   // the lines of a list: the families of two or more under one line, the others alone, by name
+    const G = new Map();
+    for (const b of [...B].sort((x, y) => { const [p, i] = nat(x.name), [q, j] = nat(y.name); return p < q ? -1 : p > q ? 1 : i - j; })) {
+      const k = nat(b.name)[0]; if (!G.has(k)) G.set(k, []); G.get(k).push(b);
+    }
+    return [...G].map(([k, M]) => M.length > 1 ? family(k, M, sh) : line(M[0], sh)).join("");
+  };
+  const A = S.camps.filter(b => !b.stored), Z = S.camps.filter(b => b.stored), zs = Z.find(b => b.name === S.campaign && !P.fold);
+  $("#camps").innerHTML = (A.length ? list(A, false) : `<div class="muted" style="padding:6px">every campaign is in the storage</div>`)
+    + (Z.length ? `<div class="camp shelf" id="shelf" title="${P.shelf ? "fold" : "open"} the storage"><span class="tw">${P.shelf ? "▾" : "▸"}</span><b>storage</b>`
+      + `<span class="num">${Z.length} old campaign${Z.length > 1 ? "s" : ""}: ${Z.filter(b => b.complete).length} complete${Z.some(b => !b.complete) ? `, ${Z.filter(b => !b.complete).length} stored by hand` : ""}`
+      + ` · ${Z.reduce((a, b) => a + b.spent, 0).toFixed(0)} kh spent</span>${zs ? `<span class="muted">showing <b>${esc(zs.name)}</b></span>` : ""}</div>`
+      + (P.shelf ? `<div id="shelfbox">${list(Z, true)}</div>` : "") : "");
+  for (const d of document.querySelectorAll("#camps .camp[data-c]")) d.onclick = () => {
     if (d.dataset.c === S.campaign) { P.fold = !P.fold; save(); build(); return; }
     P.c = d.dataset.c; P.fold = false; P.part = ""; selPids = null; save(); load();
   };
+  for (const d of document.querySelectorAll("#camps .camp[data-fam]")) d.onclick = () => { P.fam = Object.assign({}, P.fam); if (P.fam[d.dataset.fam]) delete P.fam[d.dataset.fam]; else P.fam[d.dataset.fam] = 1; save(); camps(); tags(); };
+  const sh = $("#shelf"); if (sh) sh.onclick = () => { P.shelf = !P.shelf; save(); camps(); tags(); };
+  for (const x of document.querySelectorAll("#camps button.st")) x.onclick = e => { e.stopPropagation(); post("/store", {op: x.dataset.op, names: x.dataset.names.split(",")}); };
 }
 
 function summary() {
