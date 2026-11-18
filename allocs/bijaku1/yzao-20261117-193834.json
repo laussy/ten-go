@@ -42,26 +42,30 @@
  "done": [
   60000093,
   60000122,
-  60000121
+  60000121,
+  60000120
  ],
  "times": {
   "150w80": [
    826,
-   1099
+   1099,
+   1125
   ],
   "200e80": [
    707,
-   812
+   812,
+   746
   ]
  },
  "results": [
   "results/bijaku1/yzao-20261117-193834-1.tgz",
   "results/bijaku1/yzao-20261117-193834-2.tgz",
-  "results/bijaku1/yzao-20261117-193834-3.tgz"
+  "results/bijaku1/yzao-20261117-193834-3.tgz",
+  "results/bijaku1/yzao-20261117-193834-4.tgz"
  ],
  "status": "open",
  "tengo": "1.51",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794972880
+ "updated": 1794973177
 }
