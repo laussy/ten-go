@@ -47,9 +47,10 @@
  "done": [],
  "times": {},
  "results": [],
- "status": "open",
+ "status": "released",
  "tengo": "1.51",
  "shinshu": null,
  "shugeki": false,
- "delayed": 14872
+ "delayed": 14872,
+ "updated": 1794980444
 }
