@@ -11,10 +11,11 @@
  "done": [],
  "times": {},
  "results": [],
- "status": "open",
+ "status": "finished",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 12723,
- "uchikiri": 1795033695
+ "uchikiri": 1795033695,
+ "updated": 1795033699
 }
