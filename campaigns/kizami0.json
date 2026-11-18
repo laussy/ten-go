@@ -1,0 +1,88 @@
+{
+ "name": "kizami0",
+ "prefix": "hpkaL",
+ "about": "kizami (\u523b\u307f, the step) 0: curve k = 0 of the eleven of Sec. 26 (October (2026)#Y-0NbRU, Fig. 0NNbp), the case of uijin, gamma_sigma = 293/780364 g = 0.003755 gamma_a (gamma_a = 0.1 g; g2(P->0) = 0.6667), from 0.032 g to 0.016 g on 0-3 g (Fabrice, 18 Nov 2026: 'can we naturally, using the same grid structure, double the resolution? how expensive would it be?', then 'write the 0-3 specs'); code/kizami_specs.py 1.0; prepared, to be declared by Fabrice's word",
+ "params": {
+  "GA": "1/10",
+  "GS": "293/780364",
+  "PREC": "80",
+  "MEMMIN": "8"
+ },
+ "ref": {
+  "150w80": 1542,
+  "200e80": 1025,
+  "250e80": 2221,
+  "300e80": 3907,
+  "400e80": 10179,
+  "300e160": 5044
+ },
+ "kind": "parts",
+ "pumps": [
+  [
+   0,
+   "0.006",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   1,
+   "0.134",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   2,
+   "0.07",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   3,
+   "2.022",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   4,
+   "0.038",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   5,
+   "1.702",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   6,
+   "0.102",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ]
+ ],
+ "parts": [
+  {
+   "kind": "list",
+   "prefix": "hpkaL",
+   "base": 0,
+   "about": "the points of the 0.016 g lattice 0.006 + 0.016 j g (0.006-2.998 g) with no certified pump of uijin within 0.004 g (uijin is on 0.004 g grids already); 7 pumps in van der Corput order, at 80 digits, the orders of uijin's grid (150 with weights and 200 everywhere, as its low pumps hpUz)",
+   "pumps": 7,
+   "left_out": 0
+  }
+ ]
+}
