@@ -8,9 +8,7 @@
  "deadline": 1794991222,
  "cost_kernel_h": 1.9,
  "pumps": [
-  60000120,
-  60000121,
-  60000122
+  60000120
  ],
  "done": [],
  "times": {},
@@ -19,5 +17,6 @@
  "tengo": "1.51",
  "shinshu": null,
  "shugeki": false,
- "delayed": 21626
+ "delayed": 21626,
+ "uchikiri": 1794980485
 }
