@@ -14,13 +14,25 @@
   60000091,
   60000092
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  60000000
+ ],
+ "times": {
+  "150w80": [
+   1311
+  ],
+  "200e80": [
+   869
+  ]
+ },
+ "results": [
+  "results/bijaku6/azag-20261118-070631-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.52",
  "shinshu": null,
  "shugeki": false,
  "uchikiri": 1794998817,
- "encho": 1
+ "encho": 1,
+ "updated": 1794999383
 }
