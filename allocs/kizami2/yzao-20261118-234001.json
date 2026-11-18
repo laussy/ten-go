@@ -20,12 +20,14 @@
  ],
  "done": [
   1,
-  4
+  4,
+  0
  ],
  "times": {
   "150w80": [
    899,
-   923
+   923,
+   941
   ],
   "250e80": [
    1251,
@@ -34,16 +36,20 @@
   "300e80": [
    2245,
    2238
+  ],
+  "200e80": [
+   569
   ]
  },
  "results": [
   "results/kizami2/yzao-20261118-234001-1.tgz",
-  "results/kizami2/yzao-20261118-234001-2.tgz"
+  "results/kizami2/yzao-20261118-234001-2.tgz",
+  "results/kizami2/yzao-20261118-234001-3.tgz"
  ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 9587,
- "updated": 1795044373
+ "updated": 1795044678
 }
