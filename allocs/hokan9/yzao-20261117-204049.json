@@ -14,27 +14,32 @@
   20000035
  ],
  "done": [
-  20000013
+  20000013,
+  20000035
  ],
  "times": {
   "300e80": [
-   2701
+   2701,
+   3155
   ],
   "150w80": [
-   1232
+   1232,
+   1306
   ],
   "250e80": [
-   1684
+   1684,
+   1798
   ]
  },
  "results": [
-  "results/hokan9/yzao-20261117-204049-1.tgz"
+  "results/hokan9/yzao-20261117-204049-1.tgz",
+  "results/hokan9/yzao-20261117-204049-2.tgz"
  ],
  "status": "open",
  "tengo": "1.51",
  "shinshu": null,
  "shugeki": false,
- "updated": 1794980221,
+ "updated": 1794982043,
  "delayed": 28768,
  "uchikiri": 1794980460
 }
