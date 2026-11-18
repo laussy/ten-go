@@ -68,7 +68,8 @@
   60000008,
   60000009,
   60000010,
-  60000011
+  60000011,
+  60000012
  ],
  "times": {
   "200e80": [
@@ -82,7 +83,8 @@
    932,
    928,
    907,
-   908
+   908,
+   912
   ],
   "150w80": [
    1302,
@@ -93,7 +95,8 @@
    1263,
    1303,
    1302,
-   1252
+   1252,
+   1324
   ]
  },
  "results": [
@@ -107,12 +110,13 @@
   "results/bijaku5/azag-20261118-121338-8.tgz",
   "results/bijaku5/azag-20261118-121338-9.tgz",
   "results/bijaku5/azag-20261118-121338-10.tgz",
-  "results/bijaku5/azag-20261118-121338-11.tgz"
+  "results/bijaku5/azag-20261118-121338-11.tgz",
+  "results/bijaku5/azag-20261118-121338-12.tgz"
  ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 3600,
- "updated": 1795002461
+ "updated": 1795002582
 }
