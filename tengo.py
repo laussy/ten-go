@@ -4,10 +4,11 @@ others reaching it by ssh; a public copy at github.com/laussy/ten-go), and no pu
 go, the free pumps of the campaign in its global (van der Corput) order as long as their jobs, run on this machine the longest
 first, end within the ten hours (a single pump if the budget is very small).  The claim is a
 commit pushed to the repository; a push refused because another machine pushed first is redone from the new state, so that no pump
-can be in two allocations.  An allocation has a deadline (its start + 1.5 budget + 2 h, the budget at least its longest job): the pumps it has not done by then go back to
-the pool.  While its driver runs, a watch of its machine moves the deadline on (encho, 1.52): 20 min before it, the pumps not started go back to the pool
-and the driver launches no new one, the pumps started are held 2 h more, and again each time, until they are done; only a driver gone (a machine
-stopped or asleep) lets its pumps go at the deadline, so that a pump is never computed twice.  The jobs are run by run_window.py (kit/), one work directory per allocation.
+can be in two allocations.  An allocation has a deadline (its start + 1.5 budget + 2 h, the budget at least its longest job).  While its driver runs, a watch of its machine moves the deadline on (encho, 1.52): 20 min before it, the pumps not started go back to the pool
+and the driver launches no new one, the pumps started are held 2 h more, and again each time, until they are done.  The deadline binds the driver too (1.56): it has it from the pool (the file
+deadline of its work directory, kept by the watch) and, 15 min before it with no word of a later one (no watch, or the pool out of reach), starts no pump it has not started.  The pool gives the
+pumps of an allocation away only once its deadline and its grace are past (the grace: the time of its longest pump, an hour at least, what its driver needs to complete the pumps started), and a
+pump another allocation has done is let go where it is still held (its jobs waiting dropped, those running stopped), so that a pump is not computed twice.  The jobs are run by run_window.py (kit/), one work directory per allocation.
 
 Repository (the clone is Ten-Go's alone: every command starts by resetting it to origin/main):
   campaigns/<c>.json   params, file prefix, reference seconds per order, pumps [id, P, orders] in the global order
@@ -109,7 +110,7 @@ Usage: ten-go --kido MACHINE --repo CLONE --work DIR | --senkyo [--sakusen C] | 
 import argparse, fcntl, glob, heapq, json, os, random, re, shlex, shutil, signal, subprocess, sys, tarfile, time
 from contextlib import contextmanager
 from fractions import Fraction
-VERSION = "1.55"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push); 1.36: hoju sees the machine (the allocations ending together, their kernels as they free, the small pumps of any of them); 1.37: a claim of high made by a watch launches on the kernels free, as any claim, not on all of them (its jobs started beside those of the allocations ending: 60 jobs on 32 kernels for two hours, 31 Oct); 1.38: a watch pushes a pump within the minute it completes (it looked every 30 min: the kernel-hours of the jobs done, alone, still then); 1.39: several campaigns at once: the kaizu lists them, each folded to a line but the one shown (a click shows one, or folds it), a machine's allocations in the others said under it, and --senkyo folds a complete campaign to a line; 1.40: an allocation alone again gets back the kernels its tail held, up to its claim's (the last jobs of the tail kept theirs: 31 of 32 on azag, 7 of 8 on yzao), and the watch's log a line at a time (in a new version too); 1.41: tsuchi, a desktop notification when the machine's work ends (an uchikiri, a chushi, the kikan, a campaign complete, or the last allocation without a watch): one can move on; 1.42: the kaizu's bar of the campaign says in each machine's piece the share of the total it has computed (azag 41.3 %); 1.43: in the kaizu what a machine holds a solid tint of its colour, stronger, and the free pieces a lighter grey (the held blue was hardly told from the free: ΔE 13, now 32); 1.44: hoju from the pool: the kernels an uchikiri frees take the cheapest free pumps of the campaign that end before it, not only the allocation's own (all its pumps started, 7 of 8 kernels sat idle for half an hour, 5 Nov); 1.45: the kernels of a machine shared by all its campaigns (a watch counted the jobs of its own alone: two watches on one machine booked its kernels twice), and the allocations of high before those of the other campaigns there, which go on behind them, their deadlines pushed back (the pilot of sanjin beside nijin, 7 Nov); 1.46: a claim of now or high at least as long as the longest job of its pumps (the pilot's pumps, a job of 2.8 h, were claimed one a minute, each in a claim of 2 h), the other campaigns' deadlines pushed back once (each claim pushed them again), and a claim of high starts no job over the machine's kernels; 1.47: the kaizu's bar says the % of every machine's piece always (without the name where too small, the piece then as wide as its figure), and in the grey the % left to compute; 1.48: a machine's own memory floor, "memmin" (GB) in machines/<m>.json over the campaign's MEMMIN, for its jobs' launches and memroom (yzao 3: its 8 GB held a pilot's pump back on 5 of 8 kernels, 11 Nov); 1.49: hoju after the pumps started: under an uchikiri the jobs of the pumps started of every allocation ending take the kernels freed before any small pump of hoju, the longest first (on yzao a hoju pump took the kernel freed while a pump started waited with four jobs on one kernel), and the end an uchikiri says counts the kernels of the machine as they free, not the allocation's own alone (20:17 said for about 18:25, 13 Nov); 1.50: the kaizu's now and high reach the pumps an allocation has started already: it takes their level (rank for the kernels; now pausing the others' jobs, their deadlines pushed back by the longest job it has left), its pumps not started of a lower level going back to the pool (the last pump of teisatsu9, set high and then now after azag had claimed it, waited 31 min at nproc 0 behind an older claim of teisatsu10, 14 Nov); and the driver's uchikiri no longer fails on an allocation with no kernel, jobs left and none in flight (its pumps not started then stayed held until the deadline); 1.51: the kaizu's list folds the campaigns of one name and a number under one line (teisatsu3-10, bijaku0-9: their sums in it, opened by a click), and keeps the old ones in a storage folded at its end (stored.json: every complete campaign by itself, any other stored by hand; one taken out of it stays in the list), the 31 campaigns of the pool having made it a page long (17 Nov); 1.52: encho (延長), the deadline of an allocation whose driver runs moved on by the watches of its machine: 20 min before it, its pumps not started back to the pool (an uchikiri of its own, without hoju and without ENDING), those started held 2 h more, again and again until done (the pumps of a claim waiting for kernels went back to the pool at its deadline while its driver still had them: another claim took them and both computed them, about 276 pumps twice, 16-18 Nov); 1.53: one claim at a time per machine: a watch claims only when no allocation of its machine, of any campaign, has jobs left to launch, under a lock the watches of the machine share (each watch claimed its 2 h on all the kernels whenever its own campaign had launched everything: the claims of several campaigns piled up, up to seven on azag, waiting hours for kernels), and --gensoku says what encho does at a deadline; 1.54: the watch's encho said in its own variable (it took `said`, the time of the last "nothing free" message: a watch with nothing free while another machine held pumps then failed its look on float - None, 18 Nov; found by the audit 0Xq66); 1.55: after the audit 0Xq66 (Sec. 43 of report 0JOalb): the push sends the commit made here by its name and no longer HEAD (a script that reset the clone between the two made three claims of uijin run without being in the pool, 30-31 Oct, 45 kh computed twice), a change that leaves nothing to send is nothing done, not a failure (it stopped yzao's eleven watches up to 78 min, 17 Nov), a claim's name is its own in every campaign, no git command without an end (15 min; ssh gives up a dead connection within a minute), a git lock left by a killed git removed, and a push of the pumps done that fails no longer ends the watch's look
+VERSION = "1.56"   # 1.1: claim --go (was --launch) starts the driver; 1.2: the command is ten-go (a link to this file); 1.3: --until TAG; 1.4: kh, the ledger; 1.5: --shinshu; 1.6: --uchikiri; 1.7: --chushi; 1.8: claim is --honkai, release is gone (--chushi); 1.9: --kernels is --ki; 1.10: --campaign (-c) is --sakusen; 1.11: init is --kido, --hours is --jikan; 1.12: status is --senkyo, done --tassei; 1.13: fetch is --shushu; 1.14: --shugeki; 1.15: mkcampaign is --sensen; 1.16: spec files, adaptive campaigns; 1.17: campaigns in parts, watch to completion; 1.18: launch without the sleep inhibitor where refused (ssh); 1.19: --zoen; 1.20: --zoen brings reference times for new orders; 1.21: a deadline past the longest job, the watch goes on in a new version; 1.22: an allocation whose jobs have all started is not still launching; 1.23: the watch outlives a failed git (the network gone); 1.24: --kaiso; 1.25: the clone locked (a watch and a command by hand lost each other's commits); 1.26: --kaizu, the sea chart, and the priorities it sets (prio/<c>.json); 1.27: the kaizu's logo, the blocks run in their machine's colour (azag reddish, yzao purplish), the dates with their AF tags; 1.28: the kaizu's logo small (200 px under the pointer), what is being computed in a sharp shade of its machine's colour (no more red and purple); 1.29: --kaizu stops a kaizu already on its port, and the pages of the old one reload into the new; 1.30: --gensoku N, --zensoku [H] (the watch kept all the kernels of machines/<m>.json: a lower nproc set by hand was undone within a minute); 1.31: the kaizu's pieces picked by a click, its sub-campaigns (pumps picked, named), the level now, and now and high claimed at once by the watches (high: their allocations end without loss, these take the kernels as they free; now: the jobs of the others paused meanwhile); 1.32: a job paused only for a claim of now waiting for kernels (a machine one job over its kernels, as a fresh claim makes it, paused the newest job for a minute); 1.33: the time a plan, not an end (an allocation runs the longest pumps first and, past its time, the rest as a sortie; a watch past its --until goes on with sorties), --kikan to end at the time, and a claim filled up to its time by that order (no longer the longest job kept back); 1.34: hoju, the kernels an uchikiri frees take the small pumps not started that end before it (--nohoju: none); 1.35: the kaizu's button tassei (ten-go --tassei from the sea chart: the pumps done here pushed now, not at the watch's next push); 1.36: hoju sees the machine (the allocations ending together, their kernels as they free, the small pumps of any of them); 1.37: a claim of high made by a watch launches on the kernels free, as any claim, not on all of them (its jobs started beside those of the allocations ending: 60 jobs on 32 kernels for two hours, 31 Oct); 1.38: a watch pushes a pump within the minute it completes (it looked every 30 min: the kernel-hours of the jobs done, alone, still then); 1.39: several campaigns at once: the kaizu lists them, each folded to a line but the one shown (a click shows one, or folds it), a machine's allocations in the others said under it, and --senkyo folds a complete campaign to a line; 1.40: an allocation alone again gets back the kernels its tail held, up to its claim's (the last jobs of the tail kept theirs: 31 of 32 on azag, 7 of 8 on yzao), and the watch's log a line at a time (in a new version too); 1.41: tsuchi, a desktop notification when the machine's work ends (an uchikiri, a chushi, the kikan, a campaign complete, or the last allocation without a watch): one can move on; 1.42: the kaizu's bar of the campaign says in each machine's piece the share of the total it has computed (azag 41.3 %); 1.43: in the kaizu what a machine holds a solid tint of its colour, stronger, and the free pieces a lighter grey (the held blue was hardly told from the free: ΔE 13, now 32); 1.44: hoju from the pool: the kernels an uchikiri frees take the cheapest free pumps of the campaign that end before it, not only the allocation's own (all its pumps started, 7 of 8 kernels sat idle for half an hour, 5 Nov); 1.45: the kernels of a machine shared by all its campaigns (a watch counted the jobs of its own alone: two watches on one machine booked its kernels twice), and the allocations of high before those of the other campaigns there, which go on behind them, their deadlines pushed back (the pilot of sanjin beside nijin, 7 Nov); 1.46: a claim of now or high at least as long as the longest job of its pumps (the pilot's pumps, a job of 2.8 h, were claimed one a minute, each in a claim of 2 h), the other campaigns' deadlines pushed back once (each claim pushed them again), and a claim of high starts no job over the machine's kernels; 1.47: the kaizu's bar says the % of every machine's piece always (without the name where too small, the piece then as wide as its figure), and in the grey the % left to compute; 1.48: a machine's own memory floor, "memmin" (GB) in machines/<m>.json over the campaign's MEMMIN, for its jobs' launches and memroom (yzao 3: its 8 GB held a pilot's pump back on 5 of 8 kernels, 11 Nov); 1.49: hoju after the pumps started: under an uchikiri the jobs of the pumps started of every allocation ending take the kernels freed before any small pump of hoju, the longest first (on yzao a hoju pump took the kernel freed while a pump started waited with four jobs on one kernel), and the end an uchikiri says counts the kernels of the machine as they free, not the allocation's own alone (20:17 said for about 18:25, 13 Nov); 1.50: the kaizu's now and high reach the pumps an allocation has started already: it takes their level (rank for the kernels; now pausing the others' jobs, their deadlines pushed back by the longest job it has left), its pumps not started of a lower level going back to the pool (the last pump of teisatsu9, set high and then now after azag had claimed it, waited 31 min at nproc 0 behind an older claim of teisatsu10, 14 Nov); and the driver's uchikiri no longer fails on an allocation with no kernel, jobs left and none in flight (its pumps not started then stayed held until the deadline); 1.51: the kaizu's list folds the campaigns of one name and a number under one line (teisatsu3-10, bijaku0-9: their sums in it, opened by a click), and keeps the old ones in a storage folded at its end (stored.json: every complete campaign by itself, any other stored by hand; one taken out of it stays in the list), the 31 campaigns of the pool having made it a page long (17 Nov); 1.52: encho (延長), the deadline of an allocation whose driver runs moved on by the watches of its machine: 20 min before it, its pumps not started back to the pool (an uchikiri of its own, without hoju and without ENDING), those started held 2 h more, again and again until done (the pumps of a claim waiting for kernels went back to the pool at its deadline while its driver still had them: another claim took them and both computed them, about 276 pumps twice, 16-18 Nov); 1.53: one claim at a time per machine: a watch claims only when no allocation of its machine, of any campaign, has jobs left to launch, under a lock the watches of the machine share (each watch claimed its 2 h on all the kernels whenever its own campaign had launched everything: the claims of several campaigns piled up, up to seven on azag, waiting hours for kernels), and --gensoku says what encho does at a deadline; 1.54: the watch's encho said in its own variable (it took `said`, the time of the last "nothing free" message: a watch with nothing free while another machine held pumps then failed its look on float - None, 18 Nov; found by the audit 0Xq66); 1.55: after the audit 0Xq66 (Sec. 43 of report 0JOalb): the push sends the commit made here by its name and no longer HEAD (a script that reset the clone between the two made three claims of uijin run without being in the pool, 30-31 Oct, 45 kh computed twice), a change that leaves nothing to send is nothing done, not a failure (it stopped yzao's eleven watches up to 78 min, 17 Nov), a claim's name is its own in every campaign, no git command without an end (15 min; ssh gives up a dead connection within a minute), a git lock left by a killed git removed, and a push of the pumps done that fails no longer ends the watch's look; 1.56: the deadline binds the driver and the pool alike (audit 0Xq66): the driver has its deadline from the pool (the file deadline, kept by the watches) and starts no pump not started from 15 min before it, watch or no watch, pool in reach or not (with the pool out of reach the watch moved no deadline on and the driver went on: 12 pumps of 12 computed twice in the test); the pool gives the pumps of an allocation away only after its deadline and a grace (its longest pump, an hour at least); a pump another allocation has done, or holds once this one is past its deadline and grace, is let go here, its jobs waiting dropped and those running stopped (encho only said so); a driver pushes its pumps done when it ends, and gives back those not started at its deadline, without a watch; a driver started again is the pool's own (it then starts no pump not started, past its deadline); --senkyo and the kaizu draw an allocation past its deadline as held until its grace is past; and a watch reads the pool before it looks its campaign up
 CONF = os.environ.get("TENGO_CONF", os.path.expanduser("~/.config/tengo.json"))   # another file for a test identity
 C = {}
 
@@ -290,13 +291,48 @@ def pick(c):
     die(f"say which campaign with --sakusen ({', '.join(cs)})")
 
 
+GRACE, SLACK = float(os.environ.get("TENGO_GRACE", 3600)), float(os.environ.get("TENGO_SLACK", 7200))   # 1.56: the least grace of a claim; the 2 h of its deadline (a test may set less)
+
+
+def grace(a): return a.get("grace", 7200)   # an allocation claimed before 1.56 has none of its own: 2 h
+def lapsed(a, now): return now >= a["deadline"] + grace(a)   # its deadline and its grace past: the pool gives its pumps not done away
+
+
 def held(A, now):
-    """the pumps out of the pool: those done, and all those of an open allocation before its deadline"""
+    """the pumps out of the pool: those done, and all those of an open allocation until its deadline and its grace are past (1.56; at
+    the deadline before: a driver that could not have its deadline moved on computed pumps the pool had given away, 238 kh twice,
+    14-18 Nov.  Its driver now starts no pump not started from 15 min before the deadline, and has the grace to complete those started)"""
     out = set()
     for a in A:
         out |= set(a["done"])
-        if a["status"] == "open" and now < a["deadline"]: out |= set(a["pumps"])
+        if a["status"] == "open" and not lapsed(a, now): out |= set(a["pumps"])
     return out
+
+
+def doubles(a, A, now, comp=()):
+    """1.56: the pumps the open allocation a must let go, of those it has not done: those another allocation of its campaign (A) has
+    done; and, a past its deadline and its grace, those another open allocation holds within its own, but for the pumps complete here
+    (comp: they are pushed as done, and it is the other that lets go of them)"""
+    oth = [x for x in A if x["id"] != a["id"]]; od = {p for x in oth for p in x["done"]}
+    oh = {p for x in oth if x["status"] == "open" and not lapsed(x, now) for p in x["pumps"]} if lapsed(a, now) else set()
+    return [p for p in a["pumps"] if p not in a["done"] and (p in od or p in oh and p not in comp)]
+
+
+def skip(W, pumps):
+    """the pumps the driver of W is to let go (its file skip: their jobs waiting dropped, those running stopped; a driver of before
+    1.56 does not look at it)"""
+    f = os.path.join(W, "skip"); old = set(open(f).read().split()) if os.path.exists(f) else set(); new = old | {str(p) for p in pumps}
+    if new != old: open(f + ".tmp", "w").write(" ".join(sorted(new)) + "\n"); os.replace(f + ".tmp", f)
+
+
+def mirror(a, W=None):
+    """1.56: the deadline the pool has for allocation a, written in its work directory for its driver (the file deadline), which from
+    15 min before it starts no pump it has not started: kept by the watches at each look, after the pool has been read"""
+    W = W or workdir(a); f = os.path.join(W, "deadline")
+    try:
+        if os.path.isdir(W) and (not os.path.exists(f) or open(f).read().split() != [str(int(a["deadline"]))]):
+            open(f + ".tmp", "w").write(f"{int(a['deadline'])}\n"); os.replace(f + ".tmp", f)
+    except OSError: pass
 
 
 def secs(cm, A, m, o):
@@ -385,7 +421,8 @@ def setup(a):
     if a.get("shinshu"): open(os.path.join(W, "shinshu"), "w").write(f"{a['shinshu']}\n")   # read by the driver every minute
     if a.get("shugeki"): open(os.path.join(W, "shugeki"), "w").write("whole pumps, in the plan's order\n")
     open(os.path.join(W, "jikan"), "w").write(f"{int(a['created'] + a['hours'] * 3600)}\n")   # its time: past it, the pumps left the cheapest first
-    if a.get("kikan"): open(os.path.join(W, "kikan"), "w").write(f"{a['kikan']}\n"); atend(a, W)   # then it ends without loss (--kikan)
+    if a.get("kikan"): open(os.path.join(W, "kikan"), "w").write(f"{a['kikan']}\n")   # then it ends without loss (--kikan)
+    mirror(a, W); atend(a, W)   # 1.56: its deadline, for its driver; and its driver pushes its pumps done when it ends (and gives back those not started at its deadline), watch or no watch
     S, K1 = cost(cm, allocs(a["campaign"]), a["machine"]); lv = level(a["campaign"], cm); L = {p[0]: LEVELS.index(lv(p)[0]) for p in cm["pumps"]}
     with open(os.path.join(W, "plan.txt"), "w") as f:
         f.write(f"# prefix nt withWeights j [prec]   (Ten-Go allocation {a['id']} of {a['campaign']}: {len(a['pumps'])} pumps, "
@@ -527,6 +564,7 @@ def launch(a, quiet=False, shinshu=None):
     if shinshu: open(os.path.join(W, "shinshu"), "w").write(f"{ceiling(shinshu, a['kernels'])}\n")
     if ours(W)[0]: return quiet or print(f"ten-go: the driver of {a['id']} is already running")
     if os.path.exists(os.path.join(W, "STOP")): die(f"{W}/STOP exists (released or stopped by hand): remove it to run again")
+    if not knows(W, "TENGO_GUARD"): shutil.copy(R("kit", "run_window.py"), W)   # 1.56: a driver started again is the pool's (one of before 1.56 does not look at its deadline)
     for f in glob.glob(os.path.join(W, "*.dat")):
         if os.path.getsize(f) < 1000: os.remove(f)   # the leftover of a killed job
     cmd = inhibitor(a) + ["python3", "run_window.py"]
@@ -545,8 +583,9 @@ def cmd_claim(c, hours, kernels=None, do_launch=False, shinshu=None, shugeki=Fal
         if not take: return None
         aid = base = f"{m}-{time.strftime('%Y%m%d-%H%M%S')}"; k = 1
         while glob.glob(R("allocs", "*", aid + ".json")): k += 1; aid = f"{base}-{k}"   # two claims in the same second, of any campaign (1.55: the ledger has one line per name; two of yzao's, in two campaigns, shared one, 16 Nov)
-        a = dict(id=aid, campaign=c, machine=m, kernels=kern, hours=hours, created=int(now), deadline=int(now + 1.5 * max(hours * 3600, hold) + 7200),   # a job longer than the claim keeps it
+        a = dict(id=aid, campaign=c, machine=m, kernels=kern, hours=hours, created=int(now), deadline=int(now + 1.5 * max(hours * 3600, hold) + SLACK),   # a job longer than the claim keeps it
                  cost_kernel_h=round(tot / 3600, 1), pumps=take, done=[], times={}, results=[], status="open", tengo=VERSION, shinshu=sh, shugeki=shugeki)
+        K1 = cost(cm, A, m)[1]; a["grace"] = int(max(GRACE, 1.25 * max(K1[p] for p in take)))   # 1.56: past its deadline its pumps are held that much longer (its longest pump, run on one kernel)
         if only: a["prio"] = only   # a claim of the kaizu's now or high pumps alone, made at once by a watch
         if kikan: a["kikan"] = int(kikan if kikan is not True else now + hours * 3600)   # it ends without loss then (--kikan: its time, or the watch's)
         if grew: a["grown"], a["open"] = grew; save(R("campaigns", c + ".json"), cm)   # the new pumps, in the claim's commit
@@ -581,12 +620,15 @@ def cmd_done(aid=None, final=None):
     pumps of one ended at its time by its driver, not started, given back first: kikan without a watch)"""
     for a in mine(aid): back(a)
     def change():
-        out = []; L = ledger(); booked = False
+        out = []; L = ledger(); booked = False; now = time.time()
         for c in campaigns():
-            cm = campaign(c); O = {pid: orders for pid, _, orders in cm["pumps"]}
-            for a in allocs(c):
+            cm = campaign(c); O = {pid: orders for pid, _, orders in cm["pumps"]}; A = allocs(c)
+            for a in A:
                 if a["machine"] != C["machine"] or a["status"] != "open" or (aid and a["id"] != aid) or not os.path.isdir(workdir(a)): continue
-                W = workdir(a); have = set(a["done"]); new = [p for p in complete(a, cm) if p not in have]
+                W = workdir(a); have = set(a["done"]); comp = complete(a, cm)
+                gone = doubles(a, A, now, comp)   # 1.56: a pump another allocation has done (or holds, this one past its deadline and grace) is let go here
+                if gone: a["pumps"] = [p for p in a["pumps"] if p not in gone]; a["doubled"] = a.get("doubled", 0) + len(gone); skip(W, gone)
+                new = [p for p in comp if p not in have and p not in gone]
                 if new:
                     rel = f"results/{c}/{a['id']}-{len(a['results']) + 1}.tgz"; os.makedirs(R("results", c), exist_ok=True)
                     with tarfile.open(R(rel), "w:gz") as t:
@@ -597,9 +639,10 @@ def cmd_done(aid=None, final=None):
                         for o, v in jobtimes(W, px, {p for p in new if pre(cm, p) == px}).items(): a["times"].setdefault(o, []).extend(v)
                 st = final or ("finished" if set(a["done"]) >= set(a["pumps"]) else "open")
                 sp = logspent(W); b = book(L, c, a["machine"], "alloc " + a["id"], sp); booked |= b
-                if new or st != a["status"]:
+                if new or gone or st != a["status"]:
                     a["status"] = st; a["updated"] = int(time.time()); save(R("allocs", c, a["id"] + ".json"), a)
-                    out.append(f"{a['id']}: +{len(new)} pumps ({len(a['done'])}/{len(a['pumps'])} done), {st}, {kh(sp[2])} kh spent")
+                    out.append(f"{a['id']}: +{len(new)} pumps ({len(a['done'])}/{len(a['pumps'])} done), {st}, {kh(sp[2])} kh spent"
+                               + (f", {len(gone)} pumps let go (another claim has them: {', '.join(map(str, gone[:6]))}{' ...' if len(gone) > 6 else ''})" if gone else ""))
                 elif b: out.append(f"{a['id']}: {kh(sp[2])} kh spent")
         if booked: save_ledger(L)
         return out or None
@@ -654,7 +697,7 @@ def uchikiri(a, dry=False, fill=True):
     return f"{a['id']}: {n} pumps back to the pool at once; {say}; the driver pushes the last results when it ends"
 
 
-ENCHO, ENCHO_SPAN = 1200, 7200   # 1.52: encho 20 min before the deadline, the pumps started then held 2 h more
+ENCHO, ENCHO_SPAN = float(os.environ.get("TENGO_ENCHO", 1200)), float(os.environ.get("TENGO_ENCHO_SPAN", 7200))   # 1.52: encho 20 min before the deadline, the pumps started then held 2 h more (a test may set less)
 
 
 def encho(a):
@@ -677,15 +720,18 @@ def encho(a):
             f = R("allocs", a["campaign"], a["id"] + ".json"); x = json.load(open(f)); now = time.time()
             if x["status"] != "open" or x["deadline"] - now > ENCHO: return None
             back = [p for p in x["pumps"] if str(p) not in kept and p not in x["done"]]
-            x["pumps"] = [p for p in x["pumps"] if p not in back]; x["deadline"] = int(now + ENCHO_SPAN); x["encho"] = x.get("encho", 0) + 1; save(f, x)
-            oth = [y for y in allocs(a["campaign"]) if y["id"] != x["id"]]
-            took = {p for y in oth for p in y["done"]} | {p for y in oth if y["status"] == "open" and now < y["deadline"] for p in y["pumps"]}
+            x["pumps"] = [p for p in x["pumps"] if p not in back]
+            gone = doubles(x, allocs(a["campaign"]), now, complete(x, campaign(a["campaign"])))   # 1.56: as its deadline stands; they were only said (1.52)
+            if gone: x["pumps"] = [p for p in x["pumps"] if p not in gone]; x["doubled"] = x.get("doubled", 0) + len(gone); skip(W, gone)
+            x["deadline"] = int(now + ENCHO_SPAN); x["encho"] = x.get("encho", 0) + 1; save(f, x)
             left = [p for p in x["pumps"] if p not in x["done"]]
-            return len(back), x["deadline"], len(left), [p for p in left if p in took]
-        out = transact(change, lambda o: f"encho {a['id']}: {o[0]} pumps back to the pool, the {o[2]} started held to {stamp(o[1])}")
-        if out: said.append(f"encho {a['id']}: " + (f"{out[0]} pumps not started back to the pool, " if out[0] else "") + f"the {out[2]} started held to {stamp(out[1])}"
-                            + (f"; {len(out[3])} of them taken by another allocation while the deadline was past ({', '.join(map(str, out[3][:6]))}"
-                               + (" ..." if len(out[3]) > 6 else "") + "): computed twice unless one is stopped" if out[3] else ""))
+            return len(back), x["deadline"], len(left), gone
+        out = transact(change, lambda o: f"encho {a['id']}: {o[0]} pumps back to the pool, the {o[2]} started held to {stamp(o[1])}" + (f", {len(o[3])} let go (another claim has them)" if o[3] else ""))
+        if out:
+            mirror(dict(a, deadline=out[1]))
+            said.append(f"encho {a['id']}: " + (f"{out[0]} pumps not started back to the pool, " if out[0] else "") + f"the {out[2]} started held to {stamp(out[1])}"
+                        + (f"; {len(out[3])} let go, done or held by another allocation while this one was past its deadline ({', '.join(map(str, out[3][:6]))}"
+                           + (" ..." if len(out[3]) > 6 else "") + "): their jobs here dropped or stopped" if out[3] else ""))
         return "; ".join(x for x in said if x) or None
 
 
@@ -793,7 +839,8 @@ def cmd_status(c=None):   # every campaign (a complete one folded to one line), 
                   + (f", uchikiri {stamp(a['uchikiri'])}" if a.get("uchikiri") else "") + (f", the kaizu's {a['prio']}" if a.get("prio") else "")
                   + (f", delayed {hm(a['delayed'])} by now" if a.get("delayed") else "")
                   + (f", {n} jobs paused" if a["machine"] == C["machine"] and a["status"] == "open" and os.path.isdir(workdir(a)) and (n := sum(v[2] for v in jobs(workdir(a)).values())) else "")
-                  + ("  PASSED, no watch of its machine moving it on (encho): its pumps not done are free again" if late else ""))
+                  + ("  PASSED, and its grace: its pumps not done are free again" if late and lapsed(a, now) else
+                     f"  PASSED, its machine not moving it on (encho): its pumps not done are held until {stamp(a['deadline'] + grace(a))} (its grace), then free again" if late else ""))
     if said_gensoku(): print(f"{C['machine']} (this machine): {said_gensoku()}")
 
 
@@ -838,6 +885,7 @@ def cmd_kh(args, mach=None, note=""):
 def planleft(W):   # the jobs of the plan of W without their file (those running among them), the pumps an uchikiri dropped left out
     plan = [l.split() for l in open(os.path.join(W, "plan.txt")) if l.strip() and not l.startswith("#")]
     if os.path.exists(os.path.join(W, "uchikiri.kept")): kept = set(open(os.path.join(W, "uchikiri.kept")).read().split()); plan = [f for f in plan if f[3] in kept]
+    if os.path.exists(os.path.join(W, "skip")) and knows(W, "TENGO_GUARD"): sk = set(open(os.path.join(W, "skip")).read().split()); plan = [f for f in plan if f[3] not in sk]   # 1.56: the pumps let go
     return sum(1 for f in plan if not (os.path.exists(x := os.path.join(W, f"{f[0]}_{f[3]}.dat")) and os.path.getsize(x) > 1000))
 
 
@@ -1097,10 +1145,11 @@ def lift(c, op):
             if by > 600 and (n := delay(d, ids, by, f"now {a['id']}")): said.append(f"the deadlines of {', '.join(n)} pushed back by {hm(by)}")
     return "; ".join(said) or None
 
-def newdone():   # a pump of this machine complete here and not pushed yet: its files alone, no git
+def newdone():   # a pump of this machine complete here and not pushed yet, or (1.56) one it holds and must let go (doubles): its files and the clone as it is, no git
+    now = time.time()
     for c in campaigns():
-        A = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open" and os.path.isdir(workdir(a))]
-        if A and (cm := campaign(c)) and any(set(complete(a, cm)) - set(a["done"]) for a in A): return True
+        A0 = allocs(c); A = [a for a in A0 if a["machine"] == C["machine"] and a["status"] == "open" and os.path.isdir(workdir(a))]
+        if A and (cm := campaign(c)) and any(set(complete(a, cm)) - set(a["done"]) or doubles(a, A0, now) for a in A): return True
     return False
 
 
@@ -1121,7 +1170,7 @@ def cmd_gensoku(n, hours=None):
         if op:
             t = now + rest / n; late = [a for a in op if a["deadline"] < t]
             print(f"  its open allocations, {rest / 3600:.1f} kh left: done about {stamp(t)} at {n} kernels" + ("" if late else ", within their deadlines"))
-            for a in late: print(f"  {a['id']}: " + (f"past its deadline ({stamp(a['deadline'])}) with no watch here to move it on: its pumps not done are free again" if a["deadline"] < now else
+            for a in late: print(f"  {a['id']}: " + (f"past its deadline ({stamp(a['deadline'])}) with no watch here to move it on: its pumps not done are free again at {stamp(a['deadline'] + grace(a))} (its grace)" if a["deadline"] < now else
                                  f"its deadline {stamp(a['deadline'])} comes first: 20 min before it, a watch here gives back the pumps not started and holds those started until done (encho)"))
 
 
@@ -1147,6 +1196,8 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False, kikan=False):
     every campaign: 1.53) has launched all its jobs, its tail then lending its kernels to the new one (the nproc of the new driver = kernels - jobs of the tail, all of them once the tail has ended), move on the
     deadlines of this machine's allocations while their drivers run (encho, 1.52); a new
     version pushed to the pool takes the watch over at its next sync; a git that fails (the network gone) is tried again every minute"""
+    try: sync()   # 1.56: the clone as the pool is before the campaign is looked up (a campaign declared since this machine's last look was not found, and the watch ended at once)
+    except SystemExit: pass
     end = moment(until) if until else float("inf"); restarts = {}; last = 0; c = pick(c); flag = os.path.join(C["work"], "ENDING"); said = 0; said_other = 0; lost = None; kprev = None
     halt = kikan; late = False; why = "kikan"; lost_done = None   # halt: no claim past `end` (kikan, or an uchikiri by hand); late: past it, going on with sorties
     t0 = float(os.environ.get("TENGO_WATCH_T0", time.time()))   # the start of the first watch: an uchikiri before a new version still counts
@@ -1171,20 +1222,25 @@ def cmd_watch(until, hours, c, shinshu=None, shugeki=False, kikan=False):
                 if what != lost_done: lost_done = what; print(f"{time.strftime('%H:%M:%S')} the pumps done not pushed: {what}\n  (tried again at each look; the look goes on)", flush=True)
             sync(); op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
             if newer(): os.environ["TENGO_WATCH_T0"] = str(t0); os.execv(sys.executable, [sys.executable, os.path.realpath(__file__)] + sys.argv[1:])
-            for a in op:
-                W = workdir(a); log = open(os.path.join(W, "run.log")).read() if os.path.exists(os.path.join(W, "run.log")) else ""
-                if not ours(W)[0] and "ALLDONE" not in log.split("tengo-launch")[-1] and not os.path.exists(os.path.join(W, "STOP")):
-                    if restarts.get(a["id"], 0) >= 3:   # it does not start: its pumps back to the pool, not held until the deadline
-                        print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} down after 3 starts: released", flush=True)
-                        open(os.path.join(W, "STOP"), "w").write("released by the watch\n"); cmd_done(a["id"], final="released"); continue
-                    restarts[a["id"]] = restarts.get(a["id"], 0) + 1; print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} not running: start {restarts[a['id']]}", flush=True)
-                    open(os.path.join(W, "run.log"), "a").write(f"{time.strftime('%H:%M:%S')} tengo-launch (watch)\n"); launch(a, quiet=True)
-            for a in op:   # an allocation ended at its time by its driver (kikan): its pumps not started back to the pool at once
-                if (n := back(a)): print(f"{time.strftime('%H:%M:%S')} kikan {a['id']}: {n} pumps back to the pool", flush=True)
-            for a in ours_open():   # 1.52: the deadlines of this machine's allocations (every campaign) moved on while their drivers run
+            for a in ours_open():   # 1.52: the deadlines of this machine's allocations (every campaign) moved on while their drivers run; 1.56: first in the look, each deadline as the pool has it written for its driver
                 try:
+                    mirror(a)
                     if (msg := encho(a)): print(f"{time.strftime('%H:%M:%S')} {msg}", flush=True)
                 except (SystemExit, Exception) as e: print(f"{time.strftime('%H:%M:%S')} encho {a['id']} failed: {e}", flush=True)   # the watch goes on
+            op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
+            for a in op:
+                try:   # 1.56: an allocation that cannot be started again does not end the look for the others
+                    W = workdir(a); log = open(os.path.join(W, "run.log")).read() if os.path.exists(os.path.join(W, "run.log")) else ""
+                    if not ours(W)[0] and "ALLDONE" not in log.split("tengo-launch")[-1] and not os.path.exists(os.path.join(W, "STOP")):
+                        if not os.path.isdir(W): setup(a)   # claimed and never set up (its command stopped in between)
+                        if restarts.get(a["id"], 0) >= 3:   # it does not start: its pumps back to the pool, not held until the deadline
+                            print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} down after 3 starts: released", flush=True)
+                            open(os.path.join(W, "STOP"), "w").write("released by the watch\n"); cmd_done(a["id"], final="released"); continue
+                        restarts[a["id"]] = restarts.get(a["id"], 0) + 1; print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} not running: start {restarts[a['id']]}", flush=True)
+                        open(os.path.join(W, "run.log"), "a").write(f"{time.strftime('%H:%M:%S')} tengo-launch (watch)\n"); launch(a, quiet=True)
+                except (SystemExit, Exception) as e: print(f"{time.strftime('%H:%M:%S')} driver of {a['id']} not started again: {e}", flush=True)
+            for a in op:   # an allocation ended at its time by its driver (kikan; 1.56: or at its deadline): its pumps not started back to the pool at once
+                if (n := back(a)): print(f"{time.strftime('%H:%M:%S')} kikan {a['id']}: {n} pumps back to the pool", flush=True)
             if (lifted := lift(c, op)):   # the kaizu's now and high on pumps started here already: their allocation takes the level (1.50)
                 print(f"{time.strftime('%H:%M:%S')} {lifted}", flush=True); op = [a for a in allocs(c) if a["machine"] == C["machine"] and a["status"] == "open"]
             pressed = open_claims and press(c, op, kernels_now(), hrs, sortie, kikan and end)   # the kaizu's now and high, at once

@@ -5,8 +5,10 @@ The pool of jobs shared by my machines (azag, yzao) for a long-running task [e.g
 A machine asks for a **budget**, not for tasks: `ten-go --honkai --jikan 10` takes, in one go, the free task of the ongoing "campaign" in its
 global (van der Corput) order as long as their jobs, run on that machine the longest first, end within the ten hours. The claim is a commit;
 a push refused because another machine pushed first is redone from the new state, so that no pump is ever in two allocations. An
-allocation has a deadline (start + 1.5 budget + 2 h, the budget at least its longest job), after which its tasks not done are free
-again.
+allocation has a deadline (start + 1.5 budget + 2 h, the budget at least its longest job), which a watch of its machine moves on
+while its driver runs. Since 1.56 the deadline binds the driver too: it has it from the pool and, from 15 min before it with no word
+of a later one, starts no task it has not started; the pool frees the tasks not done only once the deadline and a grace (the longest
+task, an hour at least) are past; and a task another allocation has done is dropped where it is still held.
 
 ## Commands
 

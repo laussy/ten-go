@@ -327,7 +327,7 @@ function summary() {
   const tot = sum(() => true) || 1, segsB = [];
   for (const m of S.machines) segsB.push([sum(p => p[F.st] === "d" && p[F.m] === m.name), colour[m.name], 1, `done by ${m.name}`, m.name]);
   for (const m of S.machines) segsB.push([sum(p => p[F.st] === "h" && p[F.m] === m.name), held[m.name], 1, `held by ${m.name}`]);
-  segsB.push([sum(p => p[F.st] === "l"), css("--late"), .8, "past the deadline of its allocation"]);
+  segsB.push([sum(p => p[F.st] === "l"), css("--late"), .8, "past the deadline and the grace of its allocation"]);
   segsB.push([sum(p => (p[F.st] === "f") && p[F.lv] !== "skip"), css("--free"), 1, "free"]);
   segsB.push([sum(p => p[F.st] !== "d" && p[F.st] !== "h" && p[F.lv] === "skip"), css("--skip"), .45, "skipped"]);
   const W = $("#bar").clientWidth, lp = `${(100 * left / tot).toFixed(1)} %`;   // the share of the total a machine has computed, in its piece, always: with its name where it fits, alone where not (the piece then as wide as its figure); in the grey, what is left to compute (the kh left of the line above)
@@ -451,7 +451,7 @@ function tip(e, k) {
   const p = view[k], q = S.parts[p[F.part]], st = p[F.st];
   const where = st === "d" ? `done by <b>${esc(p[F.m])}</b> <span class="muted">(${esc(p[F.alloc])})</span>`
     : st === "h" ? `held by <b>${esc(p[F.m])}</b> <span class="muted">(${esc(p[F.alloc])})</span>` + (p[F.prog] >= 1 ? " · done here, not pushed yet" : p[F.prog] ? ` · ${Math.round(100 * p[F.prog])} % done here` : "")
-    : st === "l" ? `<span style="color:var(--late)">past the deadline</span> of ${esc(p[F.alloc])}: free again` : "free";
+    : st === "l" ? `<span style="color:var(--late)">past the deadline and the grace</span> of ${esc(p[F.alloc])}: free again` : "free";
   const lv = p[F.lv], rule = p[F.rule] === null ? "no rule" : `rule ${p[F.rule] + 1}`;
   const subs = Object.keys(SUB).filter(nm => SUB[nm].has(p[F.id]));
   t.innerHTML = `<b>${esc(q.prefix)}</b> #${p[F.id] - q.base} · P = <b>${esc(p[F.P])}</b> g<br>`
@@ -502,7 +502,7 @@ function legend() {
   for (const m of S.machines) items.push(`<span><i style="background:${colour[m.name]}"></i>done by ${esc(m.name)}</span>`);
   for (const m of S.machines) items.push(`<span><i style="background:${held[m.name]}"></i>held by ${esc(m.name)}</span>`);
   for (const m of S.machines) if (m.here) items.push(`<span><i style="background:${calc[m.name]}"></i>being computed on ${esc(m.name)}, as far as it has gone</span>`);
-  items.push(`<span><i style="background:var(--free)"></i>free</span>`, `<span><i style="background:var(--free);border-bottom:3px solid var(--late)"></i>past the deadline</span>`,
+  items.push(`<span><i style="background:var(--free)"></i>free</span>`, `<span><i style="background:var(--free);border-bottom:3px solid var(--late)"></i>past the deadline and grace</span>`,
     `<span><i style="border-top:5px solid var(--now);background:var(--free)"></i>now</span>`,
     `<span><i style="border-top:3px solid var(--hi);background:var(--free)"></i>high</span>`, `<span><i style="border-top:3px solid var(--lo);background:var(--free)"></i>low</span>`,
     `<span><i style="background:repeating-linear-gradient(135deg,var(--skip) 0 1.5px,transparent 1.5px 4px)"></i>skip</span>`,

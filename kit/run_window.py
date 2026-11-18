@@ -12,6 +12,10 @@ A file shugeki (Ten-Go's sortie) keeps the plan's order for every kernel, the pu
 A file jikan (an epoch: the end of the time Ten-Go gave the run, its plan the longest pumps first) turns the run, past it, into a
 sortie: the pumps started are completed first, then those not started run the cheapest first (from the end of the plan), whole, in
 that order for every kernel, so that an uchikiri ends soon.  A file kikan (an epoch) ends the run then without loss, as --uchikiri.
+A file deadline (an epoch, Ten-Go's: the deadline the pool has for the run, rewritten when the pool has a later one) binds the run:
+from 15 minutes before it (TENGO_GUARD seconds) the run starts no pump it has not started, as --uchikiri --nohoju, and tells Ten-Go
+(the command of atend).  A file skip (Ten-Go's: pumps that are another run's now) makes the run let go of them: their jobs waiting are
+dropped, those running stopped.
   python3 run_window.py              run the plan to the end (rerun to resume: files present are skipped, jobs in flight adopted)
   python3 run_window.py --progress   one line: ASCII bar of the kernel time done, files per order, kernels, memory, end estimate
   python3 run_window.py --kill       stop now: the driver, its front-ends and their kernels (a file STOP only stops new launches)
@@ -32,6 +36,7 @@ WORK = os.path.realpath(sys.argv[sys.argv.index("--dir") + 1]) if "--dir" in sys
 if "--dir" in sys.argv and not {"--progress", "--dry"} & set(sys.argv): sys.exit("--dir only reads: with --progress or --dry")   # never stop another run by mistake
 P = dict(l.split("=", 1) for l in open("params.txt").read().split() if "=" in l)
 GA, GS, PREC, MEMMIN = P["GA"], P["GS"], P["PREC"], float(P["MEMMIN"])
+GUARD = float(os.environ.get("TENGO_GUARD", 900))   # Ten-Go 1.56: no pump not started from this long before the deadline of the run (the file deadline)
 T = {"150w": 1118, "150w80": 1409, "200e": 760, "250e": 1580, "300e": 2685, "400e": 11076}   # seconds per job, azag at home on ~30 kernels
 # (Ten-Go's reference): for the bar, and, scaled to this run's own speed, to choose the job of a kernel above nproc
 def tcost(o): return T.get(o, 600 * (int(re.match(r"\d+", o)[0]) / 150) ** 3)
@@ -410,9 +415,12 @@ if not os.path.exists("launch-epoch"):   # the launch time and the kernel time o
 print(f"{time.strftime('%H:%M:%S')} {len(jobs)} jobs to run ({len(foreign)} adopted in flight), GA={GA} GS={GS} PREC={PREC}"
       + (f", shinshu up to {ceiling()} kernels" if ceiling() else "") + (f", its time until {clock(epoch('jikan'))}" if epoch("jikan") else "")
       + (f", ending without loss at {clock(epoch('kikan'))} (kikan)" if epoch("kikan") else ""), flush=True)
-running = []; t0 = time.time(); done = 0; lastmem = 0; took = {}; limit = nproc(); hist = []; prev = {}; look = 0; uchi = False; late = False; fill = set(); core = set(); begun = set()
+running = []; t0 = time.time(); done = 0; lastmem = 0; took = {}; limit = nproc(); hist = []; prev = {}; look = 0; uchi = False; late = False; guard = False; skipped = set(); fill = set(); core = set(); begun = set()
 while jobs or running or foreign:
     now = time.time(); base, cap = nproc(), ceiling()
+    if epoch("deadline") and now >= epoch("deadline") - GUARD and not os.path.exists("UCHIKIRI"):   # Ten-Go 1.56: its deadline near and no word of a later one (no watch, or the pool out of reach): an uchikiri of its own, without hoju
+        open("nohoju", "w").write("its deadline near: only the pumps started\n"); open("UCHIKIRI", "w").write(f"{int(now)}\n"); guard = True
+        print(f"{time.strftime('%H:%M:%S')} DEADLINE {clock(epoch('deadline'))}: no later one from the pool, no new pump; the pumps started are completed", flush=True)
     if epoch("kikan") and now >= epoch("kikan") and not os.path.exists("UCHIKIRI"):   # Ten-Go's kikan: at its time, an uchikiri of its own
         open("UCHIKIRI", "w").write(f"{int(now)}\n"); print(f"{time.strftime('%H:%M:%S')} KIKAN: its time is up, it ends without loss", flush=True)
     if not late and epoch("jikan") and now >= epoch("jikan"):   # past its time: the pumps started first, then the others the cheapest first, whole
@@ -443,6 +451,14 @@ while jobs or running or foreign:
         begun = {j for *_, j in running} | {j for _, j in foreign.values()} | {f[3] for f in plan if os.path.exists(f"{f[0]}_{f[3]}.dat")}
         print(f"{time.strftime('%H:%M:%S')} UCHIKIRI: {n - len(jobs)} jobs dropped, {sum(x[3] in core for x in jobs)} kept to complete the pumps started"
               + (f", {len(fill)} small pumps not started fill the kernels of the machine as they free (hoju), each only while it ends before them" if fill else ""), flush=True)
+    if guard and uchi:   # Ten-Go, told now, gives the pumps not started back to the pool (if it can reach it)
+        guard = False
+        if os.path.exists("atend"): subprocess.Popen(shlex.split(open("atend").read().strip()), stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    if os.path.exists("skip") and (sk := set(open("skip").read().split()) - skipped):   # Ten-Go 1.56: pumps that are another run's now (it has done them, or holds them, this run past its deadline): let go
+        skipped |= sk; n = len(jobs); jobs = [x for x in jobs if x[3] not in sk]
+        hit = [p.pid for p, _, _, j in running if j in sk] + [pid for pid, (_, j) in foreign.items() if j in sk]; kill(hit)
+        if uchi: kept -= sk; fill -= sk; core -= sk; open("uchikiri.tmp", "w").write(" ".join(sorted(kept)) + "\n"); os.replace("uchikiri.tmp", "uchikiri.kept")
+        print(f"{time.strftime('%H:%M:%S')} SKIP: pumps {' '.join(sorted(sk))} are another run's: {n - len(jobs)} jobs dropped, {len(hit)} stopped", flush=True)
     if not cap: hist.clear(); prev.clear(); limit = base
     elif now - look >= EVERY:
         look = now; o = others([p.pid for p, *_ in running] + list(foreign), prev)

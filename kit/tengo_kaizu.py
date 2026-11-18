@@ -2,7 +2,7 @@
 which lists the campaigns of the pool, each in a line (its bar, its counts, the kh left; a complete one so said), and draws the one
 shown (a click on another shows it instead; on the one shown, folds it: the list and the machines alone) as a BitTorrent client draws a file: each pump a piece as wide as its estimated time on the reference machine,
 done (in the colour of the machine), held by an allocation (paler; what this machine is computing in a sharp shade of its colour, as
-far as it has gone), free, or past the deadline of its allocation; in the order of the campaign (its parts in their order, each in the
+far as it has gone), free, or past the deadline and the grace of its allocation (free again); in the order of the campaign (its parts in their order, each in the
 global order) or in the order of g.  A drag over the map, the pieces picked by a click, or a part of the list, is given a priority,
 now, high, normal, low or skip (never claimed): a rule of prio/<c>.json in the pool, the last rule that matches a pump deciding, pushed
 like a claim; the pieces picked can be named, a sub-campaign of the campaign, listed with the parts, its priority raised or lowered
@@ -127,7 +127,7 @@ def brief(T, c, now, ref, A):
     reference machine), the machines holding an allocation in it, and whether it is complete (nothing left but pumps skipped)"""
     cm = T.campaign(c); _, K = T.cost(cm, A, ref); lv = T.level(c, cm); out = T.held(A, now)
     done = {p: a["machine"] for a in A for p in a["done"]}
-    hold = {p: a["machine"] for a in A if a["status"] == "open" and now < a["deadline"] for p in a["pumps"] if p not in done}
+    hold = {p: a["machine"] for a in A if a["status"] == "open" and not T.lapsed(a, now) for p in a["pumps"] if p not in done}   # 1.56: held until the deadline and the grace are past
     by = {}
     for p, m in done.items(): by.setdefault(m, [0, 0])[0] += K.get(p, 0)
     for p, m in hold.items(): by.setdefault(m, [0, 0])[1] += K.get(p, 0)
@@ -154,7 +154,7 @@ def state(T, c, hours):
     for a in A:
         if a["status"] != "open": continue
         for p in a["pumps"]:
-            if p not in done: (hold if now < a["deadline"] else late).setdefault(p, a)
+            if p not in done: (hold if not T.lapsed(a, now) else late).setdefault(p, a)   # 1.56: late = past its deadline and its grace (free again)
     prog = {}; nfz = {}   # this machine's pumps held: the part of their cost done here (files done, jobs running by their time so far); its jobs paused
     Sme, _ = T.cost(cm, A, me); O = {p[0]: p[2] for p in cm["pumps"]}
     for a in A:
