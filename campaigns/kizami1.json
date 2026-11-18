@@ -1,0 +1,114 @@
+{
+ "name": "kizami1",
+ "prefix": "hpkbL",
+ "about": "kizami (\u523b\u307f, the step) 1: curve k = 1 of the eleven of Sec. 26 (October (2026)#Y-0NbRU, Fig. 0NNbp), the case of nijin, gamma_sigma = 23141/682840 g = 0.3389 gamma_a (gamma_a = 0.1 g; g2(P->0) = 0.8000), from 0.032 g to 0.016 g on 0-3 g (Fabrice, 18 Nov 2026: 'can we naturally, using the same grid structure, double the resolution? how expensive would it be?', then 'write the 0-3 specs'); code/kizami_specs.py 1.0; prepared, to be declared by Fabrice's word",
+ "params": {
+  "GA": "1/10",
+  "GS": "23141/682840",
+  "PREC": "80",
+  "MEMMIN": "8"
+ },
+ "ref": {
+  "150w80": 1542,
+  "200e80": 1025,
+  "250e80": 2221,
+  "300e80": 3907,
+  "400e80": 10179,
+  "300e160": 5044
+ },
+ "kind": "parts",
+ "pumps": [
+  [
+   0,
+   "0.006",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   1,
+   "2.534",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   2,
+   "0.134",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   3,
+   "0.07",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   4,
+   "0.694",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   5,
+   "0.038",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   6,
+   "2.758",
+   [
+    "300e80",
+    "250e80",
+    "150w80"
+   ]
+  ],
+  [
+   7,
+   "0.47",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   8,
+   "0.102",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   9,
+   "1.494",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ]
+ ],
+ "parts": [
+  {
+   "kind": "list",
+   "prefix": "hpkbL",
+   "base": 0,
+   "about": "the points of the 0.016 g lattice 0.006 + 0.016 j g (0.006-2.998 g) with no certified pump of nijin within 0.004 g (nijin is on 0.004 g grids already); 10 pumps in van der Corput order, at 80 digits, the orders of nijin's grid ([['0.000', '2.004', ['200e80', '150w80']], ['2.004', 'inf', ['300e80', '250e80', '150w80']]])",
+   "pumps": 10,
+   "left_out": 0
+  }
+ ]
+}
