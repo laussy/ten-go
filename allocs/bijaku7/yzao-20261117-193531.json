@@ -30,11 +30,23 @@
   60000112,
   60000113
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  60000093
+ ],
+ "times": {
+  "150w80": [
+   2616
+  ],
+  "200e80": [
+   853
+  ]
+ },
+ "results": [
+  "results/bijaku7/yzao-20261117-193531-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.51",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794967520
 }
