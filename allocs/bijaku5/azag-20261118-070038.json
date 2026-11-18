@@ -5,7 +5,7 @@
  "kernels": 32,
  "hours": 2.0,
  "created": 1794981638,
- "deadline": 1794999638,
+ "deadline": 1795005648,
  "cost_kernel_h": 58.1,
  "pumps": [
   60000000,
@@ -300,5 +300,6 @@
  "shinshu": null,
  "shugeki": false,
  "updated": 1794998382,
- "uchikiri": 1794998448
+ "uchikiri": 1794998448,
+ "encho": 1
 }
