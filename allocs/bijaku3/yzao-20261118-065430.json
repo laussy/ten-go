@@ -37,11 +37,23 @@
   60000121,
   60000122
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  60000095
+ ],
+ "times": {
+  "150w80": [
+   1126
+  ],
+  "200e80": [
+   588
+  ]
+ },
+ "results": [
+  "results/bijaku3/yzao-20261118-065430-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.52",
  "shinshu": null,
- "shugeki": false
+ "shugeki": false,
+ "updated": 1794991492
 }
