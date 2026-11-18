@@ -18,24 +18,28 @@
  "done": [
   60000114,
   60000122,
-  60000121
+  60000121,
+  60000120
  ],
  "times": {
   "150w80": [
    1451,
    1555,
-   1518
+   1518,
+   1481
   ],
   "200e80": [
    996,
    1119,
-   1107
+   1107,
+   1085
   ]
  },
  "results": [
   "results/bijaku7/azag-20261118-071223-1.tgz",
   "results/bijaku7/azag-20261118-071223-2.tgz",
-  "results/bijaku7/azag-20261118-071223-3.tgz"
+  "results/bijaku7/azag-20261118-071223-3.tgz",
+  "results/bijaku7/azag-20261118-071223-4.tgz"
  ],
  "status": "open",
  "tengo": "1.52",
@@ -43,5 +47,5 @@
  "shugeki": false,
  "uchikiri": 1794999156,
  "encho": 1,
- "updated": 1795000433
+ "updated": 1795000460
 }
