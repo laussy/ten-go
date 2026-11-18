@@ -12,27 +12,31 @@
   20000053
  ],
  "done": [
-  20000014
+  20000014,
+  20000053
  ],
  "times": {
   "300e80": [
    4041
   ],
   "150w80": [
-   1634
+   1634,
+   1641
   ],
   "250e80": [
-   2250
+   2250,
+   2272
   ]
  },
  "results": [
-  "results/hokan9/azag-20261117-204028-1.tgz"
+  "results/hokan9/azag-20261117-204028-1.tgz",
+  "results/hokan9/azag-20261117-204028-2.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.51",
  "shinshu": null,
  "shugeki": false,
  "delayed": 28794,
  "uchikiri": 1794980493,
- "updated": 1794982003
+ "updated": 1794984300
 }
