@@ -1,0 +1,31 @@
+{
+ "id": "yzao-20261119-004339",
+ "campaign": "kizami2",
+ "machine": "yzao",
+ "kernels": 6,
+ "hours": 2.0,
+ "created": 1795045419,
+ "deadline": 1795063419,
+ "cost_kernel_h": 10.2,
+ "pumps": [
+  57,
+  58,
+  59,
+  60,
+  61,
+  62,
+  63,
+  64,
+  65,
+  66,
+  67
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.56",
+ "shinshu": null,
+ "shugeki": false,
+ "grace": 8813
+}
