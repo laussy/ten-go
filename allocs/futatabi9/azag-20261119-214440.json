@@ -1,0 +1,21 @@
+{
+ "id": "azag-20261119-214440",
+ "campaign": "futatabi9",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.0,
+ "created": 1795121080,
+ "deadline": 1795144386,
+ "cost_kernel_h": 3.0,
+ "pumps": [
+  47
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.56",
+ "shinshu": null,
+ "shugeki": false,
+ "grace": 13421
+}
