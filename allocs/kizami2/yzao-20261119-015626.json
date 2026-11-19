@@ -26,26 +26,30 @@
   83
  ],
  "done": [
-  68
+  68,
+  70
  ],
  "times": {
   "150w80": [
-   844
+   844,
+   978
   ],
   "250e80": [
-   1381
+   1381,
+   1220
   ],
   "300e80": [
    2260
   ]
  },
  "results": [
-  "results/kizami2/yzao-20261119-015626-1.tgz"
+  "results/kizami2/yzao-20261119-015626-1.tgz",
+  "results/kizami2/yzao-20261119-015626-2.tgz"
  ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 5610,
- "updated": 1795052272
+ "updated": 1795052575
 }
