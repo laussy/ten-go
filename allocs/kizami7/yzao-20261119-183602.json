@@ -8,14 +8,7 @@
  "deadline": 1795121146,
  "cost_kernel_h": 4.2,
  "pumps": [
-  74,
-  42,
-  26,
-  58,
-  6,
-  70,
-  38,
-  22
+  74
  ],
  "done": [],
  "times": {},
@@ -24,5 +17,6 @@
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": true,
- "grace": 3600
+ "grace": 3600,
+ "hoju": 1795109765
 }
