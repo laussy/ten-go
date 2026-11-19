@@ -7,9 +7,7 @@
  "created": 1795109762,
  "deadline": 1795121146,
  "cost_kernel_h": 4.2,
- "pumps": [
-  74
- ],
+ "pumps": [],
  "done": [],
  "times": {},
  "results": [],
@@ -18,5 +16,6 @@
  "shinshu": null,
  "shugeki": true,
  "grace": 3600,
- "hoju": 1795109765
+ "hoju": 1795109765,
+ "uchikiri": 1795110930
 }
