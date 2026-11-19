@@ -19,13 +19,25 @@
   39,
   23
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  51
+ ],
+ "times": {
+  "200e80": [
+   641
+  ],
+  "150w80": [
+   887
+  ]
+ },
+ "results": [
+  "results/kizami4/yzao-20261119-071520-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": true,
  "grace": 3600,
- "kikan": 1795072200
+ "kikan": 1795072200,
+ "updated": 1795070255
 }
