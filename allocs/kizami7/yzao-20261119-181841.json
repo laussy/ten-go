@@ -13,13 +13,32 @@
   86,
   78
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  90,
+  86
+ ],
+ "times": {
+  "150w80": [
+   1146,
+   1088
+  ],
+  "250e80": [
+   1551,
+   1533
+  ],
+  "300e80": [
+   3093,
+   2920
+  ]
+ },
+ "results": [
+  "results/kizami7/yzao-20261119-181841-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 8361,
- "uchikiri": 1795109761
+ "uchikiri": 1795109761,
+ "updated": 1795112136
 }
