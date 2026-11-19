@@ -10,12 +10,21 @@
  "pumps": [
   13
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  13
+ ],
+ "times": {
+  "400e80": [
+   10677
+  ]
+ },
+ "results": [
+  "results/futatabi5/azag-20261118-232318-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
- "grace": 13002
+ "grace": 13002,
+ "updated": 1795051275
 }
