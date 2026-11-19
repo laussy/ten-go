@@ -18,12 +18,24 @@
   31,
   63
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  55
+ ],
+ "times": {
+  "200e80": [
+   1059
+  ],
+  "150w80": [
+   1485
+  ]
+ },
+ "results": [
+  "results/kizami4/azag-20261119-082728-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
- "grace": 9851
+ "grace": 9851,
+ "updated": 1795075292
 }
