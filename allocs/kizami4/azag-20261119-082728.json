@@ -1,0 +1,29 @@
+{
+ "id": "azag-20261119-082728",
+ "campaign": "kizami4",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.0,
+ "created": 1795073248,
+ "deadline": 1795091248,
+ "cost_kernel_h": 12.6,
+ "pumps": [
+  83,
+  91,
+  87,
+  55,
+  15,
+  79,
+  47,
+  31,
+  63
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.56",
+ "shinshu": null,
+ "shugeki": false,
+ "grace": 9851
+}
