@@ -26,23 +26,27 @@
   10000034
  ],
  "done": [
-  10000019
+  10000019,
+  10000020
  ],
  "times": {
   "200e80": [
-   593
+   593,
+   598
   ],
   "150w80": [
-   805
+   805,
+   824
   ]
  },
  "results": [
-  "results/kango6/yzao-20261120-114153-1.tgz"
+  "results/kango6/yzao-20261120-114153-1.tgz",
+  "results/kango6/yzao-20261120-114153-2.tgz"
  ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 3600,
- "updated": 1795172529
+ "updated": 1795172833
 }
