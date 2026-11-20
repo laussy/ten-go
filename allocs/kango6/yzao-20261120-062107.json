@@ -26,7 +26,8 @@
   3,
   4,
   5,
-  6
+  6,
+  7
  ],
  "times": {
   "200e80": [
@@ -36,7 +37,8 @@
    638,
    608,
    663,
-   598
+   598,
+   643
   ],
   "150w80": [
    776,
@@ -55,12 +57,13 @@
   "results/kango6/yzao-20261120-062107-4.tgz",
   "results/kango6/yzao-20261120-062107-5.tgz",
   "results/kango6/yzao-20261120-062107-6.tgz",
-  "results/kango6/yzao-20261120-062107-7.tgz"
+  "results/kango6/yzao-20261120-062107-7.tgz",
+  "results/kango6/yzao-20261120-062107-8.tgz"
  ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 3600,
- "updated": 1795154922
+ "updated": 1795155226
 }
