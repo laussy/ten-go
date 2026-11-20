@@ -1,0 +1,144 @@
+{
+ "name": "kango6",
+ "prefix": "hpggP",
+ "about": "kango (\u770b\u8b77, nursing) 6: local refinement of k = 6 (teisatsu6, gamma_sigma = 368783/810275 g = 4.551 gamma_a, gamma_a = 0.1 g) on 0-3 g, after kizami6 (0.016 g); report 0JOalb Sec. 52 (work/nursing-k6-0YUG6). Fabrice, 20 Nov 2026: 'would some nursing make sense for kizamis? let's try k=6 ... Analysis first', then 'yes, do the probe first'",
+ "params": {
+  "GA": "1/10",
+  "GS": "368783/810275",
+  "PREC": "80",
+  "MEMMIN": "8"
+ },
+ "ref": {
+  "150w80": 1542,
+  "200e80": 1025,
+  "250e80": 2221,
+  "300e80": 3907,
+  "400e80": 10179,
+  "300e160": 5044
+ },
+ "kind": "parts",
+ "pumps": [
+  [
+   0,
+   "1.422",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   1,
+   "0.478",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   2,
+   "1.418",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   3,
+   "0.474",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   4,
+   "1.426",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   5,
+   "0.482",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   6,
+   "1.416",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   7,
+   "0.472",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   8,
+   "1.42",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   9,
+   "0.476",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   10,
+   "1.424",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   11,
+   "0.48",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   12,
+   "1.428",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ],
+  [
+   13,
+   "0.484",
+   [
+    "200e80",
+    "150w80"
+   ]
+  ]
+ ],
+ "parts": [
+  {
+   "kind": "list",
+   "prefix": "hpggP",
+   "base": 0,
+   "about": "the probe: two necks of k = 6 refined to 0.002 g, the stubborn interval 1.414-1.430 g (Fig. 152a: the near-axis ladder slides half a rung within one 0.016 g step; 12 grid breaks at 0.032 and 0.016 g) and 0.470-0.486 g (18 -> 16 under halving); 7 pumps each, 80 digits, certificate B (200e80, 150w80) as kizami6 there; van der Corput order within each neck, the two necks interleaved. Question: does the slide resolve into continuous lines?",
+   "pumps": 14,
+   "left_out": 0
+  }
+ ]
+}
