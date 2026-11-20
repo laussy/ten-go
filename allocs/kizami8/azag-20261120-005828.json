@@ -100,7 +100,8 @@
   9,
   41,
   25,
-  89
+  89,
+  5
  ],
  "times": {
   "200e80": [
@@ -131,7 +132,8 @@
    1170,
    1177,
    1117,
-   1139
+   1139,
+   993
   ],
   "150w80": [
    1553,
@@ -183,12 +185,13 @@
   "results/kizami8/azag-20261120-005828-23.tgz",
   "results/kizami8/azag-20261120-005828-24.tgz",
   "results/kizami8/azag-20261120-005828-25.tgz",
-  "results/kizami8/azag-20261120-005828-26.tgz"
+  "results/kizami8/azag-20261120-005828-26.tgz",
+  "results/kizami8/azag-20261120-005828-27.tgz"
  ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 3600,
- "updated": 1795136452
+ "updated": 1795136523
 }
