@@ -24,12 +24,24 @@
   10000054,
   10000055
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000042
+ ],
+ "times": {
+  "150w80": [
+   803
+  ],
+  "200e80": [
+   573
+  ]
+ },
+ "results": [
+  "results/kango6/yzao-20261120-145428-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
- "grace": 8697
+ "grace": 8697,
+ "updated": 1795185115
 }
