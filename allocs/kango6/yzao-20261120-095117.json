@@ -32,32 +32,36 @@
   10000001,
   10000000,
   10000002,
-  10000003
+  10000003,
+  10000004
  ],
  "times": {
   "200e80": [
    546,
    579,
    618,
-   628
+   628,
+   673
   ],
   "150w80": [
    779,
    817,
    855,
-   895
+   895,
+   956
   ]
  },
  "results": [
   "results/kango6/yzao-20261120-095117-1.tgz",
   "results/kango6/yzao-20261120-095117-2.tgz",
   "results/kango6/yzao-20261120-095117-3.tgz",
-  "results/kango6/yzao-20261120-095117-4.tgz"
+  "results/kango6/yzao-20261120-095117-4.tgz",
+  "results/kango6/yzao-20261120-095117-5.tgz"
  ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
  "grace": 3600,
- "updated": 1795166380
+ "updated": 1795166870
 }
