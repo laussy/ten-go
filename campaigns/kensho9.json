@@ -1,0 +1,46 @@
+{
+ "name": "kensho9",
+ "prefix": "hpdjC",
+ "about": "kensho (\u691c\u8a3c, verification) 9: k = 9 (teisatsu9, gamma_sigma = 2412479/861155 g = 28.01 gamma_a, gamma_a = 0.1 g) at high pump, P = 11.03 g (the first pump of futatabi9, which has 150w80, 250e80, 300e80 and 400e80 there), at high truncation orders: 500, 600 and 700 at 80 digits, and 500 at 120 digits (is 80 enough at order 500?): do the lines of 300 by 400 (E', Secs. 48-51) stay, and what does a larger order add? Fabrice, 20 Nov 2026: 'put on azag check of k=9 high pump (11) at high truncation order, e.g., 500 or more'; ref times of the new orders scaled as n^3 from 400e80 (x1.15 for 120 digits)",
+ "params": {
+  "GA": "1/10",
+  "GS": "2412479/861155",
+  "PREC": "80",
+  "MEMMIN": "8"
+ },
+ "ref": {
+  "150w80": 1542,
+  "200e80": 1025,
+  "250e80": 2221,
+  "300e80": 3907,
+  "400e80": 10179,
+  "300e160": 5044,
+  "500e80": 19881,
+  "600e80": 34354,
+  "700e80": 54553,
+  "500e120": 22863
+ },
+ "kind": "parts",
+ "pumps": [
+  [
+   0,
+   "11.03",
+   [
+    "700e80",
+    "600e80",
+    "500e120",
+    "500e80"
+   ]
+  ]
+ ],
+ "parts": [
+  {
+   "kind": "list",
+   "prefix": "hpdjC",
+   "base": 0,
+   "about": "one pump, 11.03 g, orders 700e80, 600e80, 500e120, 500e80 (longest first)",
+   "pumps": 1,
+   "left_out": 0
+  }
+ ]
+}
