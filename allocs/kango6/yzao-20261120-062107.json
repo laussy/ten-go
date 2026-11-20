@@ -19,12 +19,24 @@
   8,
   9
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  0
+ ],
+ "times": {
+  "200e80": [
+   553
+  ],
+  "150w80": [
+   776
+  ]
+ },
+ "results": [
+  "results/kango6/yzao-20261120-062107-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
- "grace": 3600
+ "grace": 3600,
+ "updated": 1795152856
 }
