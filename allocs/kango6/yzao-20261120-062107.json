@@ -1,0 +1,30 @@
+{
+ "id": "yzao-20261120-062107",
+ "campaign": "kango6",
+ "machine": "yzao",
+ "kernels": 4,
+ "hours": 2.0,
+ "created": 1795152067,
+ "deadline": 1795170067,
+ "cost_kernel_h": 7.1,
+ "pumps": [
+  0,
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.56",
+ "shinshu": null,
+ "shugeki": false,
+ "grace": 3600
+}
