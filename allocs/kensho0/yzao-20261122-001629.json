@@ -1,0 +1,29 @@
+{
+ "id": "yzao-20261122-001629",
+ "campaign": "kensho0",
+ "machine": "yzao",
+ "kernels": 4,
+ "hours": 2.828,
+ "created": 1795302989,
+ "deadline": 1795325458,
+ "cost_kernel_h": 11.3,
+ "pumps": [
+  10000128,
+  10000129,
+  10000130,
+  10000131
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.57",
+ "shinshu": null,
+ "shugeki": false,
+ "tekizai": {
+  "lean": "small",
+  "window": 8,
+  "asked": 2.0
+ },
+ "grace": 12723
+}
