@@ -10,12 +10,17 @@
  "pumps": [
   10000045
  ],
- "done": [],
+ "done": [
+  10000045
+ ],
  "times": {},
- "results": [],
- "status": "open",
+ "results": [
+  "results/kensho0/yzao-20261121-113944-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
- "grace": 12723
+ "grace": 12723,
+ "updated": 1795265346
 }
