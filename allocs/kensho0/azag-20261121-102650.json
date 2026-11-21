@@ -10,12 +10,30 @@
  "pumps": [
   10000035
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  10000035
+ ],
+ "times": {
+  "150w80": [
+   1791
+  ],
+  "250e80": [
+   2402
+  ],
+  "300e80": [
+   4273
+  ],
+  "400e80": [
+   11225
+  ]
+ },
+ "results": [
+  "results/kensho0/azag-20261121-102650-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.56",
  "shinshu": null,
  "shugeki": false,
- "grace": 24085
+ "grace": 24085,
+ "updated": 1795264436
 }
