@@ -3,7 +3,12 @@
 The pool of jobs shared by my machines (azag, yzao) for a long-running task [e.g., computing the one-atom-laser skeleton, cf. 0JOalb].
 
 A machine asks for a **budget**, not for tasks: `ten-go --honkai --jikan 10` takes, in one go, the free task of the ongoing "campaign" in its
-global (van der Corput) order as long as their jobs, run on that machine the longest first, end within the ten hours. The claim is a commit;
+global (van der Corput) order as long as their jobs, run on that machine the longest first, end within the ten hours. Since 1.57
+(tekizai, 適材) it chooses among the free tasks its next two claims would take in that order: the heaviest first (the longest job,
+then the cost; time and memory go with the order), but a machine of tekizai small (yzao) the lightest first while one of tekizai
+large (azag) is on the campaign, and alone the heaviest first too, so that no task waits for a machine that is not there; with an
+end in view (`--until`, `--kikan`) the tasks that end before it first; and a budget shorter than its first task is stretched to it, four
+times at most (a claim of one task a minute otherwise). The claim is a commit;
 a push refused because another machine pushed first is redone from the new state, so that no pump is ever in two allocations. An
 allocation has a deadline (start + 1.5 budget + 2 h, the budget at least its longest job), which a watch of its machine moves on
 while its driver runs. Since 1.56 the deadline binds the driver too: it has it from the pool and, from 15 min before it with no word
@@ -133,7 +138,8 @@ The clone belongs to Ten-Go: every command resets it to `origin/main` first.
 
 - `campaigns/<c>.json`: parameters, file prefix, reference seconds per order, pumps `[id, P, orders]` in the global order (an
   adaptive campaign: its rule too, and pumps that grow at each claim)
-- `machines/<m>.json`: kernels and speed factor (the costs are then refined from the measured jobs)
+- `machines/<m>.json`: kernels and speed factor (the costs are then refined from the measured jobs), memmin (its memory floor, GB),
+  tekizai (`small` or `large`, 1.57: the tasks it takes first)
 - `allocs/<c>/<id>.json`: one allocation (machine, budget, deadline, pumps, done, job times, results, status)
 - `ledger.tsv`: the kernel-hours spent, one line per allocation (kept up to date by `--tassei`), per run log imported, or booked by
   hand. A kh is one kernel for one hour: the jobs' own times summed, a failed job's included.
