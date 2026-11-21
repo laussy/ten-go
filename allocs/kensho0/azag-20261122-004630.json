@@ -1,0 +1,33 @@
+{
+ "id": "azag-20261122-004630",
+ "campaign": "kensho0",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 3.07,
+ "created": 1795304790,
+ "deadline": 1795328568,
+ "cost_kernel_h": 42.7,
+ "pumps": [
+  10000196,
+  10000197,
+  10000203,
+  10000206,
+  10000207,
+  10000209,
+  10000210,
+  10000212
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.57",
+ "shinshu": null,
+ "shugeki": false,
+ "tekizai": {
+  "lean": "large",
+  "window": 64,
+  "asked": 2.0
+ },
+ "grace": 24028
+}
