@@ -1,0 +1,21 @@
+{
+ "id": "azag-20261121-112253",
+ "campaign": "kensho0",
+ "machine": "azag",
+ "kernels": 32,
+ "hours": 2.0,
+ "created": 1795256573,
+ "deadline": 1795280393,
+ "cost_kernel_h": 3.1,
+ "pumps": [
+  10000040
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.56",
+ "shinshu": null,
+ "shugeki": false,
+ "grace": 13850
+}
