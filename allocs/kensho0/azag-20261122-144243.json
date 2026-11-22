@@ -27,7 +27,8 @@
   10000299,
   10000302,
   10000303,
-  10000305
+  10000305,
+  10000304
  ],
  "times": {
   "400e80": [
@@ -38,7 +39,8 @@
    7407,
    7106,
    6728,
-   7160
+   7160,
+   7114
   ]
  },
  "results": [
@@ -48,7 +50,8 @@
   "results/kensho0/azag-20261122-144243-4.tgz",
   "results/kensho0/azag-20261122-144243-5.tgz",
   "results/kensho0/azag-20261122-144243-6.tgz",
-  "results/kensho0/azag-20261122-144243-7.tgz"
+  "results/kensho0/azag-20261122-144243-7.tgz",
+  "results/kensho0/azag-20261122-144243-8.tgz"
  ],
  "status": "open",
  "tengo": "1.57",
@@ -60,5 +63,5 @@
   "asked": 2.0
  },
  "grace": 13235,
- "updated": 1795364596
+ "updated": 1795364717
 }
