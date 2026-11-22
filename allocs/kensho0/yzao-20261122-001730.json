@@ -15,19 +15,24 @@
  ],
  "done": [
   10000132,
-  10000133
+  10000133,
+  10000135,
+  10000136
  ],
  "times": {
   "400e80": [
    4929,
-   4968
+   4968,
+   4941,
+   4952
   ]
  },
  "results": [
   "results/kensho0/yzao-20261122-001730-1.tgz",
-  "results/kensho0/yzao-20261122-001730-2.tgz"
+  "results/kensho0/yzao-20261122-001730-2.tgz",
+  "results/kensho0/yzao-20261122-001730-3.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.57",
  "shinshu": null,
  "shugeki": false,
@@ -37,5 +42,5 @@
   "asked": 2.0
  },
  "grace": 12723,
- "updated": 1795312991
+ "updated": 1795313036
 }
