@@ -23,9 +23,23 @@
   10000158,
   10000159
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000216
+ ],
+ "times": {
+  "150w80": [
+   1655
+  ],
+  "250e80": [
+   2321
+  ],
+  "300e80": [
+   4026
+  ]
+ },
+ "results": [
+  "results/kensho0/azag-20261122-024706-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.57",
  "shinshu": null,
@@ -35,5 +49,6 @@
   "window": 64,
   "asked": 2.0
  },
- "grace": 23966
+ "grace": 23966,
+ "updated": 1795322184
 }
