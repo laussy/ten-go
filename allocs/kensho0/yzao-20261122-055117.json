@@ -11,7 +11,7 @@
  "done": [],
  "times": {},
  "results": [],
- "status": "open",
+ "status": "finished",
  "tengo": "1.57",
  "shinshu": null,
  "shugeki": false,
@@ -20,5 +20,6 @@
   "window": 8
  },
  "grace": 6190,
- "uchikiri": 1795326453
+ "uchikiri": 1795326453,
+ "updated": 1795326458
 }
