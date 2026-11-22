@@ -13,9 +13,17 @@
   10000139,
   10000141
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000141
+ ],
+ "times": {
+  "400e80": [
+   4856
+  ]
+ },
+ "results": [
+  "results/kensho0/yzao-20261122-014222-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.57",
  "shinshu": null,
@@ -24,5 +32,6 @@
   "lean": "small",
   "window": 8
  },
- "grace": 6223
+ "grace": 6223,
+ "updated": 1795317934
 }
