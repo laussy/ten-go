@@ -24,14 +24,16 @@
   10000010,
   10000012,
   10000013,
-  10000014
+  10000014,
+  10000015
  ],
  "times": {
   "500e120": [
    13356,
    12699,
    12723,
-   12727
+   12727,
+   12526
   ]
  },
  "results": [
@@ -39,7 +41,8 @@
   "results/kakudai0/azag-20261123-064454-2.tgz",
   "results/kakudai0/azag-20261123-064454-3.tgz",
   "results/kakudai0/azag-20261123-064454-4.tgz",
-  "results/kakudai0/azag-20261123-064454-5.tgz"
+  "results/kakudai0/azag-20261123-064454-5.tgz",
+  "results/kakudai0/azag-20261123-064454-6.tgz"
  ],
  "status": "open",
  "tengo": "1.57",
@@ -51,5 +54,5 @@
   "asked": 2.0
  },
  "grace": 34875,
- "updated": 1795428146
+ "updated": 1795435959
 }
