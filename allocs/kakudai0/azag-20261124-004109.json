@@ -19,9 +19,17 @@
   10000068,
   10000069
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000060
+ ],
+ "times": {
+  "500e120": [
+   12531
+  ]
+ },
+ "results": [
+  "results/kakudai0/azag-20261124-004109-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.57",
  "shinshu": null,
@@ -31,5 +39,6 @@
   "window": 20,
   "asked": 2.0
  },
- "grace": 16033
+ "grace": 16033,
+ "updated": 1795490358
 }
