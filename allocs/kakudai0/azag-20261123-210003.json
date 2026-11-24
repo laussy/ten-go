@@ -21,17 +21,20 @@
  ],
  "done": [
   10000050,
-  10000051
+  10000051,
+  10000052
  ],
  "times": {
   "500e120": [
    13296,
-   12975
+   12975,
+   12799
   ]
  },
  "results": [
   "results/kakudai0/azag-20261123-210003-1.tgz",
-  "results/kakudai0/azag-20261123-210003-2.tgz"
+  "results/kakudai0/azag-20261123-210003-2.tgz",
+  "results/kakudai0/azag-20261123-210003-3.tgz"
  ],
  "status": "open",
  "tengo": "1.57",
@@ -43,5 +46,5 @@
   "asked": 2.0
  },
  "grace": 15908,
- "updated": 1795478420
+ "updated": 1795478723
 }
