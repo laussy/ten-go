@@ -14,15 +14,18 @@
   10000083
  ],
  "done": [
-  10000083
+  10000083,
+  10000082
  ],
  "times": {
   "500e120": [
-   12957
+   12957,
+   13008
   ]
  },
  "results": [
-  "results/kakudai0/yzao-20261124-134228-1.tgz"
+  "results/kakudai0/yzao-20261124-134228-1.tgz",
+  "results/kakudai0/yzao-20261124-134228-2.tgz"
  ],
  "status": "open",
  "tengo": "1.57",
@@ -34,5 +37,5 @@
   "asked": 2.0
  },
  "grace": 34875,
- "updated": 1795537136
+ "updated": 1795537197
 }
