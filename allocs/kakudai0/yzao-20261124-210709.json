@@ -13,9 +13,17 @@
   10000094,
   10000095
  ],
- "done": [],
- "times": {},
- "results": [],
+ "done": [
+  10000093
+ ],
+ "times": {
+  "500e120": [
+   12794
+  ]
+ },
+ "results": [
+  "results/kakudai0/yzao-20261124-210709-1.tgz"
+ ],
  "status": "open",
  "tengo": "1.57",
  "shinshu": null,
@@ -25,5 +33,6 @@
   "window": 8,
   "asked": 2.0
  },
- "grace": 16553
+ "grace": 16553,
+ "updated": 1795576669
 }
