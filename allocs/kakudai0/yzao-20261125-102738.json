@@ -12,10 +12,22 @@
   20000050,
   20000051
  ],
- "done": [],
- "times": {},
- "results": [],
- "status": "open",
+ "done": [
+  20000049,
+  20000050,
+  20000051
+ ],
+ "times": {
+  "600e120": [
+   26045,
+   26194,
+   26543
+  ]
+ },
+ "results": [
+  "results/kakudai0/yzao-20261125-102738-1.tgz"
+ ],
+ "status": "finished",
  "tengo": "1.57",
  "shinshu": null,
  "shugeki": false,
@@ -23,5 +35,6 @@
   "lean": "small",
   "window": 8
  },
- "grace": 65625
+ "grace": 65625,
+ "updated": 1795625405
 }
