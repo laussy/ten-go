@@ -1,0 +1,27 @@
+{
+ "id": "yzao-20261125-102738",
+ "campaign": "kakudai0",
+ "machine": "yzao",
+ "kernels": 3,
+ "hours": 15.0,
+ "created": 1795598858,
+ "deadline": 1795687058,
+ "cost_kernel_h": 43.8,
+ "pumps": [
+  20000049,
+  20000050,
+  20000051
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.57",
+ "shinshu": null,
+ "shugeki": false,
+ "tekizai": {
+  "lean": "small",
+  "window": 8
+ },
+ "grace": 65625
+}
