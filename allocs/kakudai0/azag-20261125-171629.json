@@ -1,0 +1,26 @@
+{
+ "id": "azag-20261125-171629",
+ "campaign": "kakudai0",
+ "machine": "azag",
+ "kernels": 14,
+ "hours": 8.0,
+ "created": 1795623389,
+ "deadline": 1795674165,
+ "cost_kernel_h": 8.1,
+ "pumps": [
+  20000064
+ ],
+ "done": [],
+ "times": {},
+ "results": [],
+ "status": "open",
+ "tengo": "1.57",
+ "shinshu": null,
+ "shugeki": false,
+ "tekizai": {
+  "lean": "large",
+  "window": 8,
+  "asked": 2.0
+ },
+ "grace": 36313
+}
