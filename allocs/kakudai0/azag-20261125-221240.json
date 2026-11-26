@@ -28,7 +28,8 @@
   20000074,
   20000073,
   20000076,
-  20000079
+  20000079,
+  20000077
  ],
  "times": {
   "500e120": [
@@ -44,7 +45,8 @@
    27979,
    29100,
    27942,
-   27499
+   27499,
+   28771
   ]
  },
  "results": [
@@ -55,7 +57,8 @@
   "results/kakudai0/azag-20261125-221240-5.tgz",
   "results/kakudai0/azag-20261125-221240-6.tgz",
   "results/kakudai0/azag-20261125-221240-7.tgz",
-  "results/kakudai0/azag-20261125-221240-8.tgz"
+  "results/kakudai0/azag-20261125-221240-8.tgz",
+  "results/kakudai0/azag-20261125-221240-9.tgz"
  ],
  "status": "open",
  "tengo": "1.57",
@@ -67,6 +70,6 @@
   "asked": 2.0
  },
  "grace": 52058,
- "updated": 1795693192,
+ "updated": 1795693980,
  "encho": 1
 }
