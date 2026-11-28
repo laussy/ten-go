@@ -12,17 +12,20 @@
   20000084
  ],
  "done": [
-  20000083
+  20000083,
+  20000084
  ],
  "times": {
   "600e120": [
-   19287
+   19287,
+   19561
   ]
  },
  "results": [
-  "results/kakudai0/yzao-20261128-141641-1.tgz"
+  "results/kakudai0/yzao-20261128-141641-1.tgz",
+  "results/kakudai0/yzao-20261128-141641-2.tgz"
  ],
- "status": "open",
+ "status": "finished",
  "tengo": "1.57",
  "shinshu": null,
  "shugeki": false,
@@ -32,5 +35,5 @@
   "asked": 2.0
  },
  "grace": 32622,
- "updated": 1795891093
+ "updated": 1795891363
 }
