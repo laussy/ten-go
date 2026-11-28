@@ -5,7 +5,7 @@
  "kernels": 14,
  "hours": 7.838,
  "created": 1795843526,
- "deadline": 1795893053,
+ "deadline": 1795899055,
  "cost_kernel_h": 80.5,
  "pumps": [
   30000059,
@@ -60,5 +60,6 @@
   "asked": 2.0
  },
  "grace": 51730,
- "updated": 1795891306
+ "updated": 1795891306,
+ "encho": 1
 }
